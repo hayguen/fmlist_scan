@@ -1,0 +1,26 @@
+
+BASE=$(pwd)
+
+# https://github.com/jgaeddert/liquid-dsp.git
+GITUSER=jgaeddert
+GITPROJ=liquid-dsp
+
+if [ ! -d ${BASE}/git/${GITUSER} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}
+fi
+
+cd ${BASE}/git/${GITUSER}
+if [ -d ${GITPROJ} ]; then
+  cd ${GITPROJ}
+  git pull --rebase
+else
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+fi
+
+cd ${BASE}/git/${GITUSER}/${GITPROJ}
+./bootstrap.sh
+./configure
+make
+
+cd ${BASE}
+

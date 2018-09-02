@@ -1,0 +1,60 @@
+
+BASE=$(pwd)
+
+
+# https://github.com/hayguen/dab-cmdline.git
+
+GITUSER=hayguen
+GITPROJ=dab-cmdline
+
+if [ ! -d ${BASE}/git/${GITUSER} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}
+fi
+
+
+cd ${BASE}/git/${GITUSER}
+if [ -d ${GITPROJ} ]; then
+  cd ${GITPROJ}
+  git pull --rebase
+else
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+fi
+
+cd ${BASE}/git/${GITUSER}/${GITPROJ}
+#tar zxf ${BASE}/example-11.tgz
+
+
+# rtlsdr
+if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr ]; then
+  mkdir -p ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
+fi
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
+cmake ../${GITPROJ}/example-10 -DRTLSDR=ON
+make
+
+
+# raw 8 bit 2048kSps
+if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw ]; then
+  mkdir -p ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw
+fi
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw
+cmake ../${GITPROJ}/example-10 -DRAWFILES=ON
+make
+
+# wav
+if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_wav ]; then
+  mkdir -p ${BASE}/git/${GITUSER}/build_${GITPROJ}_wav
+fi
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_wav
+cmake ../${GITPROJ}/example-10 -DWAVFILES=ON
+make
+
+
+
+echo "remaining todo: sudo make install"
+
+cd ${BASE}
+

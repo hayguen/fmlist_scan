@@ -1,0 +1,28 @@
+
+BASE=$(pwd)
+
+# https://github.com/windytan/redsea.git
+GITUSER=windytan
+GITPROJ=redsea
+
+if [ ! -d ${BASE}/git/${GITUSER} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}
+fi
+
+cd ${BASE}/git/${GITUSER}
+if [ -d ${GITPROJ} ]; then
+  cd ${GITPROJ}
+  git pull --rebase
+else
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+fi
+
+cd ${BASE}/git/${GITUSER}/${GITPROJ}
+./autogen.sh
+./configure --disable-tmc
+make
+
+echo "remaining todo: sudo make install"
+
+cd ${BASE}
+

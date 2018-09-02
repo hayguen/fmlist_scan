@@ -1,0 +1,70 @@
+
+BASE=$(pwd)
+if [ -z "${FMLIST_SCAN_USER}" ]; then
+  export FMLIST_SCAN_USER="pi"
+fi
+
+apt-get -y install htop powertop at lsof mc nano vim zip alpine
+apt-get -y install ncdu screen parallel sshfs wget iftop
+apt-get -y install sox lame alsa-utils
+apt-get -y install gpsd gpsd-clients
+apt-get -y install libraspberrypi-bin
+
+apt-get -y install build-essential git git-gui gitk cmake libtool autotools-dev automake
+apt-get -y install usbutils libusb-1.0-0-dev libsndfile1-dev
+
+NRAM=$(grep -c /home/${FMLIST_SCAN_USER}/ram /etc/fstab)
+if [ $NRAM -eq 0 ]; then
+  echo "installing tmpfs (ramdisk) to /etc/fstab"
+  echo "tmpfs /home/${FMLIST_SCAN_USER}/ram tmpfs rw,noexec,user,noatime,mode=0777,uid=${FMLIST_SCAN_USER},gid=${FMLIST_SCAN_USER} 0 0" >>/etc/fstab
+  sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/ram"
+  sudo -u ${FMLIST_SCAN_USER} bash -c "mount /home/${FMLIST_SCAN_USER}/ram"
+fi
+
+sed -i '/\/mnt\/sda1/d' /etc/fstab
+cat fstab >>/etc/fstab
+mkdir -p /mnt/usbext4
+mkdir -p /mnt/sda1
+mkdir -p /mnt/sda2
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /mnt/sda1
+
+
+if [ ! -f /home/${FMLIST_SCAN_USER}/.bash_aliases ]; then
+  sudo -u ${FMLIST_SCAN_USER} bash -c "cp .bash_aliases /home/${FMLIST_SCAN_USER}/"
+fi
+
+if [ ! -d /home/${FMLIST_SCAN_USER}/.ssh ]; then
+  echo "installing ssh authorized_keys"
+  sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/.ssh"
+  sudo -u ${FMLIST_SCAN_USER} bash -c "cp authorized_keys /home/${FMLIST_SCAN_USER}/.ssh/"
+  sudo -u ${FMLIST_SCAN_USER} bash -c "chmod 0600 /home/${FMLIST_SCAN_USER}/.ssh/authorized_keys"
+fi
+
+sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/bin"
+
+cp gpstime.sh /home/${FMLIST_SCAN_USER}/bin/
+cp get_gpstime.sh /home/${FMLIST_SCAN_USER}/bin/
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/gpstime.sh
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/get_gpstime.sh
+
+systemctl stop gpsd.socket
+systemctl disable gpsd.socket
+cp gpsd.conf /etc/default/gpsd
+systemctl enable gpsd.socket
+systemctl start gpsd.socket
+
+
+source setup_config
+
+source setup_leds
+
+source setup_scanner
+
+# add crontab entry: execute gpstime.sh every minute  and  scanner @restart
+source setup_crontab
+
+
+echo "hold back: apt-get install x11-xserver-utils meld"
+
+cd ${BASE}
+

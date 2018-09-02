@@ -1,0 +1,6 @@
+
+BASE=$(pwd)
+
+apt-get -y install libusb-dev libusb-1.0-0-dev
+
+cd ${BASE}

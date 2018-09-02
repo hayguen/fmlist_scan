@@ -1,0 +1,16 @@
+
+BASE=$(pwd)
+
+if [ ! -d ${BASE}/prescanDAB/build ]; then
+  mkdir -p ${BASE}/prescanDAB/build
+fi
+
+cd ${BASE}/prescanDAB/build
+cmake -DCMAKE_BUILD_TYPE=Release ../
+make
+if [ ! -d $HOME/bin ]; then
+  mkdir $HOME/bin
+fi
+cp prescanDAB $HOME/bin/
+
+cd ${BASE}

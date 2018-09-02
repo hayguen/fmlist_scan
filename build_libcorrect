@@ -1,0 +1,33 @@
+
+BASE=$(pwd)
+
+# https://github.com/quiet/libcorrect.git
+GITUSER=quiet
+GITPROJ=libcorrect
+
+if [ ! -d ${BASE}/git/${GITUSER} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}
+fi
+
+if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}/build_${GITPROJ}
+fi
+
+cd ${BASE}/git/${GITUSER}
+if [ -d ${GITPROJ} ]; then
+  cd ${GITPROJ}
+  git pull --rebase
+else
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+fi
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
+cmake ../${GITPROJ}
+make
+make shim
+
+echo "remaining todo: sudo make install"
+echo "remaining todo: sudo ldconfig"
+
+cd ${BASE}
+

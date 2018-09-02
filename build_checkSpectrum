@@ -1,0 +1,16 @@
+
+BASE=$(pwd)
+
+if [ ! -d ${BASE}/checkSpectrumForCarrier/build ]; then
+  mkdir -p ${BASE}/checkSpectrumForCarrier/build
+fi
+
+cd ${BASE}/checkSpectrumForCarrier/build
+cmake -DCMAKE_BUILD_TYPE=Release ../
+make
+if [ ! -d $HOME/bin ]; then
+  mkdir $HOME/bin
+fi
+cp checkSpectrumForCarrier $HOME/bin/
+
+cd ${BASE}

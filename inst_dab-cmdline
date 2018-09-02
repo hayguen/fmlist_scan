@@ -1,0 +1,22 @@
+
+BASE=$(pwd)
+
+# https://github.com/hayguen/dab-cmdline.git
+GITUSER=hayguen
+GITPROJ=dab-cmdline
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
+make install
+ldconfig
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw
+make install
+ldconfig
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_wav
+make install
+ldconfig
+
+
+cd ${BASE}
+

@@ -1,0 +1,6 @@
+
+BASE=$(pwd)
+
+apt-get -y install libfaad-dev libfftw3-dev libusb-dev zlib1g-dev libsamplerate0-dev portaudio19-dev
+
+cd ${BASE}

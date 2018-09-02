@@ -1,0 +1,32 @@
+
+BASE=$(pwd)
+
+# https://github.com/librtlsdr/librtlsdr
+GITUSER=librtlsdr
+GITPROJ=librtlsdr
+
+if [ ! -d ${BASE}/git/${GITUSER} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}
+fi
+
+if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}/build_${GITPROJ}
+fi
+
+cd ${BASE}/git/${GITUSER}
+if [ -d ${GITPROJ} ]; then
+  cd ${GITPROJ}
+  git pull --rebase
+else
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git -b development
+fi
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
+cmake ../${GITPROJ} -DINSTALL_UDEV_RULES=ON -DLINK_RTLTOOLS_AGAINST_STATIC_LIB=ON
+make
+
+echo "remaining todo: sudo make install"
+echo "remaining todo: sudo ldconfig"
+
+cd ${BASE}
+

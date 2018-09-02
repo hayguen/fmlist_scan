@@ -1,0 +1,27 @@
+
+BASE=$(pwd)
+
+# https://github.com/simonyiszk/csdr.git
+GITUSER=simonyiszk
+GITPROJ=csdr
+
+if [ ! -d ${BASE}/git/${GITUSER} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}
+fi
+
+cd ${BASE}/git/${GITUSER}
+if [ -d ${GITPROJ} ]; then
+  cd ${GITPROJ}
+  git pull --rebase
+else
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+fi
+
+cd ${BASE}/git/${GITUSER}/${GITPROJ}
+make
+
+echo "remaining todo: sudo make install"
+#echo "remaining todo: sudo ldconfig"
+
+cd ${BASE}
+

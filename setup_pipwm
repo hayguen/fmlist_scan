@@ -1,0 +1,11 @@
+
+if [ -z "${FMLIST_SCAN_USER}" ]; then
+  FMLIST_SCAN_USER="pi"
+fi
+
+if [ -f /home/${FMLIST_SCAN_USER}/bin/pipwm_new ]; then
+  rm -f /home/${FMLIST_SCAN_USER}/bin/pipwm
+  mv /home/${FMLIST_SCAN_USER}/bin/pipwm_new /home/${FMLIST_SCAN_USER}/bin/pipwm
+fi
+chown root:root /home/${FMLIST_SCAN_USER}/bin/pipwm
+chmod 4755 /home/${FMLIST_SCAN_USER}/bin/pipwm
