@@ -1,0 +1,7 @@
+
+BASE=$(pwd)
+
+apt-get -y install libfftw3-dev octave gnuplot
+#apt-get -y install mplayer gnuplot-x11
+
+cd ${BASE}

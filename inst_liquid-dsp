@@ -1,0 +1,13 @@
+
+BASE=$(pwd)
+
+# https://github.com/jgaeddert/liquid-dsp.git
+GITUSER=jgaeddert
+GITPROJ=liquid-dsp
+
+cd ${BASE}/git/${GITUSER}/${GITPROJ}
+make install
+ldconfig
+
+cd ${BASE}
+

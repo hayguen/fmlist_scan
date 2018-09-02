@@ -1,0 +1,6 @@
+
+if [ -z "${FMLIST_SCAN_USER}" ]; then
+  FMLIST_SCAN_USER="pi"
+fi
+
+cp rpi3b_led_*.sh /home/${FMLIST_SCAN_USER}/bin/

@@ -1,0 +1,31 @@
+
+BASE=$(pwd)
+
+# git://git.drogon.net/wiringPi
+# https://github.com/WiringPi/WiringPi.git
+
+GITUSER=drogon
+GITPROJ=wiringPi
+
+if [ ! -d ${BASE}/git/${GITUSER} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}
+fi
+
+cd ${BASE}/git/${GITUSER}
+if [ -d ${GITPROJ} ]; then
+  cd ${GITPROJ}
+  git pull --rebase
+else
+  #git clone https://github.com/${GITUSER}/${GITPROJ}.git
+  git clone git://git.${GITUSER}.net/${GITPROJ}
+fi
+
+cd ${BASE}/git/${GITUSER}/${GITPROJ}
+./build
+#make
+
+#echo "remaining todo: sudo make install"
+#echo "remaining todo: sudo ldconfig"
+
+cd ${BASE}
+

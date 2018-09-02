@@ -1,0 +1,30 @@
+
+BASE=$(pwd)
+
+# https://github.com/steve-m/kalibrate-rtl.git
+GITUSER=steve-m
+GITPROJ=kalibrate-rtl
+
+if [ ! -d ${BASE}/git/${GITUSER} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}
+fi
+
+cd ${BASE}/git/${GITUSER}
+if [ -d ${GITPROJ} ]; then
+  cd ${GITPROJ}
+  git pull --rebase
+else
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+fi
+
+cd ${BASE}/git/${GITUSER}/${GITPROJ}
+./bootstrap 
+./configure
+make
+
+echo "remaining todo: sudo make install"
+#echo "remaining todo: sudo ldconfig"
+
+cd ${BASE}
+
+# sudo make install

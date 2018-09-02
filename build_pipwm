@@ -1,0 +1,13 @@
+
+BASE=$(pwd)
+
+if [ ! -d ${BASE}/pipwm/build ]; then
+  mkdir -p ${BASE}/pipwm/build
+fi
+
+cd ${BASE}/pipwm/build
+cmake ../
+make
+cp pipwm $HOME/bin/pipwm_new
+
+cd ${BASE}

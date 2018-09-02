@@ -1,0 +1,15 @@
+
+BASE=$(pwd)
+
+# https://github.com/librtlsdr/librtlsdr
+GITUSER=librtlsdr
+GITPROJ=librtlsdr
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
+make install
+ldconfig
+rmmod dvb_usb_rtl28xxu
+echo "blacklist dvb_usb_rtl28xxu" >/etc/modprobe.d/blacklist_rtl28xxu.conf
+
+cd ${BASE}
+

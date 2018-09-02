@@ -1,0 +1,12 @@
+
+BASE=$(pwd)
+
+# https://github.com/quiet/libcorrect.git
+GITUSER=quiet
+GITPROJ=libcorrect
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
+make install
+
+cd ${BASE}
+

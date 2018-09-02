@@ -1,0 +1,6 @@
+
+BASE=$(pwd)
+
+apt-get -y install libfftw3-dev automake autoconf
+
+cd ${BASE}

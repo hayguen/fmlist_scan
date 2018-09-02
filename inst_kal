@@ -1,0 +1,17 @@
+
+BASE=$(pwd)
+if [ -z "${FMLIST_SCAN_USER}" ]; then
+  FMLIST_SCAN_USER="pi"
+fi
+
+# https://github.com/steve-m/kalibrate-rtl.git
+GITUSER=steve-m
+GITPROJ=kalibrate-rtl
+
+cd ${BASE}/git/${GITUSER}/${GITPROJ}
+make install
+
+cd ${BASE}
+
+sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/bin"
+sudo -u ${FMLIST_SCAN_USER} bash -c "cp kal.sh /home/${FMLIST_SCAN_USER}/bin/"

@@ -1,0 +1,6 @@
+
+BASE=$(pwd)
+
+apt-get -y install libsndfile1-dev automake autoconf
+
+cd ${BASE}
