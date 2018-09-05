@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source $HOME/.config/fmlist_scan
+source $HOME/.config/fmlist_scan/config
 
 # http://blog.petrilopia.net/linux/raspberry-pi-set-time-gps-dongle/
 

@@ -6,17 +6,19 @@ if [ ! -f $HOME/ram/scanLoopBgRunning ]; then
   exit 0
 fi
 
+source $HOME/.config/fmlist_scan/config
+
 CURR="$(date -u +%s)"
 LAST="$(stat -c %Y $HOME/ram/LAST)"
 D=$[ $CURR - $LAST ]
 echo "Delta from LAST to CURR = $D secs"
-if [ $D -ge 600 ]; then
+if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
   DTF="$(date -u "+%Y-%m-%dT%T Z")"
   echo "${DTF}: No stations in last $D seconds!"
   echo "${DTF}: checkBgScanLoop.sh: Error: No stations in last $D seconds!" >>$HOME/ram/scanner.log
 
-  if [ "$1" == "reboot" ]; then
-    echo "going for reboot"
+  if [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
+    echo "going for reboot. reboot is activated in $HOME/.config/fmlist_scan/config"
     echo "${DTF}: checkBgScanLoop.sh: saving results, then rebooting .." >>$HOME/ram/scanner.log
     saveScanResults.sh savelog
     sudo reboot now
@@ -39,7 +41,7 @@ if [ $D -ge 600 ]; then
     else
       echo "scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .."
       echo "${DTF}: checkBgScanLoop.sh: scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .." >>$HOME/ram/scanner.log
-      stopScanLoop.sh
+      stopBgScanLoop.sh
       pkill scanLoop.sh
       pkill scanFM.sh
       pkill scanDAB.sh

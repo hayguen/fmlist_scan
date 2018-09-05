@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ -z "${FMLIST_SCAN_RASPI}" ]; then
-  source $HOME/.config/fmlist_scan
+  source $HOME/.config/fmlist_scan/config
 fi
 if [ ${FMLIST_SCAN_RASPI} -eq 0 ]; then
   exit 0

@@ -6,6 +6,6 @@
 
 pushd src &>/dev/null
 
-./all.sh "$@"
+./setup.sh "$@"
 
 popd &>/dev/null

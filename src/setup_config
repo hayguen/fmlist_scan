@@ -6,13 +6,16 @@ if [ -z "${FMLIST_SCAN_RASPI}" ]; then
   FMLIST_SCAN_RASPI="1"
 fi
 
-sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/.config"
+sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/.config/fmlist_scan"
 
-cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan
+cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/config
 export FMLIST_SCAN_PATH="$(pwd)/scanner"
 export FMLIST_SCAN_USER="${FMLIST_SCAN_USER}"   # default is "pi"
 export FMLIST_SCAN_RASPI="${FMLIST_SCAN_RASPI}" # "0" or "1"; default is "1" for a Raspberry Pi hardware
 export FMLIST_SCAN_GPS_COORDS="${FMLIST_SCAN_GPS_COORDS}"  # e.g. "49.540295 / 8.652697"; empty for use of gpsd
+export FMLIST_SCAN_DEAD_TIME="600"              # default is "600": assume something is hanging after 600 seconds
+export FMLIST_SCAN_DEAD_REBOOT="0"              # "0" or "1"; default is "0" for rebooting when dead
+export FMLIST_SCAN_AUTOSTART="1"                # default is "1": autostart scanner in background
 export FMLIST_SCAN_FM="1"                       # "0" or "1"; default is "1" for active UKW/FM scan
 export FMLIST_SCAN_DAB="1"                      # "0" or "1"; default is "1" for active DAB scan
 export FMLIST_SCAN_FM_MIN_PWR_RATIO="4"         # parameter to checkSpectrumForCarrier
@@ -32,30 +35,33 @@ export FMLIST_SCAN_PPM="0"                      # ppm value of RTLSDR receiver
 EOF
 
 
-cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/fmscan.inc
+cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/fmscan.inc
 chunkduration=4
 par_jobs=3
 ddc_step=100000
 ukw_beg=87500000
 ukw_end=108000000
-# mpxsrate = 171 kHz; default factor = 11 => chunkbw = 1881 kHz
-# mpxsrate = 171 kHz; factor = 9 => chunkbw = 1539 kHz
-# mpxsrate = 171 kHz; factor = 8 => chunkbw = 1368 kHz
-# mpxsrate = 171 kHz; factor = 7 => chunkbw = 1197 kHz
-# mpxsrate = 171 kHz; factor = 6 => chunkbw = 1026 kHz
-mpxsrate_chunkbw_factor=6
 # R820T tuner bandwidths in kHz: 350, 450, 550, 700, 900, 1200, 1450, 1550, 1600, 1700, 1800, 1900, 1950, 2050, 2080
-RTL_BW_OPT="-w 1450000"
+# mpxsrate =171 kHz; factor =11 => chunkbw =1881 kHz => +/-850 kHz => RTL_BW_OPT=""
+# mpxsrate =171 kHz; factor = 9 => chunkbw =1539 kHz => +/-650 kHz => RTL_BW_OPT="-w 1700000"
+# mpxsrate =171 kHz; factor = 8 => chunkbw =1368 kHz
+# mpxsrate =171 kHz; factor = 7 => chunkbw =1197 kHz => +/-450 kHz => RTL_BW_OPT="-w 1550000"
+# mpxsrate =171 kHz; factor = 6 => chunkbw =1026 kHz
+# mpxsrate =171 kHz; factor = 5 => chunkbw = 855 kHz
+# mpxsrate =171 kHz; factor = 4 => chunkbw = 684 kHz
+# mpxsrate =171 kHz; factor = 3 => chunkbw = 513 kHz
+mpxsrate_chunkbw_factor=11
+RTL_BW_OPT=""
 EOF
 
 
-cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/dabscan.inc
+cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/dabscan.inc
 chanlist=dab_chanlist.txt
 DABOPT="-Q -A 2000 -E 3 -W 5000"
 EOF
 
 
-cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/dab_chanlist.txt
+cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/dab_chanlist.txt
 5A
 5B
 5C
@@ -97,8 +103,8 @@ cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/dab_chanlist.txt
 EOF
 
 
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmscan.inc
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/dabscan.inc
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/dab_chanlist.txt
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/config
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/fmscan.inc
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/dabscan.inc
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/dab_chanlist.txt
 
