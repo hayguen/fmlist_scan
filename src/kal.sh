@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export LC_ALL=C
-source $HOME/.config/fmlist_scan
+source $HOME/.config/fmlist_scan/config
 
 if [ ! -z "${FMLIST_SCAN_PPM}" ]; then
   echo "read PPM value ${FMLIST_SCAN_PPM}"
@@ -31,8 +31,8 @@ if [ -z "${FMLIST_SCAN_KAL_CH}" ] || [ "$1" != "reuse" ]; then
   FMLIST_SCAN_KAL_CH="${maxchan}"
 
   if [ ! -z "${FMLIST_SCAN_KAL_CH}" ]; then
-    sed -i '/FMLIST_SCAN_KAL_CH=/d' "$HOME/.config/fmlist_scan"
-    echo "export FMLIST_SCAN_KAL_CH=\"${FMLIST_SCAN_KAL_CH}\"" >>"$HOME/.config/fmlist_scan"
+    sed -i '/FMLIST_SCAN_KAL_CH=/d' "$HOME/.config/fmlist_scan/config"
+    echo "export FMLIST_SCAN_KAL_CH=\"${FMLIST_SCAN_KAL_CH}\"" >>"$HOME/.config/fmlist_scan/config"
   fi
 else
   echo "re-using last calibration channel ${FMLIST_SCAN_KAL_CH}"
@@ -44,7 +44,7 @@ echo "executing /usr/local/bin/kal -e ${FMLIST_SCAN_PPM} -c ${FMLIST_SCAN_KAL_CH
 NPPM=`cat "${HOME}/ram/kal-channel.log" |grep "absolute error" |awk  '/.*/ { print $4; }'`
 echo "*** new PPM value $NPPM"
 if [ ! -z "${NPPM}" ]; then
-  sed -i '/FMLIST_SCAN_PPM=/d' "$HOME/.config/fmlist_scan"
-  echo "export FMLIST_SCAN_PPM=\"${NPPM}\"  # ppm value of RTLSDR receiver" >>"$HOME/.config/fmlist_scan"
+  sed -i '/FMLIST_SCAN_PPM=/d' "$HOME/.config/fmlist_scan/config"
+  echo "export FMLIST_SCAN_PPM=\"${NPPM}\"  # ppm value of RTLSDR receiver" >>"$HOME/.config/fmlist_scan/config"
 fi
 

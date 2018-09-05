@@ -30,8 +30,11 @@ chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /mnt/sda1
 
 
 if [ ! -f /home/${FMLIST_SCAN_USER}/.bash_aliases ]; then
-  sudo -u ${FMLIST_SCAN_USER} bash -c "cp .bash_aliases /home/${FMLIST_SCAN_USER}/"
+  sudo -u ${FMLIST_SCAN_USER} bash -c "touch /home/${FMLIST_SCAN_USER}/.bash_aliases"
 fi
+sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '#$(pwd)/.bash_aliases#d' /home/${FMLIST_SCAN_USER}/.bash_aliases"
+sudo -u ${FMLIST_SCAN_USER} bash -c "echo \". $(pwd)/.bash_aliases\" >>/home/${FMLIST_SCAN_USER}/.bash_aliases"
+
 
 if [ ! -d /home/${FMLIST_SCAN_USER}/.ssh ]; then
   echo "installing ssh authorized_keys"

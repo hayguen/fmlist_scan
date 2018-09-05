@@ -1,5 +1,12 @@
 #!/bin/bash
 
+source $HOME/.config/fmlist_scan/config
+
+if [ "$1" = "autostart" ] && [ ${FMLIST_SCAN_AUTOSTART} -ne 0 ]; then
+  echo "autostart is deactivated in $HOME/.config/fmlist_scan/config"
+  exit 0
+fi
+
 echo "starting screen session 'scanLoopBg' .."
 
 screen -d -m -S scanLoopBg bash "$HOME/bin/scanLoop.sh"
@@ -10,3 +17,4 @@ if [ -z "$SSESSION" ]; then
 fi
 
 echo 1 >$HOME/ram/scanLoopBgRunning
+

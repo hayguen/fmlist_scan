@@ -1,9 +1,9 @@
 #!/bin/bash
 
-source $HOME/.config/fmlist_scan
+source $HOME/.config/fmlist_scan/config
 
 if [ "${FMLIST_SCAN_DAB}" == "0" ] || [ "${FMLIST_SCAN_DAB}" == "OFF" ]; then
-  echo "DAB scan is deactivated with FMLIST_SCAN_DAB=${FMLIST_SCAN_DAB} in $HOME/.config/fmlist_scan"
+  echo "DAB scan is deactivated with FMLIST_SCAN_DAB=${FMLIST_SCAN_DAB} in $HOME/.config/fmlist_scan/config"
   exit 0
 fi
 
@@ -25,9 +25,9 @@ echo "DAB scan started at ${DTF}" >${rec_path}/scan_duration.txt
 
 
 if [ ! -f $HOME/ram/dabscan.inc ]; then
-  if [ -f $HOME/.config/dabscan.inc ]; then
-    cp $HOME/.config/dabscan.inc $HOME/ram/
-    echo "copied scan parameters from $HOME/.config/dabscan.inc to $HOME/ram/dabscan.inc. edit this file for use with next scan."
+  if [ -f $HOME/.config/fmlist_scan/dabscan.inc ]; then
+    cp $HOME/.config/fmlist_scan/dabscan.inc $HOME/ram/
+    echo "copied scan parameters from $HOME/.config/fmlist_scan/dabscan.inc to $HOME/ram/dabscan.inc. edit this file for use with next scan."
   else
     cat - <<'EOF' >$HOME/ram/dabscan.inc
 chanlist=dab_chanlist.txt
@@ -47,10 +47,10 @@ chanpath="$HOME/ram/${chanlist}"
 echo "chanpath=${chanpath}"
 if [ ! -f "${chanpath}" ]; then
   echo "chanpath does not exist"
-  if [ -f "${HOME}/.config/${chanlist}" ]; then
-    echo "copying chanlist "${HOME}/.config/${chanlist}" to ${chanpath}"
-    echo "copying chanlist "${HOME}/.config/${chanlist}" to ${chanpath}" >>$HOME/ram/scanner.log
-    cp "${HOME}/.config/${chanlist}" "${chanpath}"
+  if [ -f "${HOME}/.config/fmlist_scan/${chanlist}" ]; then
+    echo "copying chanlist "${HOME}/.config/fmlist_scan/${chanlist}" to ${chanpath}"
+    echo "copying chanlist "${HOME}/.config/fmlist_scan/${chanlist}" to ${chanpath}" >>$HOME/ram/scanner.log
+    cp "${HOME}/.config/fmlist_scan/${chanlist}" "${chanpath}"
   else
     echo "Error: cannot find channellist file ${chanlist} configured in $HOME/ram/dabscan.inc !"
     exit 10

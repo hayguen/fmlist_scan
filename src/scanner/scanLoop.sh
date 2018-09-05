@@ -1,18 +1,18 @@
 #!/bin/bash
 
 export LC_ALL=C
-source $HOME/.config/fmlist_scan
+source $HOME/.config/fmlist_scan/config
 
-if [ -f $HOME/.config/fmscan.inc ]; then
-  cp $HOME/.config/fmscan.inc $HOME/ram/
+if [ -f $HOME/.config/fmlist_scan/fmscan.inc ]; then
+  cp $HOME/.config/fmlist_scan/fmscan.inc $HOME/ram/
 fi
 
-if [ -f $HOME/.config/dabscan.inc ]; then
-  cp $HOME/.config/dabscan.inc $HOME/ram/
+if [ -f $HOME/.config/fmlist_scan/dabscan.inc ]; then
+  cp $HOME/.config/fmlist_scan/dabscan.inc $HOME/ram/
 fi
 
-if [ -f $HOME/.config/dab_chanlist.txt ]; then
-  cp $HOME/.config/dab_chanlist.txt $HOME/ram/
+if [ -f $HOME/.config/fmlist_scan/dab_chanlist.txt ]; then
+  cp $HOME/.config/fmlist_scan/dab_chanlist.txt $HOME/ram/
 fi
 
 N=1

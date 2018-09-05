@@ -1,9 +1,9 @@
 #!/bin/bash
 
-source $HOME/.config/fmlist_scan
+source $HOME/.config/fmlist_scan/config
 
 if [ "${FMLIST_SCAN_FM}" == "0" ] || [ "${FMLIST_SCAN_FM}" == "OFF" ]; then
-  echo "FM scan is deactivated with FMLIST_SCAN_FM=${FMLIST_SCAN_FM} in $HOME/.config/fmlist_scan"
+  echo "FM scan is deactivated with FMLIST_SCAN_FM=${FMLIST_SCAN_FM} in $HOME/.config/fmlist_scan/config"
   exit 0
 fi
 
@@ -25,9 +25,9 @@ echo "FM scan started at ${DTF}" >${rec_path}/scan_duration.txt
 
 
 if [ ! -f $HOME/ram/fmscan.inc ]; then
-  if [ -f $HOME/.config/fmscan.inc ]; then
-    cp $HOME/.config/fmscan.inc $HOME/ram/
-    echo "copied scan parameters from $HOME/.config/fmscan.inc to $HOME/ram/fmscan.inc. edit this file for use with next scan."
+  if [ -f $HOME/.config/fmlist_scan/fmscan.inc ]; then
+    cp $HOME/.config/fmlist_scan/fmscan.inc $HOME/ram/
+    echo "copied scan parameters from $HOME/.config/fmlist_scan/fmscan.inc to $HOME/ram/fmscan.inc. edit this file for use with next scan."
   else
     cat - <<EOF >$HOME/ram/fmscan.inc
 chunkduration=4
