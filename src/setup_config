@@ -29,6 +29,7 @@ export FMLIST_SCAN_SAVE_PWMTONE="1"             # "0" or "1"; default is "1". fo
 export FMLIST_SCAN_SAVE_LEDPLAY="0"             # "0" or "1"; default is "0". for playing LEDs  after each saving
 export FMLIST_SCAN_FOUND_PWMTONE="0"            # "0" or "1"; default is "0". for playing tones after each detected carrier
 export FMLIST_SCAN_FOUND_LEDPLAY="0"            # "0" or "1"; default is "0". for playing LEDs  after each detected carrier
+export FMLIST_SCAN_PWM_FEEDBACK="1"             # "0" or "1"; default is "1" for signaling of FM/DAB scan success every scan
 export FMLIST_SCAN_MOUNT="1"                    # "0" or "1"; default is "1". saving results requires successful mount of /mnt/sda1
 export FMLIST_SCAN_RESULT_DIR="/mnt/sda1"       # where to save results
 export FMLIST_SCAN_PPM="0"                      # ppm value of RTLSDR receiver

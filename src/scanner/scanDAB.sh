@@ -80,6 +80,7 @@ cat $HOME/ram/dabscanout.inc >>$HOME/ram/scanner.log
 #echo ${#dabchannels[@]} ${dabchannels[@]}
 
 #cat "${chanpath}" | while read CH ; do
+NUMFOUND=0
 for CH in $(echo "${dabchannels[@]}") ; do
 
   if [ -f "$HOME/ram/stopScanLoop" ]; then
@@ -105,6 +106,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
     fi
   else
     echo "DAB_$CH" >$HOME/ram/LAST
+    NUMFOUND=$[ $NUMFOUND + 1 ]
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
       echo "${DTF}: DAB ${CH}: DETECTED station" >>$HOME/ram/scanner.log
     fi
@@ -128,7 +130,12 @@ echo "DAB scan finished at ${DTF}"
 echo "DAB scan finished at ${DTF}" >>${rec_path}/scan_duration.txt
 echo "DAB scan duration ${TDUR} sec"
 echo "DAB scan finished ${TDUR} sec" >>${rec_path}/scan_duration.txt
+echo "DAB scan found ${NUMFOUND} stations"
+echo "DAB scan found ${NUMFOUND} stations" >>${rec_path}/scan_duration.txt
 if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
   echo "DAB scan finished at ${DTF}. Duration ${TDUR} sec." >>$HOME/ram/scanner.log
+fi
+if [ ${FMLIST_SCAN_RASPI} -ne 0 ] && [ ${FMLIST_SCAN_PWM_FEEDBACK} -ne 0 ]; then
+  scanToneFeedback.sh dab ${NUMFOUND}
 fi
 
