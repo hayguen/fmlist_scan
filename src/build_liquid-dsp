@@ -18,6 +18,8 @@ else
 fi
 
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
+git checkout 9658d811f9194229304fec2d117f49c59b49a616		# last known good
+
 ./bootstrap.sh
 ./configure
 make

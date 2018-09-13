@@ -161,17 +161,37 @@ for chunkfreq in `echo $chunkfrqs EOL` ; do
       rm ${rec_path}/rec${rec_freq}.txt
     fi
 
+    echo "checkSpectrumForCarrier details" >>$HOME/ram/scanner.log
+    if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
+      CPWRFN="${rec_path}/det${rec_freq}.csv"
+    else
+      CPWRFN=""
+    fi
+    checkSpectrumForCarrier ${rec_path}/${rdy_rec_name}.raw ${chunksrate} 200 150000 100000 ${FMLIST_SCAN_FM_MIN_PWR_RATIO} "${CPWRFN}" - ${ddc_freqs} 2>>$HOME/ram/scanner.log >$HOME/ram/checkSpecResults
+    echo "checkSpectrumForCarrier results" >>$HOME/ram/scanner.log
+    cat $HOME/ram/checkSpecResults >>$HOME/ram/scanner.log
+    if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
+      cp $HOME/ram/checkSpecResults ${rec_path}/det${rec_freq}.txt
+    fi
+
+    source $HOME/ram/checkSpecResults
+
     cat - >${rec_path}/rec${rec_freq}.sh <<EOF
 #!bash
 cd ${rec_path}
 ddc_freqs=( ${ddc_freqs[@]} )
 ddcnrfreq=( ${ddcnrfreq[@]} )
+carrier_pwr_ratioL=( ${carrier_pwr_ratioL[@]} )
+carrier_pwr_ratioR=( ${carrier_pwr_ratioR[@]} )
 f=\$[ $rec_freq + \${ddc_freqs[\$1]} ]
 #echo -e "\\n***\\n*** freq $rec_freq + \${ddc_freqs[\$1]} = \$f\\n***"
 echo "f = rec_freq $rec_freq + ddc_freqs[\$1] \${ddc_freqs[\$1]} = \${f}" >redsea.\${f}.txt
 echo "normalized f = \${ddcnrfreq[\$1]}" >>redsea.\${f}.txt
 echo "last GPS:  ${GPS_RDY}" >>redsea.\${f}.txt
 echo "curr time: ${DTF_RDY}" >>redsea.\${f}.txt
+echo "" >>redsea.\${f}.txt
+echo "carrier_pwr_ratioLeft:  \${carrier_pwr_ratioL[\$1]}" >>redsea.\${f}.txt
+echo "carrier_pwr_ratioRight: \${carrier_pwr_ratioR[\$1]}" >>redsea.\${f}.txt
 echo "" >>redsea.\${f}.txt
 
 cat ${rdy_rec_name}.raw \
@@ -186,7 +206,7 @@ cat ${rdy_rec_name}.raw \
 
 NL=\$(cat redsea.\${f}.txt | wc -l)
 
-if [ \$NL -le 5 ]; then
+if [ \$NL -le 8 ]; then
   echo "processing freq \$f : no decode"
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
     echo "${DTF_RDY}: FM \${f}: NO RDS decode" >>$HOME/ram/scanner.log
@@ -210,20 +230,6 @@ fi
 EOF
     chmod a+x ${rec_path}/rec${rec_freq}.sh
 
-    echo "checkSpectrumForCarrier details" >>$HOME/ram/scanner.log
-    if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
-      CPWRFN="${rec_path}/det${rec_freq}.csv"
-    else
-      CPWRFN=""
-    fi
-    checkSpectrumForCarrier ${rec_path}/${rdy_rec_name}.raw ${chunksrate} 200 150000 100000 ${FMLIST_SCAN_FM_MIN_PWR_RATIO} "${CPWRFN}" - ${ddc_freqs} 2>>$HOME/ram/scanner.log >$HOME/ram/checkSpecResults
-    echo "checkSpectrumForCarrier results" >>$HOME/ram/scanner.log
-    cat $HOME/ram/checkSpecResults >>$HOME/ram/scanner.log
-    if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
-      cp $HOME/ram/checkSpecResults ${rec_path}/det${rec_freq}.txt
-    fi
-
-    source $HOME/ram/checkSpecResults
     ddci=0
     for ddcf in `echo $ddc_freqs` ; do
       rfreq=$[ $rec_freq + $ddcf ]
@@ -258,7 +264,8 @@ EOF
     # rm ${rec_path}/${rdy_rec_name}.raw
 
     # deleted processed temporary script and frequency list
-    rm ${rec_path}/rec${rec_freq}.sh  ${rec_path}/rec${rec_freq}.txt
+    rm ${rec_path}/rec${rec_freq}.sh
+    rm ${rec_path}/rec${rec_freq}.txt
 
     if [ ${FMLIST_SCAN_SAVE_RAW} -gt 0 ]; then
       if [ ${rec_freq} -ge ${FMLIST_SCAN_SAVE_MINFREQ} ] && [ ${rec_freq} -le ${FMLIST_SCAN_SAVE_MAXFREQ} ]; then

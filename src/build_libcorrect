@@ -22,6 +22,8 @@ else
 fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
+# git checkout 92ac341a8a3ebca0b8b9381007181a86b2f1278c		# last known good
+
 cmake ../${GITPROJ}
 make
 make shim
