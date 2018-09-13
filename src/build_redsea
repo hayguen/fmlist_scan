@@ -18,6 +18,8 @@ else
 fi
 
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
+git checkout 5c891e0e28ccce9fcc0bcbc29e05523856dac89d		# last known good
+
 ./autogen.sh
 ./configure --disable-tmc
 make

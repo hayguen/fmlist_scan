@@ -49,7 +49,6 @@ echo "removing rpi3b led scripts from $HOME/bin .."
 rm -f "$HOME/bin/rpi3b_led_blinkRed.sh"
 rm -f "$HOME/bin/rpi3b_led_init.sh"
 rm -f "$HOME/bin/rpi3b_led_next.sh"
-rm -f "$HOME/bin/rpi3b_led_play.sh"
 
 
 echo ""
