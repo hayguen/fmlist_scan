@@ -318,6 +318,7 @@ if /bin/true; then
   rm ${rec_path}/${rdy_rec_name}.raw
 fi
 
+NUMFOUND=$(ls -1 ${rec_path}/redsea.*.txt | grep -v _noRDS | wc -l)
 TEND="$(date -u +%s)"
 TDUR=$[ $TEND - $TBEG ]
 DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
@@ -325,7 +326,12 @@ echo "FM scan finished at ${DTF}"
 echo "FM scan finished at ${DTF}" >>${rec_path}/scan_duration.txt
 echo "FM scan duration ${TDUR} sec"
 echo "FM scan finished ${TDUR} sec" >>${rec_path}/scan_duration.txt
+echo "FM scan found ${NUMFOUND} RDS carriers"
+echo "FM scan found ${NUMFOUND} RDS carriers" >>${rec_path}/scan_duration.txt
 if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
   echo "FM scan finished at ${DTF}. Duration ${TDUR} sec." >>$HOME/ram/scanner.log
+fi
+if [ ${FMLIST_SCAN_RASPI} -ne 0 ] && [ ${FMLIST_SCAN_PWM_FEEDBACK} -ne 0 ]; then
+  scanToneFeedback.sh fm ${NUMFOUND}
 fi
 

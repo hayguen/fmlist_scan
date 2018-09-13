@@ -75,6 +75,16 @@ while /bin/true; do
 
   echo $N
 
+  # test RTL dongle
+  rtl_sdr -f 100M -n 512 $HOME/ram/test.raw
+  if [ $? -ne 0 ]; then
+    if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
+      sudo -E $HOME/bin/rpi3b_led_blinkRed.sh
+      pipwm 2000 500 0 1
+    fi
+    continue
+  fi
+
   scanFM.sh
   scanDAB.sh
   # always save log .. to have it saved - especially when mobile
@@ -82,6 +92,9 @@ while /bin/true; do
   saveScanResults.sh ${FMLIST_SCAN_SAVE_LOG_OPT}
 
   if [ ${FMLIST_SCAN_SAVE_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
+    if [ ${FMLIST_SCAN_PWM_FEEDBACK} -ne 0 ]; then
+      sleep 0.5
+    fi
     pipwm 2000 10 0 1   50 100 50 100 50 100   150 100 150 100 150 100
   fi
   if [ ${FMLIST_SCAN_SAVE_LEDPLAY} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
