@@ -16,6 +16,8 @@ if [ -f $HOME/.config/fmlist_scan/dab_chanlist.txt ]; then
 fi
 
 N=1
+NUM_RTL_FAILS=0
+
 cd $HOME/ram
 
 if [ $( echo "$PATH" | grep -c "/usr/local/bin" ) -eq 0 ]; then
@@ -82,11 +84,24 @@ while /bin/true; do
       sudo -E $HOME/bin/rpi3b_led_blinkRed.sh
       pipwm 2000 500 0 1
     fi
+    NUM_RTL_FAILS=$[ ${NUM_RTL_FAILS} + 1 ]
+    if [ ${NUM_RTL_FAILS} -eq ${FMLIST_SCAN_DEAD_RTL_TRIES} ] && [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
+      sudo reboot now
+    fi
     continue
   fi
+  NUM_RTL_FAILS=0
 
   scanFM.sh
+  if [ -f "$HOME/ram/stopScanLoop" ]; then
+    break
+  fi
+
   scanDAB.sh
+  if [ -f "$HOME/ram/stopScanLoop" ]; then
+    break
+  fi
+
   # always save log .. to have it saved - especially when mobile
   echo -e "\\n*********** saveScanResults.sh ${FMLIST_SCAN_SAVE_LOG_OPT} \\n" >>$HOME/ram/scanner.log
   saveScanResults.sh ${FMLIST_SCAN_SAVE_LOG_OPT}

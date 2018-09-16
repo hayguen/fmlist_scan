@@ -80,7 +80,7 @@ void usage(void)
 		"scan_next_dab_channel, for RTL2832 based DVB-T receivers\n\n"
 		"Usage:\t -c <ch> continue from this last channel. frequency will be next channel.\n"
 		"\t[-L comma seperated channel list (default: '5A-13F')]\n"
-		"\t[-C minimum autocorrelation coefficient in distance 1 ms - for 1 kHz subcarrier distance. default: 0.5\n"
+		"\t[-C minimum autocorrelation coefficient in distance 1 ms - for 1 kHz subcarrier distance. default: 0.15\n"
 		"\t[-W wait milliseconds after setting frequency. default: 100 ms\n"
 		"\t[-s samplerate (default: 2048000 Hz)]\n"
 		"\t[-w tuner_bandwidth (default: automatic)]\n"

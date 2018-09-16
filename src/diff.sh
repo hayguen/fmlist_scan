@@ -2,14 +2,22 @@
 
 if [ -z "$1" ]; then
   echo "usage: $0 [print] [<BINDIR>]"
-  echo "  default BINDIR is \$HOME/bin"
+  echo "  default BINDIR is ../../bin"
+  #echo "  default BINDIR is \$HOME/bin"
   echo ""
 fi
 
-BINDIR="$HOME/bin"
+#BINDIR="$HOME/bin"
+BINDIR="../../bin"
 if [ ! -z "$2" ]; then
   BINDIR="$2"
 fi
+
+DIFF="$(which colordiff)"
+if [ -z "${DIFF}" ]; then
+  DIFF="$(which diff)"
+fi
+
 
 for f in `ls -1 *.sh scanner/*.sh` ; do
   b=$( basename "$f" )
@@ -28,7 +36,7 @@ for f in `ls -1 *.sh scanner/*.sh` ; do
     else
       echo -e "diff $f:\t\tNOT equal"
       if [ "$1" == "print" ]; then
-        diff "$f" "${BINDIR}/$b"
+        ${DIFF} "$f" "${BINDIR}/$b"
         echo ""
       fi
     fi
