@@ -69,17 +69,20 @@ fi
 
 echo "" >>$HOME/ram/scanner.log
 
-allchans=$( tr '\n' ',' <"${chanpath}" |sed 's#,$##g' )
 
+if [ ${FMLIST_SCAN_DAB_USE_PRESCAN} -ne 0 ]; then
+  allchans=$( tr '\n' ',' <"${chanpath}" |sed 's#,$##g' )
+  echo "running prescanDAB -W 64 -A 2 -C ${FMLIST_SCAN_DAB_MIN_AUTOCORR} -L ${allchans} .." >>$HOME/ram/scanner.log
+  prescanDAB -W 64 -A 2 -C ${FMLIST_SCAN_DAB_MIN_AUTOCORR} -L "${allchans}" >$HOME/ram/dabscanout.inc
+  echo "" >>$HOME/ram/scanner.log
+  cat $HOME/ram/dabscanout.inc >>$HOME/ram/scanner.log
+  . $HOME/ram/dabscanout.inc
+  #echo ${#dabchannels[@]} ${dabchannels[@]}
+else
+  allchans=$( tr '\n' ' ' <"${chanpath}" )
+  dabchannels=( ${allchans} )
+fi
 
-echo "running prescanDAB -W 64 -A 2 -L ${allchans} .." >>$HOME/ram/scanner.log
-prescanDAB -W 64 -A 2 -L "${allchans}" >$HOME/ram/dabscanout.inc
-echo "" >>$HOME/ram/scanner.log
-cat $HOME/ram/dabscanout.inc >>$HOME/ram/scanner.log
-. $HOME/ram/dabscanout.inc
-#echo ${#dabchannels[@]} ${dabchannels[@]}
-
-#cat "${chanpath}" | while read CH ; do
 NUMFOUND=0
 for CH in $(echo "${dabchannels[@]}") ; do
 
@@ -87,17 +90,28 @@ for CH in $(echo "${dabchannels[@]}") ; do
     break
   fi
   DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
+  GPS="$($HOME/bin/get_gpstime.sh)"
+  GPSV="$( ( flock -s 213 ; cat $HOME/ram/gpscoor.inc 2>/dev/null ) 213>gps.lock )"
   echo "$CH"
-  echo "channel:   $CH"         >"${rec_path}/DAB_$CH.log"
-  echo "last GPS:  $($HOME/bin/get_gpstime.sh)" &>>"${rec_path}/DAB_$CH.log"
-  echo "curr time: ${DTF}"   &>>"${rec_path}/DAB_$CH.log"
-  echo "" &>>"${rec_path}/DAB_$CH.log"
+  echo "CHANNEL=\"${CH}\""    >"${rec_path}/DAB_$CH.inc"
+  echo "CURRTIM=\"${DTF}\""  >>"${rec_path}/DAB_$CH.inc"
+  echo "# last GPS:  ${GPS}" >>"${rec_path}/DAB_$CH.inc"
+  echo "${GPSV}"             >>"${rec_path}/DAB_$CH.inc"
+  echo "DAB_USE_PRESCAN=\"${FMLIST_SCAN_DAB_USE_PRESCAN}\""   >>"${rec_path}/DAB_$CH.inc"
+  echo "DAB_MIN_AUTOCORR=\"${FMLIST_SCAN_DAB_MIN_AUTOCORR}\"" >>"${rec_path}/DAB_$CH.inc"
+
   if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
     echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanDAB.sh before dab-rtlsdr -C ${CH}: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
   fi
-  dab-rtlsdr -C $CH ${DABOPT} &>>"${rec_path}/DAB_$CH.log"
-  NL=$( cat "${rec_path}/DAB_$CH.log" | grep -c programnameHandler )
-  if [ $NL -eq 0 ]; then
+
+  dab-rtlsdr -C $CH ${DABOPT} &>"${rec_path}/DAB_$CH.log"
+
+  NP=$( cat "${rec_path}/DAB_$CH.log" | grep " is part of the ensemble" | grep -c "^programnameHandler:" )
+  NE=$( cat "${rec_path}/DAB_$CH.log" | grep " is recognized" | grep -c "^ensemblenameHandler:" )
+  echo "DAB_ENSEMBLE=\"${NE}\"" >>"${rec_path}/DAB_$CH.inc"
+  echo "NUM_PROGRAMS=\"${NP}\"" >>"${rec_path}/DAB_$CH.inc"
+
+  if [ $NP -eq 0 ]; then
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
       echo "${DTF}: DAB ${CH}: NO station" >>$HOME/ram/scanner.log
       mv "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_no-station.log"

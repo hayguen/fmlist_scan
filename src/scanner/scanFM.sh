@@ -127,6 +127,8 @@ rec_freq=0
 
 GPS_ACT=""
 GPS_RDY=""
+GPSV_ACT=""
+GPSV_RDY=""
 DTF_ACT=""
 DTF_RDY=""
 
@@ -143,6 +145,7 @@ for chunkfreq in `echo $chunkfrqs EOL` ; do
 
   if [ ! "$chunkfreq" == "EOL" ]; then
     GPS_ACT="$($HOME/bin/get_gpstime.sh)"
+    GPSV_ACT="$( ( flock -s 213 ; cat $HOME/ram/gpscoor.inc 2>/dev/null ) 213>gps.lock )"
     DTF_ACT="$(date -u "+%Y-%m-%dT%T.%N Z")"
     echo "recording frequency $chunkfreq in background. last gps ${GPS_ACT}. now ${DTF_ACT}: rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${rec_path}/${act_rec_name}.raw"
     if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
@@ -185,14 +188,16 @@ carrier_pwr_ratioL=( ${carrier_pwr_ratioL[@]} )
 carrier_pwr_ratioR=( ${carrier_pwr_ratioR[@]} )
 f=\$[ $rec_freq + \${ddc_freqs[\$1]} ]
 #echo -e "\\n***\\n*** freq $rec_freq + \${ddc_freqs[\$1]} = \$f\\n***"
-echo "f = rec_freq $rec_freq + ddc_freqs[\$1] \${ddc_freqs[\$1]} = \${f}" >redsea.\${f}.txt
-echo "normalized f = \${ddcnrfreq[\$1]}" >>redsea.\${f}.txt
-echo "last GPS:  ${GPS_RDY}" >>redsea.\${f}.txt
-echo "curr time: ${DTF_RDY}" >>redsea.\${f}.txt
-echo "" >>redsea.\${f}.txt
-echo "carrier_pwr_ratioLeft:  \${carrier_pwr_ratioL[\$1]}" >>redsea.\${f}.txt
-echo "carrier_pwr_ratioRight: \${carrier_pwr_ratioR[\$1]}" >>redsea.\${f}.txt
-echo "" >>redsea.\${f}.txt
+
+echo "f=\"\${f}\""              >redsea.\${f}.inc
+echo "# f = rec_freq $rec_freq + ddc_freqs[\$1] \${ddc_freqs[\$1]} = \${f}" >>redsea.\${f}.inc
+echo "# normalized f = \${ddcnrfreq[\$1]}" >>redsea.\${f}.inc
+echo "CURRTIM=\"${DTF_RDY}\""  >>redsea.\${f}.inc
+echo "# last GPS:  ${GPS_RDY}" >>redsea.\${f}.inc
+echo "\${GPSV_RDY}"            >>redsea.\${f}.inc
+echo "FM_MIN_PWR_RATIO=${FMLIST_SCAN_FM_MIN_PWR_RATIO}" >>redsea.\${f}.inc
+echo "carrier_pwr_ratioLeft=\"\${carrier_pwr_ratioL[\$1]}\""  >>redsea.\${f}.inc
+echo "carrier_pwr_ratioRight=\"\${carrier_pwr_ratioR[\$1]}\"" >>redsea.\${f}.inc
 
 cat ${rdy_rec_name}.raw \
  | csdr convert_u8_f \
@@ -202,21 +207,25 @@ cat ${rdy_rec_name}.raw \
  | csdr fmdemod_quadri_cf \
  | csdr convert_f_s16 \
  | redsea --bler \
- >> redsea.\${f}.txt
+ > redsea.\${f}.txt
 
 NL=\$(cat redsea.\${f}.txt | wc -l)
+echo "NUM_DECODED_JSON_LINES=\"\${NL}\"" >>redsea.\${f}.inc
 
-if [ \$NL -le 8 ]; then
+if [ \$NL -le 0 ]; then
   echo "processing freq \$f : no decode"
+  echo "RDS=\"0\"" >>redsea.\${f}.inc
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
     echo "${DTF_RDY}: FM \${f}: NO RDS decode" >>$HOME/ram/scanner.log
     mv redsea.\${f}.txt redsea.\${f}_noRDS.txt
   else
     rm redsea.\${f}.txt
+    rm redsea.\${f}.inc
   fi
 else
   echo "processing freq \$f : decoded rds"
   echo "FM \$f" >$HOME/ram/LAST
+  echo "RDS=\"1\"" >>redsea.\${f}.inc
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
     echo "${DTF_RDY}: FM \$f: decoded RDS" >>$HOME/ram/scanner.log
   fi
@@ -293,6 +302,7 @@ EOF
   fi
   # switch GPS/TIME
   GPS_RDY="${GPS_ACT}"
+  export GPSV_RDY="${GPSV_ACT}"
   DTF_RDY="${DTF_ACT}"
 
   rec_freq=$chunkfreq
