@@ -52,6 +52,11 @@ rm -f "$HOME/bin/rpi3b_led_next.sh"
 
 
 echo ""
+echo "keeping gpio-input.service. deactivate with:"
+echo "  sudo systemctl stop gpio-input.service"
+echo "  sudo systemctl disable gpio-input.service"
+echo "  sudo rm /lib/systemd/system/gpio-input.service"
+echo ""
 echo "keeping gpsd. deactivate with:"
 echo "  sudo systemctl stop gpsd.socket"
 echo "  sudo systemctl disable gpsd.socket"
