@@ -2,7 +2,7 @@
 
 source $HOME/.config/fmlist_scan/config
 
-if [ "$1" = "autostart" ] && [ ${FMLIST_SCAN_AUTOSTART} -ne 0 ]; then
+if [ "$1" = "autostart" ] && [ ${FMLIST_SCAN_AUTOSTART} -eq 0 ]; then
   echo "autostart is deactivated in $HOME/.config/fmlist_scan/config"
   exit 0
 fi
