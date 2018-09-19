@@ -3,6 +3,7 @@
 rm -rf checkSpectrumForCarrier/build
 rm -rf prescanDAB/build
 rm -rf pipwm/build
+rm -rf pishutdown/build
 rm -rf git/hayguen/build_dab-cmdline_rtlsdr
 rm -rf git/hayguen/build_dab-cmdline_raw
 rm -rf git/hayguen/build_dab-cmdline_wav
