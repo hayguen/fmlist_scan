@@ -1,0 +1,14 @@
+
+BASE=$(pwd)
+
+cd ${BASE}/pishutdown/build
+make install
+
+cd ${BASE}/pishutdown
+cp gpio-input.service /lib/systemd/system/gpio-input.service
+chmod 644 /lib/systemd/system/gpio-input.service
+
+systemctl daemon-reload
+systemctl enable gpio-input.service
+
+cd ${BASE}

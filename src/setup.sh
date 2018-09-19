@@ -12,7 +12,7 @@ if [ -z "${FMLIST_SCAN_RASPI}" ]; then
   export FMLIST_SCAN_RASPI="1"
 fi
 
-echo "$0 [syspre|pre|rtl|csdr|lfec|ldsp|redsea|dabcmd|pipwm|chkspec|pscan|kal]"
+echo "$0 [syspre|pre|rtl|csdr|lfec|ldsp|redsea|dabcmd|pipwm|pishutd|chkspec|pscan|kal]"
 echo "  syspre  install system prerequisites"
 echo "  pre     install prerequisites for all tools to be compiled"
 echo "  rtl     install prerequisites, build & install librtlsdr - rtlsdr 'driver' lib"
@@ -22,6 +22,7 @@ echo "  ldsp    install prerequisites, build & install for liquid-dsp - required
 echo "  redsea  install prerequisites, build & install for redsea - rds decoder"
 echo "  dabcmd  install prerequisites, build & install for dab-cmdline - dab decoder - modified for scan"
 echo "  pipwm   build & install libwiringPi. then compile / install pipwm"
+echo "  pishutd build & install libwiringPi. then compile / install pishutdown"
 echo "  chkspec build & install liquid-dsp. then compile / install checkSpectrumForCarrier"
 echo "  pscan   compile / install prescanDAB"
 echo "  kal     build & install kal."
@@ -93,10 +94,17 @@ if [ "$1" == "dabcmd" ] || [ "$1" == "" ]; then
 fi
 
 if [ "$1" == "pipwm" ] || [ "$1" == "" ]; then
-  echo "building libwiringPi"
+  echo "building libwiringPi, pipwm"
   sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi"
   sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pipwm"
   . setup_pipwm
+fi
+
+if [ "$1" == "pishutd" ] || [ "$1" == "" ]; then
+  echo "building libwiringPi, pishutdown"
+  sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi"
+  sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pishutdown"
+  . inst_pishutdown
 fi
 
 if [ "$1" == "chkspec" ] || [ "$1" == "" ]; then

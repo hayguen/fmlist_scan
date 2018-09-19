@@ -1,0 +1,12 @@
+
+BASE=$(pwd)
+
+if [ ! -d ${BASE}/pishutdown/build ]; then
+  mkdir -p ${BASE}/pishutdown/build
+fi
+
+cd ${BASE}/pishutdown/build
+cmake ../
+make
+
+cd ${BASE}
