@@ -65,6 +65,11 @@ echo "" >>$HOME/ram/scanner.log
 NUMCPUS=$(cat /proc/cpuinfo | grep ^processor | wc -l)
 echo -e "\\nNUMCPUS=${NUMCPUS}\\n" >>$HOME/ram/scanner.log
 
+if [ ${FMLIST_SCAN_SAVE_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
+  sleep 1
+  scanToneFeedback.sh welcome
+fi
+
 # temperature - human readable: $(vcgencmd measure_temp)
 # temperature in /1000 degree:  $(cat /sys/class/thermal/thermal_zone0/temp)
 # echo -e "\\nTemperature: $(cat /sys/class/thermal/thermal_zone0/temp)\\n" >>$HOME/ram/scanner.log
@@ -82,10 +87,14 @@ while /bin/true; do
   if [ $? -ne 0 ]; then
     if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
       sudo -E $HOME/bin/rpi3b_led_blinkRed.sh
-      pipwm 2000 500 0 1
+      scanToneFeedback.sh error
     fi
     NUM_RTL_FAILS=$[ ${NUM_RTL_FAILS} + 1 ]
     if [ ${NUM_RTL_FAILS} -eq ${FMLIST_SCAN_DEAD_RTL_TRIES} ] && [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
+      DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
+      echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
+      echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>$HOME/ram/scanner.log
+      saveScanResults.sh savelog
       sudo reboot now
     fi
     continue
@@ -110,7 +119,7 @@ while /bin/true; do
     if [ ${FMLIST_SCAN_PWM_FEEDBACK} -ne 0 ]; then
       sleep 0.5
     fi
-    pipwm 2000 10 0 1   50 100 50 100 50 100   150 100 150 100 150 100
+    scanToneFeedback.sh saved
   fi
   if [ ${FMLIST_SCAN_SAVE_LEDPLAY} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
     sudo -E $HOME/bin/rpi3b_led_blinkRed.sh
@@ -128,6 +137,6 @@ if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
 fi
 if [ ${FMLIST_SCAN_SAVE_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   sleep 1
-  pipwm 2000 10 0 1   50 100 50 100 50 100   150 100 150 100 150 100   50 100 50 100 50 100
+  scanToneFeedback.sh final
 fi
 

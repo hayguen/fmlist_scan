@@ -23,6 +23,12 @@ fi
 echo "DAB scan started at ${DTF}"
 echo "DAB scan started at ${DTF}" >${rec_path}/scan_duration.txt
 
+# get ${GPSSRC} for use in dabscan.inc
+GPSVALS=$( ( flock -s 213 ; cat $HOME/ram/gpscoor.inc 2>/dev/null ) 213>gps.lock )
+echo "${GPSVALS}" >$HOME/ram/gpsvals.inc
+source $HOME/ram/gpsvals.inc
+rm $HOME/ram/gpsvals.inc
+
 
 if [ ! -f $HOME/ram/dabscan.inc ]; then
   if [ -f $HOME/.config/fmlist_scan/dabscan.inc ]; then
@@ -102,6 +108,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
 
   if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
     echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanDAB.sh before dab-rtlsdr -C ${CH}: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
+    echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
   fi
 
   dab-rtlsdr -C $CH ${DABOPT} &>"${rec_path}/DAB_$CH.log"
@@ -125,7 +132,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
       echo "${DTF}: DAB ${CH}: DETECTED station" >>$HOME/ram/scanner.log
     fi
     if [ ${FMLIST_SCAN_FOUND_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-      pipwm 2000 10
+      scanToneFeedback.sh found
     fi
     if [ ${FMLIST_SCAN_FOUND_LEDPLAY} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
       sudo -E $HOME/bin/rpi3b_led_next.sh
@@ -135,6 +142,7 @@ done
 
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanDAB.sh after dab-rtlsdr: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
+  echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
 fi
 
 TEND="$(date -u +%s)"

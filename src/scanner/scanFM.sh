@@ -23,6 +23,11 @@ fi
 echo "FM scan started at ${DTF}"
 echo "FM scan started at ${DTF}" >${rec_path}/scan_duration.txt
 
+# get ${GPSSRC} for use in fmscan.inc
+GPSVALS=$( ( flock -s 213 ; cat $HOME/ram/gpscoor.inc 2>/dev/null ) 213>gps.lock )
+echo "${GPSVALS}" >$HOME/ram/gpsvals.inc
+source $HOME/ram/gpsvals.inc
+rm $HOME/ram/gpsvals.inc
 
 if [ ! -f $HOME/ram/fmscan.inc ]; then
   if [ -f $HOME/.config/fmlist_scan/fmscan.inc ]; then
@@ -58,7 +63,9 @@ rdsfreq=$[ $pilotfreq * 3 ]
 mpxsrate=$[ $rdsfreq * 3 ]
 
 # chunksrate = 171 * 14 = 2394 kHz
-chunk2mpx_dec=14
+if [ -z "${chunk2mpx_dec}" ]; then
+  chunk2mpx_dec=14
+fi
 chunksrate=$[ $mpxsrate * $chunk2mpx_dec ]
 chunkbw=$[ $mpxsrate * $mpxsrate_chunkbw_factor ]
 chunknumsmp=$[ $chunkduration * $chunksrate ]
@@ -76,6 +83,7 @@ ddc_fmin=$( echo "$ddc_freqs" | head -n 1 )
 ddc_fmax=$( echo "$ddc_freqs" | tail -n 1 )
 ddc_span=$[ $ddc_fmax + $ddc_fmax + $ddc_step ]
 ddc_freqs=$( ( seq $ddc_hstep $ddc_step $ddc_end ; seq -$ddc_hstep -$ddc_step -$ddc_end ) | sort -n | sed -z 's/\n/ /g' )
+Nddc_freqs="$( echo "${ddc_freqs}" | wc -w )"
 
 cachedNrfFile="$HOME/ram/ddc_freqs_bw${chunkbw}_step${ddc_step}_fs${chunksrate}.inc"
 localNrfFile="${FMLIST_SCAN_PATH}/ddc_freqs_bw${chunkbw}_step${ddc_step}_fs${chunksrate}.inc"
@@ -102,23 +110,28 @@ fi
 
 chunks_beg_f=$[ $ukw_beg + $ddc_fmax ]
 chunks_end_f=$[ $ukw_end + $ddc_fmax ]
-chunkfrqs=$( seq $chunks_beg_f $ddc_span $chunks_end_f )
+chunkfrqs=$( seq ${chunks_beg_f} ${ddc_span} ${chunks_end_f} | tr '\n' ' ' )
+Nchunkfrqs="$( echo "${chunkfrqs}" | wc -w )"
 
-echo "mpx srate is $mpxsrate"
-echo "recording is in chunks of $chunkduration secs at $chunksrate"
-echo "ddc freqs are $ddc_freqs"
-echo "ddc min freq is $ddc_fmin"
-echo "ddc max freq is $ddc_fmax"
-echo "ddc_span is $ddc_span"
-echo "chunkfrqs are $chunkfrqs"
+echo "mpx srate is ${mpxsrate}"
+echo "recording is in chunks of ${chunkduration} secs @ ${chunksrate} Hz"
+echo "ddc_freqs are ${ddc_freqs}"
+echo "#ddc_freqs is ${Nddc_freqs}"
+echo "ddc_min freq is ${ddc_fmin}"
+echo "ddc_max freq is ${ddc_fmax}"
+echo "ddc_span is ${ddc_span}"
+echo "chunkfrqs are ${chunkfrqs}"
+echo "#chunkfrqs is ${Nchunkfrqs}"
 
-echo "mpx srate is $mpxsrate"    >>${rec_path}/scan_duration.txt
-echo "recording is in chunks of $chunkduration secs at $chunksrate" >>${rec_path}/scan_duration.txt
-echo "ddc freqs are $ddc_freqs"  >>${rec_path}/scan_duration.txt
-echo "ddc min freq is $ddc_fmin" >>${rec_path}/scan_duration.txt
-echo "ddc max freq is $ddc_fmax" >>${rec_path}/scan_duration.txt
-echo "ddc_span is $ddc_span"     >>${rec_path}/scan_duration.txt
-echo "chunkfrqs are $chunkfrqs"  >>${rec_path}/scan_duration.txt
+echo "mpx srate is ${mpxsrate}"      >>${rec_path}/scan_duration.txt
+echo "recording is in chunks of ${chunkduration} secs at ${chunksrate}" >>${rec_path}/scan_duration.txt
+echo "ddc freqs are ${ddc_freqs}"    >>${rec_path}/scan_duration.txt
+echo "#ddc_freqs is ${Nddc_freqs}"   >>${rec_path}/scan_duration.txt
+echo "ddc min freq is ${ddc_fmin}"   >>${rec_path}/scan_duration.txt
+echo "ddc max freq is ${ddc_fmax}"   >>${rec_path}/scan_duration.txt
+echo "ddc_span is ${ddc_span}"       >>${rec_path}/scan_duration.txt
+echo "chunkfrqs are ${chunkfrqs}"    >>${rec_path}/scan_duration.txt
+echo "#chunkfrqs is ${Nchunkfrqs}"   >>${rec_path}/scan_duration.txt
 
 
 act_rec_name=A
@@ -137,7 +150,7 @@ rm ${rec_path}/${rdy_rec_name}.raw
 
 echo starting loop over chunkfrqs
 
-for chunkfreq in `echo $chunkfrqs EOL` ; do
+for chunkfreq in $( echo $chunkfrqs EOL ) ; do
 
   if [ -f "$HOME/ram/stopScanLoop" ]; then
     break
@@ -150,6 +163,7 @@ for chunkfreq in `echo $chunkfrqs EOL` ; do
     echo "recording frequency $chunkfreq in background. last gps ${GPS_ACT}. now ${DTF_ACT}: rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${rec_path}/${act_rec_name}.raw"
     if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
       echo -e "\\n$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before rtl_sdr -f ${chunkfreq}: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
+      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
     fi
     timeout -s SIGKILL -k ${chunkreckilltime} ${chunkrectimeout} rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw &>${rec_path}/${act_rec_name}.log &
     recpid=$!
@@ -184,8 +198,8 @@ for chunkfreq in `echo $chunkfrqs EOL` ; do
 cd ${rec_path}
 ddc_freqs=( ${ddc_freqs[@]} )
 ddcnrfreq=( ${ddcnrfreq[@]} )
-carrier_pwr_ratioL=( ${carrier_pwr_ratioL[@]} )
-carrier_pwr_ratioR=( ${carrier_pwr_ratioR[@]} )
+carrier_pwr_ratioMin=( ${carrier_pwr_ratioMin[@]} )
+carrier_pwr_ratioMax=( ${carrier_pwr_ratioMax[@]} )
 f=\$[ $rec_freq + \${ddc_freqs[\$1]} ]
 #echo -e "\\n***\\n*** freq $rec_freq + \${ddc_freqs[\$1]} = \$f\\n***"
 
@@ -196,17 +210,25 @@ echo "CURRTIM=\"${DTF_RDY}\""  >>redsea.\${f}.inc
 echo "# last GPS:  ${GPS_RDY}" >>redsea.\${f}.inc
 echo "\${GPSV_RDY}"            >>redsea.\${f}.inc
 echo "FM_MIN_PWR_RATIO=${FMLIST_SCAN_FM_MIN_PWR_RATIO}" >>redsea.\${f}.inc
-echo "carrier_pwr_ratioLeft=\"\${carrier_pwr_ratioL[\$1]}\""  >>redsea.\${f}.inc
-echo "carrier_pwr_ratioRight=\"\${carrier_pwr_ratioR[\$1]}\"" >>redsea.\${f}.inc
+echo "carrier_pwr_ratioMin=\"\${carrier_pwr_ratioMin[\$1]}\"" >>redsea.\${f}.inc
+echo "carrier_pwr_ratioMax=\"\${carrier_pwr_ratioMax[\$1]}\"" >>redsea.\${f}.inc
 
-cat ${rdy_rec_name}.raw \
- | csdr convert_u8_f \
- | csdr fastdcblock_ff \
- | csdr shift_addfast_cc \${ddcnrfreq[\$1]} 2>/dev/null \
- | csdr fir_decimate_cc $chunk2mpx_dec $chunk2mpx_nfc HAMMING 2>/dev/null \
- | csdr fmdemod_quadri_cf \
- | csdr convert_f_s16 \
- | redsea --bler \
+CURREPOCH=\$(date -d "${DTF_RDY}" -u "+%s")
+#date -d @\${CURREPOCH} -u "+%Y-%m-%dT%TZ"  # back to date/time from epoch - seconds since 1970
+
+echo "\${GPSV_RDY}" >gpsv.\${f}.inc
+source gpsv.\${f}.inc
+rm gpsv.\${f}.inc
+GPSCOLS="\${GPSLAT},\${GPSLON},\${GPSMODE},\${GPSALT},\${GPSTIM}"
+
+cat ${rdy_rec_name}.raw \\
+ | csdr convert_u8_f \\
+ | csdr fastdcblock_ff \\
+ | csdr shift_addfast_cc \${ddcnrfreq[\$1]} 2>/dev/null \\
+ | csdr fir_decimate_cc $chunk2mpx_dec $chunk2mpx_nfc HAMMING 2>/dev/null \\
+ | csdr fmdemod_quadri_cf \\
+ | csdr convert_f_s16 \\
+ | redsea --bler \\
  > redsea.\${f}.txt
 
 NL=\$(cat redsea.\${f}.txt | wc -l)
@@ -215,9 +237,15 @@ echo "NUM_DECODED_JSON_LINES=\"\${NL}\"" >>redsea.\${f}.inc
 if [ \$NL -le 0 ]; then
   echo "processing freq \$f : no decode"
   echo "RDS=\"0\"" >>redsea.\${f}.inc
+  RDS="0"
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
     echo "${DTF_RDY}: FM \${f}: NO RDS decode" >>$HOME/ram/scanner.log
     mv redsea.\${f}.txt redsea.\${f}_noRDS.txt
+
+    echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm.\${f}.csv
+    echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm.\${f}.csv
+    echo ",${DTF_RDY},\${GPSCOLS}" >>fm.\${f}.csv
+
   else
     rm redsea.\${f}.txt
     rm redsea.\${f}.inc
@@ -226,11 +254,19 @@ else
   echo "processing freq \$f : decoded rds"
   echo "FM \$f" >$HOME/ram/LAST
   echo "RDS=\"1\"" >>redsea.\${f}.inc
+  RDS="1"
+  RDSCOLS="\$( redsea.json2csv.sh redsea.\${f}.txt )"
+
+    echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm.\${f}.csv
+    echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm.\${f}.csv
+    echo -n ",${DTF_RDY},\${GPSCOLS}" >>fm.\${f}.csv
+    echo ",\${RDSCOLS}" >>fm.\${f}.csv
+
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
     echo "${DTF_RDY}: FM \$f: decoded RDS" >>$HOME/ram/scanner.log
   fi
   if [ ${FMLIST_SCAN_FOUND_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-    pipwm 2000 10
+    scanToneFeedback.sh found
   fi
   if [ ${FMLIST_SCAN_FOUND_LEDPLAY} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
     sudo -E $HOME/bin/rpi3b_led_next.sh
@@ -250,8 +286,8 @@ EOF
             cat - <<EOF >>${rec_path}/det${rec_freq}.txt
 
 found carrier at relative carrier_frq ${carrier_frq[$ddci]} is at absolute $[ ${rec_freq} + ${carrier_frq[$ddci]} ] Hz
-power ratio left  ${carrier_pwr_ratioL[$ddci]}
-power ratio right ${carrier_pwr_ratioR[$ddci]}
+power ratio minimum ${carrier_pwr_ratioMin[$ddci]}
+power ratio maximum ${carrier_pwr_ratioMax[$ddci]}
 EOF
           fi
         fi
@@ -261,12 +297,14 @@ EOF
 
     if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
       echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before parallel: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
+      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
     fi
     # batch process prepared scripts in/with parallel
     # use nice, that processing does not disturb background recording of next chunk
     time nice parallel --no-notice --jobs ${par_jobs} "bash ${rec_path}/rec${rec_freq}.sh" <${rec_path}/rec${rec_freq}.txt
     if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
       echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh after parallel of ${carrier_num_det} carriers: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
+      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
     fi
 
     # delete processed file
@@ -328,7 +366,8 @@ if /bin/true; then
   rm ${rec_path}/${rdy_rec_name}.raw
 fi
 
-NUMFOUND=$(ls -1 ${rec_path}/redsea.*.txt | grep -v _noRDS | wc -l)
+NUMRDS=$(ls -1 ${rec_path}/redsea.*.txt | grep -v _noRDS | wc -l)
+NUMCAR=$(ls -1 ${rec_path}/redsea.*.txt | grep _noRDS | wc -l)
 TEND="$(date -u +%s)"
 TDUR=$[ $TEND - $TBEG ]
 DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
@@ -336,12 +375,12 @@ echo "FM scan finished at ${DTF}"
 echo "FM scan finished at ${DTF}" >>${rec_path}/scan_duration.txt
 echo "FM scan duration ${TDUR} sec"
 echo "FM scan finished ${TDUR} sec" >>${rec_path}/scan_duration.txt
-echo "FM scan found ${NUMFOUND} RDS carriers"
-echo "FM scan found ${NUMFOUND} RDS carriers" >>${rec_path}/scan_duration.txt
+echo "FM scan found ${NUMRDS} RDS carriers and ${NUMCAR} plain carriers"
+echo "FM scan found ${NUMRDS} RDS carriers and ${NUMCAR} plain carriers" >>${rec_path}/scan_duration.txt
 if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
   echo "FM scan finished at ${DTF}. Duration ${TDUR} sec." >>$HOME/ram/scanner.log
 fi
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ] && [ ${FMLIST_SCAN_PWM_FEEDBACK} -ne 0 ]; then
-  scanToneFeedback.sh fm ${NUMFOUND}
+  scanToneFeedback.sh fm ${NUMRDS}
 fi
 

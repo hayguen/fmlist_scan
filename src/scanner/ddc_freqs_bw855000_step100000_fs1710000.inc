@@ -1,0 +1,8 @@
+ddcnrfreq[0]=" 0.20468"
+ddcnrfreq[1]=" 0.14620"
+ddcnrfreq[2]=" 0.087719"
+ddcnrfreq[3]=" 0.029240"
+ddcnrfreq[4]="-0.029240"
+ddcnrfreq[5]="-0.087719"
+ddcnrfreq[6]="-0.14620"
+ddcnrfreq[7]="-0.20468"

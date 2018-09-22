@@ -32,29 +32,65 @@ fi
 cd $HOME/ram
 
 
-if [ "$1" = "savelog" ]; then
-  DTF="$(date -u "+%Y-%m-%dT%T Z")"
-  DTFREC="$(date -u "+%Y-%m-%dT%H%M%S")"
-  if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-    echo -e "\\n${DTF}: Temperature at saveScanResults.sh: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
-  fi
-  cp $HOME/ram/scanner.log ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_scanner.log
-  # do NOT remove file - just truncate
-  echo "" >$HOME/ram/scanner.log
-else
-  echo -e "\\n******* saveScanResults.sh without 'savelog'\\n" >>$HOME/ram/scanner.log
-fi
-
 ls -1 | grep ^scan_ | while read d ; do
   if [ -d "$d" ]; then
     echo $d
     if [ ${FMLIST_SCAN_SAVE_RAW} -eq 0 ]; then
       rm -f "$d/A.raw" "$d/B.raw"
     fi
+    if [ $(echo "$d" |grep -c "_FM\$") -ne 0 ]; then
+      if [ ${FMLIST_SCAN_DEBUG_CHK_SPECTRUM} -eq 0 ]; then
+        echo "saveScanResults.sh: deleting $d/det*.csv and .txt" >>$HOME/ram/scanner.log
+        rm -f $d/det*.csv
+        rm -f $d/det*.txt
+      fi
+      if [ ${FMLIST_SCAN_DEBUG_REDSEA} -eq 0 ]; then
+        echo "saveScanResults.sh: deleting $d/redsea.*.txt" >>$HOME/ram/scanner.log
+        rm -f $d/redsea.*.txt
+      fi
+
+      pushd $d
+      rm -f $HOME/ram/fm.csv
+      for res in $(ls -1 fm.*.csv) ; do
+        cat "$res" >>$HOME/ram/fm.csv
+      done
+      popd
+    fi
+
     zip -r "${FMLIST_SCAN_RESULT_DIR}/$S/$d.zip" "$d"
     rm -rf "$d"
   fi
 done
+
+if [ "$1" = "savelog" ]; then
+  DTF="$(date -u "+%Y-%m-%dT%T Z")"
+  DTFREC="$(date -u "+%Y-%m-%dT%H%M%S")"
+  if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
+    echo -e "\\n${DTF}: Temperature at saveScanResults.sh: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
+    echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
+  fi
+  if [ -f $HOME/ram/cputemp.csv ]; then
+    cp $HOME/ram/cputemp.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_cputemp.csv
+    rm $HOME/ram/cputemp.csv
+  fi
+  if [ -f $HOME/ram/gpscoor.csv ]; then
+    COOR=$( ( flock -x 213 ; cat $HOME/ram/gpscoor.csv 2>/dev/null ; rm -f $HOME/ram/gpscoor.csv 2>/dev/null ) 213>$HOME/ram/gps.lock )
+    echo "$COOR" >${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_gpscoor.csv
+  fi
+  if [ -f $HOME/ram/fm.csv ]; then
+    cp $HOME/ram/fm.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_fm.csv
+    rm $HOME/ram/fm.csv
+  fi
+
+  #cp $HOME/ram/scanner.log ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_scanner.log
+  gzip -kc $HOME/ram/scanner.log >${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_scanner.log.gz
+  # do NOT remove file - just truncate
+  echo "" >$HOME/ram/scanner.log
+else
+  echo -e "\\n******* saveScanResults.sh without 'savelog'\\n" >>$HOME/ram/scanner.log
+fi
+
+
 
 #sync -f "${FMLIST_SCAN_RESULT_DIR}/$S"
 sync
