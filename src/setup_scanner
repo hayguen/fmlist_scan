@@ -12,7 +12,9 @@ cp scanner/scanLoop.sh        /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/startBgScanLoop.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/stopBgScanLoop.sh  /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/saveScanResults.sh /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/redsea.json2csv    /home/${FMLIST_SCAN_USER}/bin/
 
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*scan*.sh /home/${FMLIST_SCAN_USER}/bin/*Scan*.sh
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*scan*.sh
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*Scan*.sh
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/redsea.json2csv
 
-# setup aliases -> prereq_fmlist_scan

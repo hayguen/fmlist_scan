@@ -15,6 +15,7 @@ alias gu='git pull --rebase'
 alias gp='git push'
 alias gss='git stash save'
 alias gsa='git stash apply'
+alias gsl='git stash list'
 
 alias showDABprogs='for f in $( ls -1 DAB_*.log | sort )  ; do if [ $(grep -c "programnameHandler:" $f) -gt 0 ]; then echo -e "\\n***\\n*** $f\\n***\\n" ; cat $f |grep "programnameHandler:" ; fi ; done'
 alias showDABens='for f in $( ls -1 DAB_*.log | sort )    ; do if [ $(grep -c "ensemblenameHandler:" $f) -gt 0 ]; then echo -e "\\n***\\n*** $f\\n***\\n" ; cat $f |grep "ensemblenameHandler:" ; fi ; done'

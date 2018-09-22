@@ -10,7 +10,7 @@ apt-get -y install sox lame alsa-utils
 apt-get -y install gpsd gpsd-clients
 apt-get -y install libraspberrypi-bin
 
-apt-get -y install build-essential git git-gui gitk cmake libtool autotools-dev automake
+apt-get -y install build-essential git git-gui gitk cmake libtool autotools-dev automake colordiff jq
 apt-get -y install usbutils libusb-1.0-0-dev libsndfile1-dev
 
 NRAM=$(grep -c /home/${FMLIST_SCAN_USER}/ram /etc/fstab)

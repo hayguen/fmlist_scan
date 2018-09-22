@@ -37,6 +37,8 @@ rm -f "$HOME/bin/scanLoop.sh"
 rm -f "$HOME/bin/startBgScanLoop.sh"
 rm -f "$HOME/bin/stopBgScanLoop.sh"
 rm -f "$HOME/bin/saveScanResults.sh"
+rm -f "$HOME/bin/concatScanResults.sh"
+rm -f "$HOME/bin/redsea.json2csv.sh"
 
 echo "removing calibration script from $HOME/bin .."
 rm -f "$HOME/bin/kal.sh"

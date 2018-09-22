@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "\tlength in ms:    how many milliseconds of file's head to be processed. default: 200 ms\n");
 		fprintf(stderr, "\tchannel bw:      channel bandwidth to analyse. default: 150000 Hz\n");
 		fprintf(stderr, "\tmain channel bw: main channel bandwidth. default: 100000 Hz\n");
-		fprintf(stderr, "\tmin pwr ratio:   minimum power ratio: power(main channel) / power(non-main). non-main = channel bw - main. default: 10.0\n");
+		fprintf(stderr, "\tmin pwr ratio:   minimum power ratio in dB: power(main channel) / power(non-main). non-main = channel bw - main. default: 6.0\n");
 		fprintf(stderr, "\tcpwr filename:   optional filename to write compressed power values as .CSV. default: empty\n");
 		fprintf(stderr, "\trelfreq n:       frequencies for each channel to analyze - relative to I/Q DC as 0 Hz.\n");
 		return 1;
@@ -70,7 +70,8 @@ int main(int argc, char *argv[])
 	double lenMillis = 200;
 	double chanBw = 150000.0;
 	double chanMainBw = 100000.0;
-	double minPwrRatio = 10.0;
+	double minPwrRatioLevel = 6.0;
+	bool bothRequireMinPwrRatio = true;
 	const char * cPwrFilename = nullptr;
 
 	int nextArgNo = 1;
@@ -98,7 +99,9 @@ int main(int argc, char *argv[])
 
 		if (!strcmp(argv[nextArgNo], "-"))
 			break;
-		minPwrRatio = atof(argv[nextArgNo++]);
+		if ( argv[nextArgNo][0] == '+' )
+			bothRequireMinPwrRatio = false;
+		minPwrRatioLevel = atof(argv[nextArgNo++]);
 
 		if (!strcmp(argv[nextArgNo], "-"))
 			break;
@@ -272,6 +275,8 @@ int main(int argc, char *argv[])
 	std::string sfrq( "carrier_frq=( " );
 	std::string sprL( "carrier_pwr_ratioL=( " );
 	std::string sprR( "carrier_pwr_ratioR=( " );
+	std::string sprMin( "carrier_pwr_ratioMin=( " );
+	std::string sprMax( "carrier_pwr_ratioMax=( " );
 	std::string sdet( "carrier_det=( " );
 
 	int numDet = 0;
@@ -282,31 +287,45 @@ int main(int argc, char *argv[])
 		const double pwrLeft  = powerDensity( pwr, chanCenter-chanCornerBinDistA, chanCenter-chanCornerBinDistB );
 		const double pwrMid   = powerDensity( pwr, chanCenter-chanCornerBinDistB, chanCenter+chanCornerBinDistB );
 		const double pwrRight = powerDensity( pwr, chanCenter+chanCornerBinDistB, chanCenter+chanCornerBinDistA );
-		const double pwrRatioLeft  = pwrMid / pwrLeft;
-		const double pwrRatioRight = pwrMid / pwrRight;
-		const bool carrierThere = (pwrRatioLeft >= minPwrRatio) && (pwrRatioRight >= minPwrRatio);
+		const double pwrRatioLeft  = ( pwrMid < 0.001 * pwrLeft ) ? 0.001 : (pwrMid / pwrLeft);
+		const double pwrRatioRight = ( pwrMid < 0.001 * pwrRight ) ? 0.001 : (pwrMid / pwrRight);
+		const double pwrRatioLeftLevel  = 10.0 * log10( pwrRatioLeft );
+		const double pwrRatioRightLevel = 10.0 * log10( pwrRatioRight );
+		const double pwrRatioMinLevel   = ( pwrRatioLeftLevel < pwrRatioRightLevel ) ? pwrRatioLeftLevel : pwrRatioRightLevel;
+		const double pwrRatioMaxLevel   = ( pwrRatioLeftLevel > pwrRatioRightLevel ) ? pwrRatioLeftLevel : pwrRatioRightLevel;
+		const bool carrierThere = bothRequireMinPwrRatio
+				? ( (pwrRatioLeftLevel >= minPwrRatioLevel) && (pwrRatioRightLevel >= minPwrRatioLevel) )
+				: ( (pwrRatioLeftLevel >= minPwrRatioLevel) || (pwrRatioRightLevel >= minPwrRatioLevel) );
 		// fprintf(stderr, "%d, %f, %f, %s\n", cfreq, pwrRatioLeft, pwrRatioRight, (carrierThere ? ">= 10" : "<") );
 		sfrq += std::to_string( cfreq );
 		sfrq += " ";
-		sprL += std::to_string( int(pwrRatioLeft*10.0) );
+		sprL += std::to_string( int(pwrRatioLeftLevel*10.0) );
 		sprL += " ";
-		sprR += std::to_string( int(pwrRatioRight*10.0) );
+		sprR += std::to_string( int(pwrRatioRightLevel*10.0) );
 		sprR += " ";
+		sprMin += std::to_string( int(pwrRatioMinLevel*10.0) );
+		sprMin += " ";
+		sprMax += std::to_string( int(pwrRatioMaxLevel*10.0) );
+		sprMax += " ";
 		sdet += (carrierThere ? "1 " : "0 ");
 		numDet += (carrierThere ? 1 : 0);
 	}
 	sfrq += ")";
 	sprL += ")";
 	sprR += ")";
+	sprMin += ")";
+	sprMax += ")";
 	sdet += ")";
 	std::string ndet = "carrier_num_det=" + std::to_string(numDet);
 	std::string srbw = "compressed_rbw=\"" + std::to_string( compressedRbw ) + "\"";
 
 	fprintf(stdout, "%s\n", srbw.c_str());
 	fprintf(stdout, "%s\n", sfrq.c_str());
-	fprintf(stdout, "# carrier power ratio left / right corner * 10. 20 == 3 dB\n");
+	fprintf(stdout, "# carrier power ratio left / right corner in dB * 10: 60 == 6.0 dB\n");
 	fprintf(stdout, "%s\n", sprL.c_str());
 	fprintf(stdout, "%s\n", sprR.c_str());
+	fprintf(stdout, "%s\n", sprMin.c_str());
+	fprintf(stdout, "%s\n", sprMax.c_str());
 	fprintf(stdout, "%s\n", sdet.c_str());
 	fprintf(stdout, "%s\n", ndet.c_str());
 	return 0;
