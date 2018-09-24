@@ -21,7 +21,8 @@ echo "removing entries from crontab .."
 
 # remove aliases
 echo "removing entries from ~/.bash_aliases .."
-sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '#$(pwd)/.bash_aliases#d' /home/${FMLIST_SCAN_USER}/.bash_aliases"
+ALIASEXPR="$( echo -n "$(pwd)/.bash_aliases" |sed "s#/#\\\\/#g" )"
+sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPR}/d' /home/${FMLIST_SCAN_USER}/.bash_aliases"
 
 # remove gps scripts
 echo "removing gps scripts from $HOME/bin .."
