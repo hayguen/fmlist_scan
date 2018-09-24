@@ -30,7 +30,6 @@ echo ""
 echo "environment parameters - to set before calling:"
 echo "set FMLIST_SCAN_USER=<user>   # default user \"pi\""
 echo "set FMLIST_SCAN_RASPI=<1/0>   # default \"1\" if Raspberry Pi hardware"
-echo "set FMLIST_SCAN_GPS_COORDS=\"49.540295 / 8.652697\"   # default \"\" for using gpsd - with GPS hardware"
 echo ""
 
 if [ "$1" == "-h" ] || [ "$1" == "--h" ] || [ "$1" == "--help" ]; then
