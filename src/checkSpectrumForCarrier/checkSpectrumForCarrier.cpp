@@ -278,9 +278,13 @@ int main(int argc, char *argv[])
 	std::string sprMin( "carrier_pwr_ratioMin=( " );
 	std::string sprMax( "carrier_pwr_ratioMax=( " );
 	std::string sdet( "carrier_det=( " );
+	std::string sdbgPwr( "dbgPwrLevel=( " );
+
+	double *dbgPwr = new double[ argc ];
 
 	int numDet = 0;
-	for ( int argidx = iFirstFreqArg; argidx < argc; ++argidx )
+	int argidx;
+	for ( argidx = iFirstFreqArg; argidx < argc; ++argidx )
 	{
 		const int cfreq = atoi( argv[argidx] );
 		const int chanCenter = H + int( round(cfreq / rbw) );
@@ -297,6 +301,7 @@ int main(int argc, char *argv[])
 				? ( (pwrRatioLeftLevel >= minPwrRatioLevel) && (pwrRatioRightLevel >= minPwrRatioLevel) )
 				: ( (pwrRatioLeftLevel >= minPwrRatioLevel) || (pwrRatioRightLevel >= minPwrRatioLevel) );
 		// fprintf(stderr, "%d, %f, %f, %s\n", cfreq, pwrRatioLeft, pwrRatioRight, (carrierThere ? ">= 10" : "<") );
+		dbgPwr[ argidx ] = pwrMid;
 		sfrq += std::to_string( cfreq );
 		sfrq += " ";
 		sprL += std::to_string( int(pwrRatioLeftLevel*10.0) );
@@ -319,6 +324,22 @@ int main(int argc, char *argv[])
 	std::string ndet = "carrier_num_det=" + std::to_string(numDet);
 	std::string srbw = "compressed_rbw=\"" + std::to_string( compressedRbw ) + "\"";
 
+	double dbgMaxPwr = dbgPwr[ iFirstFreqArg ];
+	for ( argidx = iFirstFreqArg; argidx < argc; ++argidx )
+	{
+		if ( dbgMaxPwr < dbgPwr[ argidx ] )
+			dbgMaxPwr = dbgPwr[ argidx ];
+	}
+	for ( argidx = iFirstFreqArg; argidx < argc; ++argidx )
+	{
+		const double pwrRatio  = dbgPwr[ argidx ] / dbgMaxPwr;
+		const double pwrRatioLevel  = 10.0 * log10( pwrRatio );
+		sdbgPwr += std::to_string( int(pwrRatioLevel*10.0) );
+		//sdbgPwr += std::to_string( pwrRatioLevel );
+		sdbgPwr += " ";
+	}
+	sdbgPwr += ")";
+
 	fprintf(stdout, "%s\n", srbw.c_str());
 	fprintf(stdout, "%s\n", sfrq.c_str());
 	fprintf(stdout, "# carrier power ratio left / right corner in dB * 10: 60 == 6.0 dB\n");
@@ -328,5 +349,6 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "%s\n", sprMax.c_str());
 	fprintf(stdout, "%s\n", sdet.c_str());
 	fprintf(stdout, "%s\n", ndet.c_str());
+	fprintf(stdout, "%s\n", sdbgPwr.c_str());
 	return 0;
 }
