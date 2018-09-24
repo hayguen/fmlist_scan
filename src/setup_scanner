@@ -13,9 +13,9 @@ cp scanner/startBgScanLoop.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/stopBgScanLoop.sh  /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/saveScanResults.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/prepareScanResultsForUpload.sh /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/redsea.json2csv    /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/redsea.json2csv.sh /home/${FMLIST_SCAN_USER}/bin/
 
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*scan*.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*Scan*.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/redsea.json2csv
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/redsea.json2csv.sh
 
