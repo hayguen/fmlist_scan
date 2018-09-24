@@ -242,9 +242,9 @@ if [ \$NL -le 0 ]; then
     echo "${DTF_RDY}: FM \${f}: NO RDS decode" >>$HOME/ram/scanner.log
     mv redsea.\${f}.txt redsea.\${f}_noRDS.txt
 
-    echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm.\${f}.csv
-    echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm.\${f}.csv
-    echo ",${DTF_RDY},\${GPSCOLS}" >>fm.\${f}.csv
+    echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_carrier.\${f}.csv
+    echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm_carrier.\${f}.csv
+    echo ",${DTF_RDY},\${GPSCOLS}" >>fm_carrier.\${f}.csv
 
   else
     rm redsea.\${f}.txt
@@ -257,10 +257,10 @@ else
   RDS="1"
   RDSCOLS="\$( redsea.json2csv.sh redsea.\${f}.txt )"
 
-    echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm.\${f}.csv
-    echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm.\${f}.csv
-    echo -n ",${DTF_RDY},\${GPSCOLS}" >>fm.\${f}.csv
-    echo ",\${RDSCOLS}" >>fm.\${f}.csv
+    echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_rds.\${f}.csv
+    echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm_rds.\${f}.csv
+    echo -n ",${DTF_RDY},\${GPSCOLS}" >>fm_rds.\${f}.csv
+    echo ",\${RDSCOLS}" >>fm_rds.\${f}.csv
 
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
     echo "${DTF_RDY}: FM \$f: decoded RDS" >>$HOME/ram/scanner.log

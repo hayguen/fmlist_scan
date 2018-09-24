@@ -111,6 +111,11 @@ while /bin/true; do
     break
   fi
 
+  if [ "$1" = "single" ] || [ "$1" = "singleshot" ]; then
+    # stop loop before saving results. results are saved anyway after loop
+    break
+  fi
+
   # always save log .. to have it saved - especially when mobile
   echo -e "\\n*********** saveScanResults.sh ${FMLIST_SCAN_SAVE_LOG_OPT} \\n" >>$HOME/ram/scanner.log
   saveScanResults.sh ${FMLIST_SCAN_SAVE_LOG_OPT}

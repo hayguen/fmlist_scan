@@ -50,10 +50,17 @@ ls -1 | grep ^scan_ | while read d ; do
       fi
 
       pushd $d
-      rm -f $HOME/ram/fm.csv
-      for res in $(ls -1 fm.*.csv) ; do
-        cat "$res" >>$HOME/ram/fm.csv
+      rm -f $HOME/ram/fm_carrier.csv
+      rm -f $HOME/ram/fm_rds.csv
+      for res in $(ls -1 fm_carrier.*.csv) ; do
+        cat "$res" >>$HOME/ram/fm_carrier.csv
       done
+      for res in $(ls -1 fm_rds.*.csv) ; do
+        cat "$res" >>$HOME/ram/fm_rds.csv
+      done
+      TMIN=$( cat $HOME/ram/fm_carrier.csv $HOME/ram/fm_rds.csv | sort -n | head -n 1 | awk -F ',' '{ print $1; }' )
+      echo "${TMIN},$(cat $HOME/ram/fm_carrier.csv |wc -l),$(cat $HOME/ram/fm_rds.csv |wc -l)" >$HOME/ram/fm_count.csv
+
       popd
     fi
 
@@ -77,9 +84,17 @@ if [ "$1" = "savelog" ]; then
     COOR=$( ( flock -x 213 ; cat $HOME/ram/gpscoor.csv 2>/dev/null ; rm -f $HOME/ram/gpscoor.csv 2>/dev/null ) 213>$HOME/ram/gps.lock )
     echo "$COOR" >${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_gpscoor.csv
   fi
-  if [ -f $HOME/ram/fm.csv ]; then
-    cp $HOME/ram/fm.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_fm.csv
-    rm $HOME/ram/fm.csv
+  if [ -f $HOME/ram/fm_carrier.csv ]; then
+    cp $HOME/ram/fm_carrier.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_fm_carrier.csv
+    rm $HOME/ram/fm_carrier.csv
+  fi
+  if [ -f $HOME/ram/fm_rds.csv ]; then
+    cp $HOME/ram/fm_rds.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_fm_rds.csv
+    rm $HOME/ram/fm_rds.csv
+  fi
+  if [ -f $HOME/ram/fm_count.csv ]; then
+    cp $HOME/ram/fm_count.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_fm_count.csv
+    rm $HOME/ram/fm_count.csv
   fi
 
   #cp $HOME/ram/scanner.log ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_scanner.log

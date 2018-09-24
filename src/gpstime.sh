@@ -89,7 +89,9 @@ if [ ! -z "${GPSTIM}" ] && [ ! -z "${GPSLAT}" ] && [ ! -z "${GPSLON}" ]; then
     echo "GPSLON=\"${GPSLON}\""   >>gpscoor.inc
     echo "GPSMODE=\"${GPSMODE}\"" >>gpscoor.inc
     echo "GPSALT=\"${GPSALT}\""   >>gpscoor.inc
-    echo "${GPSLAT},${GPSLON},${GPSALT},${GPSTIM},${SYSTIM}" >>gpscoor.csv
+    if [ ${GPSMODE} -ne 0 ]; then
+      echo "${GPSLAT},${GPSLON},${GPSALT},${GPSTIM},${SYSTIM}" >>gpscoor.csv
+    fi
   ) 213>gps.lock
 
   if [ ${SET_SYSTIM} -eq 1 ]; then
