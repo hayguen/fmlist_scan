@@ -4,3 +4,4 @@ if [ -z "${FMLIST_SCAN_USER}" ]; then
 fi
 
 cp rpi3b_led_*.sh /home/${FMLIST_SCAN_USER}/bin/
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/rpi3b_led_*.sh
