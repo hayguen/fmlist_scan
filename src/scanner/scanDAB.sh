@@ -98,6 +98,11 @@ for CH in $(echo "${dabchannels[@]}") ; do
   DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
   GPS="$($HOME/bin/get_gpstime.sh)"
   GPSV="$( ( flock -s 213 ; cat $HOME/ram/gpscoor.inc 2>/dev/null ) 213>gps.lock )"
+  echo "${GPSV}" >$HOME/ram/gpsvals.inc
+  source $HOME/ram/gpsvals.inc
+  rm $HOME/ram/gpsvals.inc
+  GPSCOLS="${GPSLAT},${GPSLON},${GPSMODE},${GPSALT},${GPSTIM}"
+
   echo "$CH"
   echo "CHANNEL=\"${CH}\""    >"${rec_path}/DAB_$CH.inc"
   echo "CURRTIM=\"${DTF}\""  >>"${rec_path}/DAB_$CH.inc"
@@ -112,6 +117,10 @@ for CH in $(echo "${dabchannels[@]}") ; do
   fi
 
   dab-rtlsdr -C $CH ${DABOPT} &>"${rec_path}/DAB_$CH.log"
+  grep ",CSV_ENSEMBLE," "${rec_path}/DAB_$CH.log" | sed "s#,CSV_ENSEMBLE,#,${GPSCOLS},#g" >>"${rec_path}/dab_ensemble.csv"
+  grep ",CSV_GPSCOOR,"  "${rec_path}/DAB_$CH.log" | sed "s#,CSV_GPSCOOR,#,${GPSCOLS},#g"  >>"${rec_path}/dab_gps.csv"
+  grep ",CSV_AUDIO,"    "${rec_path}/DAB_$CH.log" | sed "s#,CSV_AUDIO,#,${GPSCOLS},#g"    >>"${rec_path}/dab_audio.csv"
+  grep ",CSV_PACKET,"   "${rec_path}/DAB_$CH.log" | sed "s#,CSV_PACKET,#,${GPSCOLS},#g"   >>"${rec_path}/dab_packet.csv"
 
   NP=$( cat "${rec_path}/DAB_$CH.log" | grep " is part of the ensemble" | grep -c "^programnameHandler:" )
   NE=$( cat "${rec_path}/DAB_$CH.log" | grep " is recognized" | grep -c "^ensemblenameHandler:" )

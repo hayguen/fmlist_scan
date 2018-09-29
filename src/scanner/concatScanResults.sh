@@ -5,7 +5,8 @@ source $HOME/.config/fmlist_scan/config
 if [ -z "$1" ]; then
   >&2 echo "usage $0 <filetype> [<date> [<begin> [<end>]]]"
   >&2 echo -e "\tconcatenates file contents within one dates given time region"
-  >&2 echo -e "\tfiletype  filename part in scanner result directory: 'cputemp', 'gpscoor', 'fm_carrier', 'fm_rds' or 'fm_count'."
+  >&2 echo -e "\tfiletype  filename part in scanner result directory: 'cputemp', 'gpscoor', 'fm_carrier', 'fm_rds', 'fm_count',"
+  >&2 echo -e "\t           'dab_ensemble', 'dab_gps', 'dab_audio', 'dab_packet' or 'dab_count'."
   >&2 echo -e "\tdate      date in format 'YYY-mm-dd', e.g. '2018-09-17'"
   >&2 echo -e "\tbegin     optional begin time in numeric format 'hhmmss', e.g. '010203'. default: '000000'"
   >&2 echo -e "\tend       optional end time in numeric format 'hhmmss'. default: '235959'"

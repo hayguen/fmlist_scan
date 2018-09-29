@@ -92,11 +92,11 @@ EOF
 
 cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/dabscan.inc
 chanlist=dab_chanlist.txt
-DABOPT="-Q -A 2000 -E 3 -W 5000"
+DABOPT="-Q -E 3 -W 5000 -A 2000 -c"
 
 if [ "\${GPSSRC}" = "static" ]; then
   # spend more time on scanning in static environment
-  DABOPT="-Q -E 3 -W 8000 -A 4000"
+  DABOPT="-Q -E 3 -W 8000 -A 4000 -c"
 fi
 EOF
 
