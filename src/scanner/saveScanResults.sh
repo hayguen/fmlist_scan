@@ -62,6 +62,20 @@ ls -1 | grep ^scan_ | while read d ; do
       echo "${TMIN},$(cat $HOME/ram/fm_carrier.csv |wc -l),$(cat $HOME/ram/fm_rds.csv |wc -l)" >$HOME/ram/fm_count.csv
 
       popd
+    elif [ $(echo "$d" |grep -c "_DAB\$") -ne 0 ]; then
+      pushd $d
+      rm -f $HOME/ram/dab_audio.csv
+      rm -f $HOME/ram/dab_ensemble.csv
+      rm -f $HOME/ram/dab_gps.csv
+      rm -f $HOME/ram/dab_packet.csv
+      cp dab_audio.csv     $HOME/ram/dab_audio.csv
+      cp dab_ensemble.csv  $HOME/ram/dab_ensemble.csv
+      cp dab_gps.csv       $HOME/ram/dab_gps.csv
+      cp dab_packet.csv    $HOME/ram/dab_packet.csv
+      TMIN=$( cat $HOME/ram/ensemble.csv $HOME/ram/dab_audio.csv | sort -n | head -n 1 | awk -F ',' '{ print $1; }' )
+      echo "${TMIN},$(cat $HOME/ram/dab_ensemble.csv |wc -l),$(cat $HOME/ram/dab_audio.csv |wc -l),$(cat $HOME/ram/dab_packet.csv |wc -l)" >$HOME/ram/dab_count.csv
+
+      popd
     fi
 
     zip -r "${FMLIST_SCAN_RESULT_DIR}/$S/$d.zip" "$d"
@@ -84,6 +98,7 @@ if [ "$1" = "savelog" ]; then
     COOR=$( ( flock -x 213 ; cat $HOME/ram/gpscoor.csv 2>/dev/null ; rm -f $HOME/ram/gpscoor.csv 2>/dev/null ) 213>$HOME/ram/gps.lock )
     echo "$COOR" >${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_gpscoor.csv
   fi
+
   if [ -f $HOME/ram/fm_carrier.csv ]; then
     cp $HOME/ram/fm_carrier.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_fm_carrier.csv
     rm $HOME/ram/fm_carrier.csv
@@ -95,6 +110,27 @@ if [ "$1" = "savelog" ]; then
   if [ -f $HOME/ram/fm_count.csv ]; then
     cp $HOME/ram/fm_count.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_fm_count.csv
     rm $HOME/ram/fm_count.csv
+  fi
+
+  if [ -f $HOME/ram/dab_ensemble.csv ]; then
+    cp $HOME/ram/dab_ensemble.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_dab_ensemble.csv
+    rm $HOME/ram/dab_ensemble.csv
+  fi
+  if [ -f $HOME/ram/dab_gps.csv ]; then
+    cp $HOME/ram/dab_gps.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_dab_gps.csv
+    rm $HOME/ram/dab_gps.csv
+  fi
+  if [ -f $HOME/ram/dab_audio.csv ]; then
+    cp $HOME/ram/dab_audio.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_dab_audio.csv
+    rm $HOME/ram/dab_audio.csv
+  fi
+  if [ -f $HOME/ram/dab_packet.csv ]; then
+    cp $HOME/ram/dab_packet.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_dab_packet.csv
+    rm $HOME/ram/dab_packet.csv
+  fi
+  if [ -f $HOME/ram/dab_count.csv ]; then
+    cp $HOME/ram/dab_count.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_dab_count.csv
+    rm $HOME/ram/dab_count.csv
   fi
 
   #cp $HOME/ram/scanner.log ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_scanner.log

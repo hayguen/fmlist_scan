@@ -47,6 +47,17 @@ ls -1 |egrep "^[0-9]{4}-[0-9]{2}-[0-9]{2}\$" |grep -v "${GREPOPT}" |while read d
   concatScanResults.sh fm_count   "${d}" |gzip -c >uploads/${d}_fm_count.csv.gz
   echo "  fm_count finished."
 
+  concatScanResults.sh dab_ensemble "${d}" |gzip -c >uploads/${d}_dab_ensemble.csv.gz
+  echo "  dab_ensemble finished."
+  concatScanResults.sh dab_gps      "${d}" |gzip -c >uploads/${d}_dab_gps.csv.gz
+  echo "  dab_gps finished."
+  concatScanResults.sh dab_audio    "${d}" |gzip -c >uploads/${d}_dab_audio.csv.gz
+  echo "  dab_audio finished."
+  concatScanResults.sh dab_packet   "${d}" |gzip -c >uploads/${d}_dab_packet.csv.gz
+  echo "  dab_packet finished."
+  concatScanResults.sh dab_count    "${d}" |gzip -c >uploads/${d}_dab_count.csv.gz
+  echo "  dab_count finished."
+
   mv "$d" "uploaded/"
 
 done
