@@ -1,6 +1,2 @@
 
-# LABEL=USBEXT4 /mnt/usbext4 ext4 defaults,noatime 0 0
-# /dev/sda2  /mnt/sda2  ext4    defaults,noatime,ro  0  0
-
 /dev/sda1  /mnt/sda1  vfat    defaults,noatime,user,noauto  0  0
-
