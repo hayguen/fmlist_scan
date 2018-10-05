@@ -5,16 +5,17 @@ fi
 sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/bin"
 
 # copy all scripts
-cp scanner/checkBgScanLoop.sh  /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/scanFM.sh           /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/scanDAB.sh          /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/scanLoop.sh         /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/startBgScanLoop.sh  /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/stopBgScanLoop.sh   /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/scanToneFeedback.sh /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/saveScanResults.sh  /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/checkBgScanLoop.sh   /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanFM.sh            /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanDAB.sh           /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanLoop.sh          /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/startBgScanLoop.sh   /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/stopBgScanLoop.sh    /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanToneFeedback.sh  /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/saveScanResults.sh   /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/concatScanResults.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/prepareScanResultsForUpload.sh /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/redsea.json2csv.sh  /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/redsea.json2csv.sh   /home/${FMLIST_SCAN_USER}/bin/
 
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*scan*.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*Scan*.sh
