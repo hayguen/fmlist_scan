@@ -92,13 +92,14 @@ EOF
 
 cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/dabscan.inc
 chanlist=dab_chanlist.txt
-# verifiable TII (statistics) requires much time: that is why to increase -A from 2000 to 12000
+# verifiable TII (statistics without '-x' option) requires much time: that is why to increase -A from 2000 to 12000
+#   with option '-x', activation enhanced tii algorithm with quality values, reduced -A to 6000 ms
 #   options -t,  -a and -r specify how tii statistics should work ..
-DABOPT="-Q -E 3 -W 5000 -A 12000 -c -t 10 -a 0.9 -r 10"
+DABOPT="-Q -E 3 -W 5000 -A 6000 -c -t 5 -a 0.8 -r 5 -x"
 
 if [ "\${GPSSRC}" = "static" ]; then
   # spend more time on scanning in static environment
-  DABOPT="-Q -E 3 -W 8000 -A 12000 -c -t 10 -a 0.9 -r 10"
+  DABOPT="-Q -E 3 -W 8000 -A 12000 -c -t 10 -a 0.9 -r 10 -x"
 fi
 EOF
 
