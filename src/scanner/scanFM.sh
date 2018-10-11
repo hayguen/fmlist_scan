@@ -160,11 +160,12 @@ for chunkfreq in $( echo $chunkfrqs EOL ) ; do
     GPS_ACT="$($HOME/bin/get_gpstime.sh)"
     GPSV_ACT="$( ( flock -s 213 ; cat $HOME/ram/gpscoor.inc 2>/dev/null ) 213>gps.lock )"
     DTF_ACT="$(date -u "+%Y-%m-%dT%T.%N Z")"
-    echo "recording frequency $chunkfreq in background. last gps ${GPS_ACT}. now ${DTF_ACT}: rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${rec_path}/${act_rec_name}.raw"
+    echo "recording frequency $chunkfreq in background. last gps ${GPS_ACT}. now ${DTF_ACT}: rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw"
     if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
       echo -e "\\n$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before rtl_sdr -f ${chunkfreq}: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
       echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
     fi
+    echo timeout -s SIGKILL -k ${chunkreckilltime} ${chunkrectimeout} rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw ..
     timeout -s SIGKILL -k ${chunkreckilltime} ${chunkrectimeout} rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw &>${rec_path}/${act_rec_name}.log &
     recpid=$!
   fi
