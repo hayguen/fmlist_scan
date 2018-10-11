@@ -41,14 +41,22 @@ export FMLIST_SCAN_PWM_FEEDBACK="1"             # "0" or "1"; default is "1" for
 export FMLIST_SCAN_MOUNT="1"                    # "0" or "1"; default is "1". saving results requires successful mount of /mnt/sda1
 export FMLIST_SCAN_RESULT_DIR="/mnt/sda1"       # where to save results
 export FMLIST_SCAN_PPM="0"                      # ppm value of RTLSDR receiver
+export FMLIST_FM_RTLSDR_DEV=""                  # FM:  optional device/serial, see rtl_test / rtl_eeprom
+export FMLIST_DAB_RTLSDR_DEV=""                 # DAB: optional device/serial
 EOF
 
 
 cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/fmscan.inc
+
+# number of parallel jobs with gnu parallel : use multiple cores/threads of cpu
 par_jobs="3"
+# define ukw/fm band in Hz
 ddc_step="100000"
 ukw_beg="87500000"
 ukw_end="108000000"
+
+# record chunk duration in seconds
+chunkduration="4"
 
 # chunksrate = 171 * 14 = 2394 kHz, keep this value high to avoid aliasing!
 chunk2mpx_dec="14"
@@ -66,7 +74,6 @@ chunk2mpx_dec="14"
 # mpxsrate_chunkbw_factor="10"; RTL_BW_OPT="-w 1800000" # +/-750000 Hz, N= 16, chunkbw= 1710 kHz; chunkduration=4 => 81sec, 14 RDS +35 plain carriers; 86s, 17+41; minT=13*4=52s
 # mpxsrate_chunkbw_factor="11"; RTL_BW_OPT="-w 2080000" # +/-850000 Hz, N= 18, chunkbw= 1881 kHz; chunkduration=4 => 74sec, 15 RDS +31 plain carriers; 74s, 14+26; minT=12*4=48s
 
-chunkduration="4"
 mpxsrate_chunkbw_factor="10"; RTL_BW_OPT="-w 1800000"    # +/-750000 Hz, N = 16, chunkbw = 1710 kHz
 
 if [ "\${GPSSRC}" = "static" ]; then
@@ -84,23 +91,48 @@ if [ "\${GPSSRC}" = "static" ]; then
 # mpxsrate_chunkbw_factor="10"; RTL_BW_OPT="-w 1800000" # +/-750000 Hz, N= 16, chunkbw= 1710 kHz; chunkduration=8 => 140sec, 17 RDS +33 plain carriers; 141s, 18+38; minT=13*8=108s
 # mpxsrate_chunkbw_factor="11"; RTL_BW_OPT="-w 2080000" # +/-850000 Hz, N= 18, chunkbw= 1881 kHz; chunkduration=8 => 125sec, 12 RDS +30 plain carriers; 123s, 14+25; minT=12*8=96s
 
-mpxsrate_chunkbw_factor="7";  RTL_BW_OPT="-w 1200000"
+  mpxsrate_chunkbw_factor="7";  RTL_BW_OPT="-w 1200000"
 
 fi
+
+
+# options to rtl_sdr, e.g. select device with option '-d <serial>'.
+# do NOT use options '-s' (samplerate), '-n' (number of samples), '-f' (frequency) or '-w' (bandwidth) here!
+#   reuse devicename from config: \${FMLIST_FM_RTLSDR_DEV}
+
+RTLSDR_OPT=""
+if [ ! -z "\${FMLIST_FM_RTLSDR_DEV}" ]; then
+  RTLSDR_OPT="\${RTLSDR_OPT} -d \${FMLIST_FM_RTLSDR_DEV}"
+fi
+
 EOF
 
 
 cat - <<EOF >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/dabscan.inc
-chanlist=dab_chanlist.txt
+
+# file with channels to scan
+chanlist="dab_chanlist.txt"
+
 # verifiable TII (statistics without '-x' option) requires much time: that is why to increase -A from 2000 to 12000
 #   with option '-x', activation enhanced tii algorithm with quality values, reduced -A to 6000 ms
 #   options -t,  -a and -r specify how tii statistics should work ..
+
 DABOPT="-Q -E 3 -W 5000 -A 6000 -c -t 5 -a 0.8 -r 5 -x"
 
 if [ "\${GPSSRC}" = "static" ]; then
   # spend more time on scanning in static environment
   DABOPT="-Q -E 3 -W 8000 -A 12000 -c -t 10 -a 0.9 -r 10 -x"
 fi
+
+# select rtlsdr device with option '-s <serial>'.
+#   program 'rtl_test' will list all devices with their serial numbers 'SN'.
+#   in case your serial numbers are not unique, you can modify these with 'rtl_eeprom'.
+#   reuse devicename from config: \${FMLIST_DAB_RTLSDR_DEV}
+
+if [ ! -z "\${FMLIST_DAB_RTLSDR_DEV}" ]; then
+  DABOPT="\${DABOPT} -s \${FMLIST_DAB_RTLSDR_DEV}"
+fi
+
 EOF
 
 

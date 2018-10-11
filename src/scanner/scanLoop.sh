@@ -54,9 +54,11 @@ echo -e "\\nlsb_release -a:" >>$HOME/ram/scanner.log
 lsb_release -a >>$HOME/ram/scanner.log
 echo "" >>$HOME/ram/scanner.log
 
-echo -e "\\nvcgencmd version:" >>$HOME/ram/scanner.log
-vcgencmd version >>$HOME/ram/scanner.log
-echo "" >>$HOME/ram/scanner.log
+if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
+  echo -e "\\nvcgencmd version:" >>$HOME/ram/scanner.log
+  vcgencmd version >>$HOME/ram/scanner.log
+  echo "" >>$HOME/ram/scanner.log
+fi
 
 echo -e "\\n/proc/cpuinfo:" >>$HOME/ram/scanner.log
 cat /proc/cpuinfo >>$HOME/ram/scanner.log
@@ -80,25 +82,78 @@ while /bin/true; do
     break
   fi
 
-  echo $N
+  echo "scanloop iteration $N"
 
-  # test RTL dongle
-  rtl_sdr -f 100M -n 512 $HOME/ram/test.raw
-  if [ $? -ne 0 ]; then
-    if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-      sudo -E $HOME/bin/rpi3b_led_blinkRed.sh
-      scanToneFeedback.sh error
+  # test RTL dongle for FM
+  TESTED_FIRST_DEV="0"
+  TESTED_FM_DEV="0"
+  if [ "${FMLIST_SCAN_FM}" != "0" ] && [ "${FMLIST_SCAN_FM}" != "OFF" ]; then
+    echo "test rtl_sdr for FM ${FMLIST_FM_RTLSDR_DEV}"
+    echo "test rtl_sdr for FM ${FMLIST_FM_RTLSDR_DEV}" >>$HOME/ram/scanner.log
+    if [ -z "${FMLIST_FM_RTLSDR_DEV}" ]; then
+      FMLIST_FM_RTLSDR_OPT=""
+      TESTED_FIRST_DEV="1"
+    else
+      FMLIST_FM_RTLSDR_OPT="-d ${FMLIST_FM_RTLSDR_DEV}"
     fi
-    NUM_RTL_FAILS=$[ ${NUM_RTL_FAILS} + 1 ]
-    if [ ${NUM_RTL_FAILS} -eq ${FMLIST_SCAN_DEAD_RTL_TRIES} ] && [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
-      DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
-      echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
-      echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>$HOME/ram/scanner.log
-      saveScanResults.sh savelog
-      sudo reboot now
+    TESTED_FM_DEV="1"
+    rtl_sdr -f 100M -n 512 ${FMLIST_FM_RTLSDR_OPT} $HOME/ram/test.raw &>>$HOME/ram/scanner.log
+    if [ $? -ne 0 ]; then
+      echo "error at test rtl_sdr! for FM"
+      echo "error at test rtl_sdr! for FM" &>>$HOME/ram/scanner.log
+      if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
+        sudo -E $HOME/bin/rpi3b_led_blinkRed.sh
+        scanToneFeedback.sh error
+      fi
+      NUM_RTL_FAILS=$[ ${NUM_RTL_FAILS} + 1 ]
+      if [ ${NUM_RTL_FAILS} -eq ${FMLIST_SCAN_DEAD_RTL_TRIES} ] && [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
+        DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
+        echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
+        echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>$HOME/ram/scanner.log
+        saveScanResults.sh savelog
+        sudo reboot now
+      fi
+      echo "retry test - because rtl_sdr test for FM failed!"
+      continue
     fi
-    continue
   fi
+
+  if [ "${FMLIST_SCAN_DAB}" != "0" ] && [ "${FMLIST_SCAN_DAB}" != "OFF" ]; then
+  if [ -z "${FMLIST_DAB_RTLSDR_DEV}" ] && [ "${TESTED_FIRST_DEV}" = "1" ]; then
+    echo "skiping test rtl_sdr for DAB: it's same default device"
+  elif [ ${TESTED_FM_DEV} = "1" ] && [ "${FMLIST_FM_RTLSDR_DEV}" = "${FMLIST_DAB_RTLSDR_DEV}" ]; then
+    echo "skiping test rtl_sdr for DAB: it's same device as for FM"
+  else
+    # test 2nd RTL dongle for DAB
+    echo "test rtl_sdr for DAB ${FMLIST_DAB_RTLSDR_DEV}"
+    echo "test rtl_sdr for DAB ${FMLIST_DAB_RTLSDR_DEV}" >>$HOME/ram/scanner.log
+    if [ -z "${FMLIST_DAB_RTLSDR_DEV}" ]; then
+      FMLIST_DAB_RTLSDR_OPT=""
+    else
+      FMLIST_DAB_RTLSDR_OPT="-d ${FMLIST_DAB_RTLSDR_DEV}"
+    fi
+    rtl_sdr -f 100M -n 512 ${FMLIST_DAB_RTLSDR_OPT} $HOME/ram/test.raw &>>$HOME/ram/scanner.log
+    if [ $? -ne 0 ]; then
+      echo "error at test rtl_sdr! for DAB"
+      echo "error at test rtl_sdr! for DAB" &>>$HOME/ram/scanner.log
+      if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
+        sudo -E $HOME/bin/rpi3b_led_blinkRed.sh
+        scanToneFeedback.sh error
+      fi
+      NUM_RTL_FAILS=$[ ${NUM_RTL_FAILS} + 1 ]
+      if [ ${NUM_RTL_FAILS} -eq ${FMLIST_SCAN_DEAD_RTL_TRIES} ] && [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
+        DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
+        echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
+        echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>$HOME/ram/scanner.log
+        saveScanResults.sh savelog
+        sudo reboot now
+      fi
+      echo "retry test - because rtl_sdr test for DAB failed!"
+      continue
+    fi
+  fi
+  fi
+
   NUM_RTL_FAILS=0
 
   scanFM.sh
