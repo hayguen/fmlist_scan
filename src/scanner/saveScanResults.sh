@@ -4,22 +4,23 @@ source $HOME/.config/fmlist_scan/config
 
 cd $HOME/ram
 
-MNTC=$( mount | grep -c /mnt/sda1 )
+
+MNTC=$( mount | grep -c ${FMLIST_SCAN_RESULT_DIR} )
 if [ $MNTC -eq 0 ] && [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
 
-  mount /mnt/sda1
+  mount ${FMLIST_SCAN_RESULT_DIR}
 
-  MNTC=$( mount | grep -c /mnt/sda1 )
+  MNTC=$( mount | grep -c ${FMLIST_SCAN_RESULT_DIR} )
   if [ $MNTC -eq 0 ]; then
-    echo "Error: USB stick is not available on /mnt/sda1 !"
+    echo "Error: Device (USB memory stick) is not available on ${FMLIST_SCAN_RESULT_DIR} !"
     exit 0
   fi
 fi
 
 if [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
-  FM=$( df -h -m /dev/sda1 | tail -n 1 | awk '{ print $4; }' )
+  FM=$( df -h -m ${FMLIST_SCAN_RESULT_DEV} | tail -n 1 | awk '{ print $4; }' )
   if [ $FM -le 5 ]; then
-    echo "Error: not enough space on USB stick /dev/sda1 !"
+    echo "Error: not enough space on USB stick ${FMLIST_SCAN_RESULT_DEV} !"
     exit 0
   fi
 fi
