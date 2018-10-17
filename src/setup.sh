@@ -11,6 +11,15 @@ fi
 if [ -z "${FMLIST_SCAN_RASPI}" ]; then
   export FMLIST_SCAN_RASPI="1"
 fi
+if [ -z "${FMLIST_SCAN_SETUP_GPS}" ]; then
+  export FMLIST_SCAN_SETUP_GPS="1"
+fi
+if [ -z "${FMLIST_USER}" ]; then
+  export FMLIST_USER=""
+fi
+if [ -z "${FMLIST_OM_ID}" ]; then
+  export FMLIST_OM_ID=""
+fi
 
 echo "$0 [syspre|pre|rtl|csdr|lfec|ldsp|redsea|dabcmd|pipwm|pishutd|chkspec|pscan|kal]"
 echo "  syspre  install system prerequisites"
