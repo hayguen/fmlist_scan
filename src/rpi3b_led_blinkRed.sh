@@ -10,12 +10,12 @@ fi
 # 3 x ( black - red ) # show saving
 for c in `echo 1 2 3` ; do
   # set black / off both leds
-  echo -n "3" >$HOME/ram/STATE
+  echo -n "3" >${FMLIST_SCAN_RAM_DIR}/STATE
   $HOME/bin/rpi3b_led_next.sh -it
   sleep 0.25
 
   # set red led on
-  echo -n "0" >$HOME/ram/STATE
+  echo -n "0" >${FMLIST_SCAN_RAM_DIR}/STATE
   $HOME/bin/rpi3b_led_next.sh -it
   sleep 0.25
 done

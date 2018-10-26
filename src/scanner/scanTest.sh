@@ -1,5 +1,10 @@
 #!/bin/bash
 
+source $HOME/.config/fmlist_scan/config
+if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
+  mkdir -p "${FMLIST_SCAN_RAM_DIR}"
+fi
+
 # desired audio samplerate
 ASRATE=16000
 # desired coarse MPX rate, which will get decimated to audio samplerate
@@ -76,15 +81,15 @@ for testNo in $(echo $ARGS); do
       NUMSMP=$[ $RECDURATION * $SRATE ]
       echo "recording 10 secs with rtl_sdr to ramdisk. Please wait!"
       echo "recording at RF rate $SRATE , decimating by $DECIM to $RDSRATE"
-      rtl_sdr -s $SRATE -n $NUMSMP -f $LOFREQ  $HOME/ram/test.raw
-      ls -alh $HOME/ram/test.raw
+      rtl_sdr -s $SRATE -n $NUMSMP -f $LOFREQ  ${FMLIST_SCAN_RAM_DIR}/test.raw
+      ls -alh ${FMLIST_SCAN_RAM_DIR}/test.raw
       echo "filesize must be ~ $[ ( $SRATE * $RECDURATION * 2 ) / 1024 / 1024 ] MB .. check this now!"
       sleep 5
       ;;
 
     "5")
       echo "testing record + csdr + redsea!"
-      cat $HOME/ram/test.raw \
+      cat ${FMLIST_SCAN_RAM_DIR}/test.raw \
        | csdr convert_u8_f \
        | csdr fastdcblock_ff \
        | csdr shift_addfast_cc -0.25 2>/dev/null \

@@ -12,9 +12,9 @@ DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
 DTFREC="$(date -u "+%Y-%m-%dT%H%M%S")"
 TBEG="$(date -u +%s)"
 
-rec_path="$HOME/ram/scan_${DTFREC}_FM"
+rec_path="${FMLIST_SCAN_RAM_DIR}/scan_${DTFREC}_FM"
 if [ ! -z "$1" ]; then
-  rec_path="$HOME/ram/$1"
+  rec_path="${FMLIST_SCAN_RAM_DIR}/$1"
 fi
 if [ ! -d "${rec_path}" ]; then
   mkdir -p "${rec_path}"
@@ -24,17 +24,17 @@ echo "FM scan started at ${DTF}"
 echo "FM scan started at ${DTF}" >${rec_path}/scan_duration.txt
 
 # get ${GPSSRC} for use in fmscan.inc
-GPSVALS=$( ( flock -s 213 ; cat $HOME/ram/gpscoor.inc 2>/dev/null ) 213>gps.lock )
-echo "${GPSVALS}" >$HOME/ram/gpsvals.inc
-source $HOME/ram/gpsvals.inc
-rm $HOME/ram/gpsvals.inc
+GPSVALS=$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>gps.lock )
+echo "${GPSVALS}" >${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+source ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+rm ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
 
-if [ ! -f $HOME/ram/fmscan.inc ]; then
+if [ ! -f ${FMLIST_SCAN_RAM_DIR}/fmscan.inc ]; then
   if [ -f $HOME/.config/fmlist_scan/fmscan.inc ]; then
-    cp $HOME/.config/fmlist_scan/fmscan.inc $HOME/ram/
-    echo "copied scan parameters from $HOME/.config/fmlist_scan/fmscan.inc to $HOME/ram/fmscan.inc. edit this file for use with next scan."
+    cp $HOME/.config/fmlist_scan/fmscan.inc ${FMLIST_SCAN_RAM_DIR}/
+    echo "copied scan parameters from $HOME/.config/fmlist_scan/fmscan.inc to ${FMLIST_SCAN_RAM_DIR}/fmscan.inc. edit this file for use with next scan."
   else
-    cat - <<EOF >$HOME/ram/fmscan.inc
+    cat - <<EOF >${FMLIST_SCAN_RAM_DIR}/fmscan.inc
 chunkduration=4
 par_jobs=3
 ddc_step=100000
@@ -49,11 +49,11 @@ mpxsrate_chunkbw_factor=11
 # R820T tuner bandwidths in kHz: 350, 450, 550, 700, 900, 1200, 1450, 1550, 1600, 1700, 1800, 1900, 1950, 2050, 2080
 RTL_BW_OPT="-w 1550000"
 EOF
-    echo "wrote default scan parameters to $HOME/ram/fmscan.inc. edit this file for use with next scan."
+    echo "wrote default scan parameters to ${FMLIST_SCAN_RAM_DIR}/fmscan.inc. edit this file for use with next scan."
   fi
 fi
-echo "reading scan parameters (chunkduration, par_jobs, ddc_step, ukw_beg, ukw_end) from $HOME/ram/fmscan.inc"
-source $HOME/ram/fmscan.inc
+echo "reading scan parameters (chunkduration, par_jobs, ddc_step, ukw_beg, ukw_end) from ${FMLIST_SCAN_RAM_DIR}/fmscan.inc"
+source ${FMLIST_SCAN_RAM_DIR}/fmscan.inc
 
 DISPLAY=""
 pilotfreq=19000
@@ -85,7 +85,7 @@ ddc_span=$[ $ddc_fmax + $ddc_fmax + $ddc_step ]
 ddc_freqs=$( ( seq $ddc_hstep $ddc_step $ddc_end ; seq -$ddc_hstep -$ddc_step -$ddc_end ) | sort -n | sed -z 's/\n/ /g' )
 Nddc_freqs="$( echo "${ddc_freqs}" | wc -w )"
 
-cachedNrfFile="$HOME/ram/ddc_freqs_bw${chunkbw}_step${ddc_step}_fs${chunksrate}.inc"
+cachedNrfFile="${FMLIST_SCAN_RAM_DIR}/ddc_freqs_bw${chunkbw}_step${ddc_step}_fs${chunksrate}.inc"
 localNrfFile="${FMLIST_SCAN_PATH}/ddc_freqs_bw${chunkbw}_step${ddc_step}_fs${chunksrate}.inc"
 if [ ! -f "${cachedNrfFile}" ]; then
   if [ -f "${localNrfFile}" ]; then
@@ -152,18 +152,18 @@ echo starting loop over chunkfrqs
 
 for chunkfreq in $( echo $chunkfrqs EOL ) ; do
 
-  if [ -f "$HOME/ram/stopScanLoop" ]; then
+  if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
     break
   fi
 
   if [ ! "$chunkfreq" == "EOL" ]; then
     GPS_ACT="$($HOME/bin/get_gpstime.sh)"
-    GPSV_ACT="$( ( flock -s 213 ; cat $HOME/ram/gpscoor.inc 2>/dev/null ) 213>gps.lock )"
+    GPSV_ACT="$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>gps.lock )"
     DTF_ACT="$(date -u "+%Y-%m-%dT%T.%N Z")"
     echo "recording frequency $chunkfreq in background. last gps ${GPS_ACT}. now ${DTF_ACT}: rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw"
     if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-      echo -e "\\n$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before rtl_sdr -f ${chunkfreq}: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
-      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
+      echo -e "\\n$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before rtl_sdr -f ${chunkfreq}: $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
     fi
     echo timeout -s SIGKILL -k ${chunkreckilltime} ${chunkrectimeout} rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw ..
     timeout -s SIGKILL -k ${chunkreckilltime} ${chunkrectimeout} rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw &>${rec_path}/${act_rec_name}.log &
@@ -179,20 +179,20 @@ for chunkfreq in $( echo $chunkfrqs EOL ) ; do
       rm ${rec_path}/rec${rec_freq}.txt
     fi
 
-    echo "checkSpectrumForCarrier details" >>$HOME/ram/scanner.log
+    echo "checkSpectrumForCarrier details" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
       CPWRFN="${rec_path}/det${rec_freq}.csv"
     else
       CPWRFN=""
     fi
-    checkSpectrumForCarrier ${rec_path}/${rdy_rec_name}.raw ${chunksrate} 200 150000 100000 ${FMLIST_SCAN_FM_MIN_PWR_RATIO} "${CPWRFN}" - ${ddc_freqs} 2>>$HOME/ram/scanner.log >$HOME/ram/checkSpecResults
-    echo "checkSpectrumForCarrier results" >>$HOME/ram/scanner.log
-    cat $HOME/ram/checkSpecResults >>$HOME/ram/scanner.log
+    checkSpectrumForCarrier ${rec_path}/${rdy_rec_name}.raw ${chunksrate} 200 150000 100000 ${FMLIST_SCAN_FM_MIN_PWR_RATIO} "${CPWRFN}" - ${ddc_freqs} 2>>${FMLIST_SCAN_RAM_DIR}/scanner.log >${FMLIST_SCAN_RAM_DIR}/checkSpecResults
+    echo "checkSpectrumForCarrier results" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+    cat ${FMLIST_SCAN_RAM_DIR}/checkSpecResults >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
-      cp $HOME/ram/checkSpecResults ${rec_path}/det${rec_freq}.txt
+      cp ${FMLIST_SCAN_RAM_DIR}/checkSpecResults ${rec_path}/det${rec_freq}.txt
     fi
 
-    source $HOME/ram/checkSpecResults
+    source ${FMLIST_SCAN_RAM_DIR}/checkSpecResults
 
     cat - >${rec_path}/rec${rec_freq}.sh <<EOF
 #!bash
@@ -240,7 +240,7 @@ if [ \$NL -le 0 ]; then
   echo "RDS=\"0\"" >>redsea.\${f}.inc
   RDS="0"
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
-    echo "${DTF_RDY}: FM \${f}: NO RDS decode" >>$HOME/ram/scanner.log
+    echo "${DTF_RDY}: FM \${f}: NO RDS decode" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     mv redsea.\${f}.txt redsea.\${f}_noRDS.txt
 
     echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_carrier.\${f}.csv
@@ -253,7 +253,7 @@ if [ \$NL -le 0 ]; then
   fi
 else
   echo "processing freq \$f : decoded rds"
-  echo "FM \$f" >$HOME/ram/LAST
+  echo "FM \$f" >${FMLIST_SCAN_RAM_DIR}/LAST
   echo "RDS=\"1\"" >>redsea.\${f}.inc
   RDS="1"
   RDSCOLS="\$( redsea.json2csv.sh redsea.\${f}.txt )"
@@ -264,7 +264,7 @@ else
     echo ",\${RDSCOLS}" >>fm_rds.\${f}.csv
 
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
-    echo "${DTF_RDY}: FM \$f: decoded RDS" >>$HOME/ram/scanner.log
+    echo "${DTF_RDY}: FM \$f: decoded RDS" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
   fi
   if [ ${FMLIST_SCAN_FOUND_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
     scanToneFeedback.sh found
@@ -297,15 +297,15 @@ EOF
     done
 
     if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-      echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before parallel: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
-      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
+      echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before parallel: $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
     fi
     # batch process prepared scripts in/with parallel
     # use nice, that processing does not disturb background recording of next chunk
     time nice parallel --no-notice --jobs ${par_jobs} "bash ${rec_path}/rec${rec_freq}.sh" <${rec_path}/rec${rec_freq}.txt
     if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-      echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh after parallel of ${carrier_num_det} carriers: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
-      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
+      echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh after parallel of ${carrier_num_det} carriers: $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
     fi
 
     # delete processed file
@@ -323,9 +323,9 @@ EOF
         if [ ${MFREE} -ge ${FMLIST_SCAN_SAVE_MIN_MEM} ]; then
           mv ${rec_path}/${rdy_rec_name}.raw ${rec_path}/raw__srate_${chunksrate}__freq_${rec_freq}.bin
           gzip ${rec_path}/raw__srate_${chunksrate}__freq_${rec_freq}.bin
-          echo "$(date -u "+%Y-%m-%dT%T Z"): keeping record as raw__srate_${chunksrate}__freq_${rec_freq}.bin" >>$HOME/ram/scanner.log
+          echo "$(date -u "+%Y-%m-%dT%T Z"): keeping record as raw__srate_${chunksrate}__freq_${rec_freq}.bin" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         else
-          echo "$(date -u "+%Y-%m-%dT%T Z"): ${MFREE} MB free memory is below ${FMLIST_SCAN_SAVE_MIN_MEM}: NOT keeping record of freq ${rec_freq}" >>$HOME/ram/scanner.log
+          echo "$(date -u "+%Y-%m-%dT%T Z"): ${MFREE} MB free memory is below ${FMLIST_SCAN_SAVE_MIN_MEM}: NOT keeping record of freq ${rec_freq}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         fi
       fi
     fi
@@ -352,10 +352,10 @@ EOF
     sleep 0.5
 
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
-      echo "rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${rec_path}/${rdy_rec_name}.raw finished" >>$HOME/ram/scanner.log
-      echo "ls -alh ${rec_path}/*.raw :" >>$HOME/ram/scanner.log
-      ls -alh ${rec_path}/*.raw >>$HOME/ram/scanner.log
-      cat ${rec_path}/${act_rec_name}.log >>$HOME/ram/scanner.log
+      echo "rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${rec_path}/${rdy_rec_name}.raw finished" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "ls -alh ${rec_path}/*.raw :" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      ls -alh ${rec_path}/*.raw >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      cat ${rec_path}/${act_rec_name}.log >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     fi
   fi
 
@@ -379,7 +379,7 @@ echo "FM scan finished ${TDUR} sec" >>${rec_path}/scan_duration.txt
 echo "FM scan found ${NUMRDS} RDS carriers and ${NUMCAR} plain carriers"
 echo "FM scan found ${NUMRDS} RDS carriers and ${NUMCAR} plain carriers" >>${rec_path}/scan_duration.txt
 if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
-  echo "FM scan finished at ${DTF}. Duration ${TDUR} sec." >>$HOME/ram/scanner.log
+  echo "FM scan finished at ${DTF}. Duration ${TDUR} sec." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 fi
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ] && [ ${FMLIST_SCAN_PWM_FEEDBACK} -ne 0 ]; then
   scanToneFeedback.sh fm ${NUMRDS}

@@ -17,19 +17,9 @@ fi
 apt-get -y install build-essential git git-gui gitk cmake libtool autotools-dev automake colordiff jq
 apt-get -y install usbutils libusb-1.0-0-dev libsndfile1-dev
 
-NRAM=$(grep -c /home/${FMLIST_SCAN_USER}/ram /etc/fstab)
-if [ $NRAM -eq 0 ]; then
-  echo "installing tmpfs (ramdisk) to /etc/fstab"
-  echo "tmpfs /home/${FMLIST_SCAN_USER}/ram tmpfs rw,noexec,user,noatime,mode=0777,uid=${FMLIST_SCAN_USER},gid=${FMLIST_SCAN_USER} 0 0" >>/etc/fstab
-  sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/ram"
-  sudo -u ${FMLIST_SCAN_USER} bash -c "mount /home/${FMLIST_SCAN_USER}/ram"
-fi
-
 sed -i '/\/mnt\/sda1/d' /etc/fstab
 cat fstab >>/etc/fstab
-mkdir -p /mnt/usbext4
 mkdir -p /mnt/sda1
-mkdir -p /mnt/sda2
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /mnt/sda1
 
 
