@@ -1,13 +1,16 @@
 #!/bin/bash
 
 source $HOME/.config/fmlist_scan/config
+if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
+  mkdir -p "${FMLIST_SCAN_RAM_DIR}"
+fi
 
 # http://blog.petrilopia.net/linux/raspberry-pi-set-time-gps-dongle/
 
 # ${FMLIST_SCAN_GPS_COORDS} : "static", "gps", "auto"
 #   auto: try gpsd -> if not available, then use static coordinates
 
-cd $HOME/ram
+cd ${FMLIST_SCAN_RAM_DIR}
 SYSTIM="$( date -u "+%Y-%m-%dT%T.%NZ" )"
 SET_SYSTIM="0"
 SET_STATIC="0"

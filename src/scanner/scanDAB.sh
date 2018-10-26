@@ -12,9 +12,9 @@ DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
 DTFREC="$(date -u "+%Y-%m-%dT%H%M%S")"
 TBEG="$(date -u +%s)"
 
-rec_path="$HOME/ram/scan_${DTFREC}_DAB"
+rec_path="${FMLIST_SCAN_RAM_DIR}/scan_${DTFREC}_DAB"
 if [ ! -z "$1" ]; then
-  rec_path="$HOME/ram/$1"
+  rec_path="${FMLIST_SCAN_RAM_DIR}/$1"
 fi
 if [ ! -d "${rec_path}" ]; then
   mkdir -p "${rec_path}"
@@ -24,41 +24,41 @@ echo "DAB scan started at ${DTF}"
 echo "DAB scan started at ${DTF}" >${rec_path}/scan_duration.txt
 
 # get ${GPSSRC} for use in dabscan.inc
-GPSVALS=$( ( flock -s 213 ; cat $HOME/ram/gpscoor.inc 2>/dev/null ) 213>gps.lock )
-echo "${GPSVALS}" >$HOME/ram/gpsvals.inc
-source $HOME/ram/gpsvals.inc
-rm $HOME/ram/gpsvals.inc
+GPSVALS=$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>gps.lock )
+echo "${GPSVALS}" >${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+source ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+rm ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
 
 
-if [ ! -f $HOME/ram/dabscan.inc ]; then
+if [ ! -f ${FMLIST_SCAN_RAM_DIR}/dabscan.inc ]; then
   if [ -f $HOME/.config/fmlist_scan/dabscan.inc ]; then
-    cp $HOME/.config/fmlist_scan/dabscan.inc $HOME/ram/
-    echo "copied scan parameters from $HOME/.config/fmlist_scan/dabscan.inc to $HOME/ram/dabscan.inc. edit this file for use with next scan."
+    cp $HOME/.config/fmlist_scan/dabscan.inc ${FMLIST_SCAN_RAM_DIR}/
+    echo "copied scan parameters from $HOME/.config/fmlist_scan/dabscan.inc to ${FMLIST_SCAN_RAM_DIR}/dabscan.inc. edit this file for use with next scan."
   else
-    cat - <<'EOF' >$HOME/ram/dabscan.inc
+    cat - <<'EOF' >${FMLIST_SCAN_RAM_DIR}/dabscan.inc
 chanlist=dab_chanlist.txt
 DABOPT="-Q -A 2000 -E 3 -W 5000"
 EOF
-    echo "wrote default scan parameters to $HOME/ram/dabscan.inc. edit this file for use with next scan."
+    echo "wrote default scan parameters to ${FMLIST_SCAN_RAM_DIR}/dabscan.inc. edit this file for use with next scan."
   fi
 fi
-echo "reading scan parameters (chanlist, DABOPT) from $HOME/ram/dabscan.inc"
-source $HOME/ram/dabscan.inc
+echo "reading scan parameters (chanlist, DABOPT) from ${FMLIST_SCAN_RAM_DIR}/dabscan.inc"
+source ${FMLIST_SCAN_RAM_DIR}/dabscan.inc
 
 if [ ! -z "${FMLIST_SCAN_PPM}" ]; then
   DABOPT="${DABOPT} -p ${FMLIST_SCAN_PPM}"
 fi
 
-chanpath="$HOME/ram/${chanlist}"
+chanpath="${FMLIST_SCAN_RAM_DIR}/${chanlist}"
 echo "chanpath=${chanpath}"
 if [ ! -f "${chanpath}" ]; then
   echo "chanpath does not exist"
   if [ -f "${HOME}/.config/fmlist_scan/${chanlist}" ]; then
     echo "copying chanlist "${HOME}/.config/fmlist_scan/${chanlist}" to ${chanpath}"
-    echo "copying chanlist "${HOME}/.config/fmlist_scan/${chanlist}" to ${chanpath}" >>$HOME/ram/scanner.log
+    echo "copying chanlist "${HOME}/.config/fmlist_scan/${chanlist}" to ${chanpath}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     cp "${HOME}/.config/fmlist_scan/${chanlist}" "${chanpath}"
   else
-    echo "Error: cannot find channellist file ${chanlist} configured in $HOME/ram/dabscan.inc !"
+    echo "Error: cannot find channellist file ${chanlist} configured in ${FMLIST_SCAN_RAM_DIR}/dabscan.inc !"
     exit 10
   fi
 fi
@@ -73,16 +73,16 @@ if /bin/false; then
   echo ""
 fi
 
-echo "" >>$HOME/ram/scanner.log
+echo "" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 
 
 if [ ${FMLIST_SCAN_DAB_USE_PRESCAN} -ne 0 ]; then
   allchans=$( tr '\n' ',' <"${chanpath}" |sed 's#,$##g' )
-  echo "running prescanDAB -W 64 -A 2 -C ${FMLIST_SCAN_DAB_MIN_AUTOCORR} -L ${allchans} .." >>$HOME/ram/scanner.log
-  prescanDAB -W 64 -A 2 -C ${FMLIST_SCAN_DAB_MIN_AUTOCORR} -L "${allchans}" >$HOME/ram/dabscanout.inc
-  echo "" >>$HOME/ram/scanner.log
-  cat $HOME/ram/dabscanout.inc >>$HOME/ram/scanner.log
-  . $HOME/ram/dabscanout.inc
+  echo "running prescanDAB -W 64 -A 2 -C ${FMLIST_SCAN_DAB_MIN_AUTOCORR} -L ${allchans} .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  prescanDAB -W 64 -A 2 -C ${FMLIST_SCAN_DAB_MIN_AUTOCORR} -L "${allchans}" >${FMLIST_SCAN_RAM_DIR}/dabscanout.inc
+  echo "" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  cat ${FMLIST_SCAN_RAM_DIR}/dabscanout.inc >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  . ${FMLIST_SCAN_RAM_DIR}/dabscanout.inc
   #echo ${#dabchannels[@]} ${dabchannels[@]}
 else
   allchans=$( tr '\n' ' ' <"${chanpath}" )
@@ -92,15 +92,15 @@ fi
 NUMFOUND=0
 for CH in $(echo "${dabchannels[@]}") ; do
 
-  if [ -f "$HOME/ram/stopScanLoop" ]; then
+  if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
     break
   fi
   DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
   GPS="$($HOME/bin/get_gpstime.sh)"
-  GPSV="$( ( flock -s 213 ; cat $HOME/ram/gpscoor.inc 2>/dev/null ) 213>gps.lock )"
-  echo "${GPSV}" >$HOME/ram/gpsvals.inc
-  source $HOME/ram/gpsvals.inc
-  rm $HOME/ram/gpsvals.inc
+  GPSV="$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>gps.lock )"
+  echo "${GPSV}" >${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+  source ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+  rm ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
   GPSCOLS="${GPSLAT},${GPSLON},${GPSMODE},${GPSALT},${GPSTIM}"
 
   echo "$CH"
@@ -112,8 +112,8 @@ for CH in $(echo "${dabchannels[@]}") ; do
   echo "DAB_MIN_AUTOCORR=\"${FMLIST_SCAN_DAB_MIN_AUTOCORR}\"" >>"${rec_path}/DAB_$CH.inc"
 
   if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-    echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanDAB.sh before dab-rtlsdr -C ${CH}: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
-    echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
+    echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanDAB.sh before dab-rtlsdr -C ${CH}: $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+    echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
   fi
 
   dab-rtlsdr -C $CH ${DABOPT} &>"${rec_path}/DAB_$CH.log"
@@ -129,16 +129,16 @@ for CH in $(echo "${dabchannels[@]}") ; do
 
   if [ $NP -eq 0 ]; then
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
-      echo "${DTF}: DAB ${CH}: NO station" >>$HOME/ram/scanner.log
+      echo "${DTF}: DAB ${CH}: NO station" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       mv "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_no-station.log"
     else
       rm "${rec_path}/DAB_${CH}.log"
     fi
   else
-    echo "DAB_$CH" >$HOME/ram/LAST
+    echo "DAB_$CH" >${FMLIST_SCAN_RAM_DIR}/LAST
     NUMFOUND=$[ $NUMFOUND + 1 ]
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
-      echo "${DTF}: DAB ${CH}: DETECTED station" >>$HOME/ram/scanner.log
+      echo "${DTF}: DAB ${CH}: DETECTED station" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     fi
     if [ ${FMLIST_SCAN_FOUND_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
       scanToneFeedback.sh found
@@ -150,8 +150,8 @@ for CH in $(echo "${dabchannels[@]}") ; do
 done
 
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-  echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanDAB.sh after dab-rtlsdr: $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/scanner.log
-  echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>$HOME/ram/cputemp.csv
+  echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanDAB.sh after dab-rtlsdr: $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
 fi
 
 TEND="$(date -u +%s)"
@@ -164,7 +164,7 @@ echo "DAB scan finished ${TDUR} sec" >>${rec_path}/scan_duration.txt
 echo "DAB scan found ${NUMFOUND} stations"
 echo "DAB scan found ${NUMFOUND} stations" >>${rec_path}/scan_duration.txt
 if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
-  echo "DAB scan finished at ${DTF}. Duration ${TDUR} sec." >>$HOME/ram/scanner.log
+  echo "DAB scan finished at ${DTF}. Duration ${TDUR} sec." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 fi
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ] && [ ${FMLIST_SCAN_PWM_FEEDBACK} -ne 0 ]; then
   scanToneFeedback.sh dab ${NUMFOUND}

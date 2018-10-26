@@ -2,8 +2,3 @@
 * replace /etc/wpa_supplicant/wpa_supplicant.conf - if on exists on USB
 allows to add new wifi network with ssid and psk.
 
-* replace '$HOME/ram' with '/dev/shm/fmlist_scan'
-and create symlink '$HOME/ram' linking to '/dev/shm/fmlist_scan'
-and create environment variable FMLIST_SCAN_OS_RAM and FMLIST_SCAN_RAM.
-see https://unix.stackexchange.com/questions/26364/how-can-i-create-a-tmpfs-as-a-regular-non-root-user
-

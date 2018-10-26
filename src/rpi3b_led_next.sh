@@ -9,9 +9,9 @@ fi
 
 CURR="$(date -u +%s)"
 
-if [ -f $HOME/ram/STATE ]; then
-  S="$(cat $HOME/ram/STATE)"
-  LAST="$(stat -c %Y $HOME/ram/STATE)"
+if [ -f ${FMLIST_SCAN_RAM_DIR}/STATE ]; then
+  S="$(cat ${FMLIST_SCAN_RAM_DIR}/STATE)"
+  LAST="$(stat -c %Y ${FMLIST_SCAN_RAM_DIR}/STATE)"
 else
   S=0
   LAST=0
@@ -62,5 +62,5 @@ elif [ $S -eq 3 ]; then
 fi
 
 S="$[ ($S + 1) % 4 ]"
-echo -n "$S" >$HOME/ram/STATE
+echo -n "$S" >${FMLIST_SCAN_RAM_DIR}/STATE
 

@@ -2,23 +2,26 @@
 
 export LC_ALL=C
 source $HOME/.config/fmlist_scan/config
+if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
+  mkdir -p "${FMLIST_SCAN_RAM_DIR}"
+fi
 
 if [ -f $HOME/.config/fmlist_scan/fmscan.inc ]; then
-  cp $HOME/.config/fmlist_scan/fmscan.inc $HOME/ram/
+  cp $HOME/.config/fmlist_scan/fmscan.inc ${FMLIST_SCAN_RAM_DIR}/
 fi
 
 if [ -f $HOME/.config/fmlist_scan/dabscan.inc ]; then
-  cp $HOME/.config/fmlist_scan/dabscan.inc $HOME/ram/
+  cp $HOME/.config/fmlist_scan/dabscan.inc ${FMLIST_SCAN_RAM_DIR}/
 fi
 
 if [ -f $HOME/.config/fmlist_scan/dab_chanlist.txt ]; then
-  cp $HOME/.config/fmlist_scan/dab_chanlist.txt $HOME/ram/
+  cp $HOME/.config/fmlist_scan/dab_chanlist.txt ${FMLIST_SCAN_RAM_DIR}/
 fi
 
 N=1
 NUM_RTL_FAILS=0
 
-cd $HOME/ram
+cd ${FMLIST_SCAN_RAM_DIR}
 
 if [ $( echo "$PATH" | grep -c "/usr/local/bin" ) -eq 0 ]; then
   export PATH=/usr/local/bin:$PATH
@@ -32,40 +35,40 @@ if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   sudo -E $HOME/bin/rpi3b_led_init.sh
 fi
 
-if [ -f "$HOME/ram/stopScanLoop" ]; then
-  rm "$HOME/ram/stopScanLoop"
+if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
+  rm "${FMLIST_SCAN_RAM_DIR}/stopScanLoop"
 fi
 
 #
 
-echo -e "\\nSTARTING_SCANNER\\n\\n" >>$HOME/ram/scanner.log
+echo -e "\\nSTARTING_SCANNER\\n\\n" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 
 
-echo -e "\\nhostnamectl" >>$HOME/ram/scanner.log
-hostnamectl >>$HOME/ram/scanner.log
-echo "" >>$HOME/ram/scanner.log
+echo -e "\\nhostnamectl" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+hostnamectl >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+echo "" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 
 
-echo -e "\\n/etc/os-release:" >>$HOME/ram/scanner.log
-cat /etc/os-release >>$HOME/ram/scanner.log
-echo "" >>$HOME/ram/scanner.log
+echo -e "\\n/etc/os-release:" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+cat /etc/os-release >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+echo "" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 
-echo -e "\\nlsb_release -a:" >>$HOME/ram/scanner.log
-lsb_release -a >>$HOME/ram/scanner.log
-echo "" >>$HOME/ram/scanner.log
+echo -e "\\nlsb_release -a:" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+lsb_release -a >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+echo "" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-  echo -e "\\nvcgencmd version:" >>$HOME/ram/scanner.log
-  vcgencmd version >>$HOME/ram/scanner.log
-  echo "" >>$HOME/ram/scanner.log
+  echo -e "\\nvcgencmd version:" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  vcgencmd version >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  echo "" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 fi
 
-echo -e "\\n/proc/cpuinfo:" >>$HOME/ram/scanner.log
-cat /proc/cpuinfo >>$HOME/ram/scanner.log
-echo "" >>$HOME/ram/scanner.log
+echo -e "\\n/proc/cpuinfo:" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+cat /proc/cpuinfo >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+echo "" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 
 NUMCPUS=$(cat /proc/cpuinfo | grep ^processor | wc -l)
-echo -e "\\nNUMCPUS=${NUMCPUS}\\n" >>$HOME/ram/scanner.log
+echo -e "\\nNUMCPUS=${NUMCPUS}\\n" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 
 if [ ${FMLIST_SCAN_SAVE_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   sleep 1
@@ -74,11 +77,11 @@ fi
 
 # temperature - human readable: $(vcgencmd measure_temp)
 # temperature in /1000 degree:  $(cat /sys/class/thermal/thermal_zone0/temp)
-# echo -e "\\nTemperature: $(cat /sys/class/thermal/thermal_zone0/temp)\\n" >>$HOME/ram/scanner.log
+# echo -e "\\nTemperature: $(cat /sys/class/thermal/thermal_zone0/temp)\\n" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 
 while /bin/true; do
 
-  if [ -f "$HOME/ram/stopScanLoop" ]; then
+  if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
     break
   fi
 
@@ -89,7 +92,7 @@ while /bin/true; do
   TESTED_FM_DEV="0"
   if [ "${FMLIST_SCAN_FM}" != "0" ] && [ "${FMLIST_SCAN_FM}" != "OFF" ]; then
     echo "test rtl_sdr for FM ${FMLIST_FM_RTLSDR_DEV}"
-    echo "test rtl_sdr for FM ${FMLIST_FM_RTLSDR_DEV}" >>$HOME/ram/scanner.log
+    echo "test rtl_sdr for FM ${FMLIST_FM_RTLSDR_DEV}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     if [ -z "${FMLIST_FM_RTLSDR_DEV}" ]; then
       FMLIST_FM_RTLSDR_OPT=""
       TESTED_FIRST_DEV="1"
@@ -97,10 +100,10 @@ while /bin/true; do
       FMLIST_FM_RTLSDR_OPT="-d ${FMLIST_FM_RTLSDR_DEV}"
     fi
     TESTED_FM_DEV="1"
-    rtl_sdr -f 100M -n 512 ${FMLIST_FM_RTLSDR_OPT} $HOME/ram/test.raw &>>$HOME/ram/scanner.log
+    rtl_sdr -f 100M -n 512 ${FMLIST_FM_RTLSDR_OPT} ${FMLIST_SCAN_RAM_DIR}/test.raw &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
     if [ $? -ne 0 ]; then
       echo "error at test rtl_sdr! for FM"
-      echo "error at test rtl_sdr! for FM" &>>$HOME/ram/scanner.log
+      echo "error at test rtl_sdr! for FM" &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
       if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
         sudo -E $HOME/bin/rpi3b_led_blinkRed.sh
         scanToneFeedback.sh error
@@ -109,7 +112,7 @@ while /bin/true; do
       if [ ${NUM_RTL_FAILS} -eq ${FMLIST_SCAN_DEAD_RTL_TRIES} ] && [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
         DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
         echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
-        echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>$HOME/ram/scanner.log
+        echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         saveScanResults.sh savelog
         sudo reboot now
       fi
@@ -126,16 +129,16 @@ while /bin/true; do
   else
     # test 2nd RTL dongle for DAB
     echo "test rtl_sdr for DAB ${FMLIST_DAB_RTLSDR_DEV}"
-    echo "test rtl_sdr for DAB ${FMLIST_DAB_RTLSDR_DEV}" >>$HOME/ram/scanner.log
+    echo "test rtl_sdr for DAB ${FMLIST_DAB_RTLSDR_DEV}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     if [ -z "${FMLIST_DAB_RTLSDR_DEV}" ]; then
       FMLIST_DAB_RTLSDR_OPT=""
     else
       FMLIST_DAB_RTLSDR_OPT="-d ${FMLIST_DAB_RTLSDR_DEV}"
     fi
-    rtl_sdr -f 100M -n 512 ${FMLIST_DAB_RTLSDR_OPT} $HOME/ram/test.raw &>>$HOME/ram/scanner.log
+    rtl_sdr -f 100M -n 512 ${FMLIST_DAB_RTLSDR_OPT} ${FMLIST_SCAN_RAM_DIR}/test.raw &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
     if [ $? -ne 0 ]; then
       echo "error at test rtl_sdr! for DAB"
-      echo "error at test rtl_sdr! for DAB" &>>$HOME/ram/scanner.log
+      echo "error at test rtl_sdr! for DAB" &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
       if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
         sudo -E $HOME/bin/rpi3b_led_blinkRed.sh
         scanToneFeedback.sh error
@@ -144,7 +147,7 @@ while /bin/true; do
       if [ ${NUM_RTL_FAILS} -eq ${FMLIST_SCAN_DEAD_RTL_TRIES} ] && [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
         DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
         echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
-        echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>$HOME/ram/scanner.log
+        echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         saveScanResults.sh savelog
         sudo reboot now
       fi
@@ -157,12 +160,12 @@ while /bin/true; do
   NUM_RTL_FAILS=0
 
   scanFM.sh
-  if [ -f "$HOME/ram/stopScanLoop" ]; then
+  if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
     break
   fi
 
   scanDAB.sh
-  if [ -f "$HOME/ram/stopScanLoop" ]; then
+  if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
     break
   fi
 
@@ -172,7 +175,7 @@ while /bin/true; do
   fi
 
   # always save log .. to have it saved - especially when mobile
-  echo -e "\\n*********** saveScanResults.sh ${FMLIST_SCAN_SAVE_LOG_OPT} \\n" >>$HOME/ram/scanner.log
+  echo -e "\\n*********** saveScanResults.sh ${FMLIST_SCAN_SAVE_LOG_OPT} \\n" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
   saveScanResults.sh ${FMLIST_SCAN_SAVE_LOG_OPT}
 
   if [ ${FMLIST_SCAN_SAVE_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
@@ -188,7 +191,7 @@ while /bin/true; do
   N=$[ $N + 1 ]
 done
 
-echo -e "\\nend of scanLoop. calling saveScanResults.sh savelog .." >>$HOME/ram/scanner.log
+echo -e "\\nend of scanLoop. calling saveScanResults.sh savelog .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 saveScanResults.sh savelog
 
 

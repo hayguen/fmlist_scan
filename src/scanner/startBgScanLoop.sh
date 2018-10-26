@@ -1,6 +1,9 @@
 #!/bin/bash
 
 source $HOME/.config/fmlist_scan/config
+if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
+  mkdir -p "${FMLIST_SCAN_RAM_DIR}"
+fi
 
 # check / mount
 MNTC=$( mount | grep -c "${FMLIST_SCAN_RESULT_DIR}" )
@@ -86,5 +89,5 @@ if [ -z "$SSESSION" ]; then
   exit 10
 fi
 
-echo "1" >$HOME/ram/scanLoopBgRunning
+echo "1" >${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
 
