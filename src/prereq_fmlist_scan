@@ -58,7 +58,7 @@ source setup_leds
 
 source setup_scanner
 
-# add crontab entry: execute gpstime.sh every minute  and  scanner @restart
+# add crontab entry: execute scanner @restart
 source setup_crontab
 
 

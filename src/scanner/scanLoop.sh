@@ -6,6 +6,13 @@ if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
   mkdir -p "${FMLIST_SCAN_RAM_DIR}"
 fi
 
+# start gps in background?
+rm -f "${FMLIST_SCAN_RAM_DIR}/stopGps"
+rm -f "${FMLIST_SCAN_RAM_DIR}/gpscoor.log"
+if [ ${FMLIST_SCAN_SETUP_GPS} ="1" ]; then
+  nice -n 15 $HOME/bin/gpstime.sh >/dev/null 2>&1 &
+fi
+
 if [ -f $HOME/.config/fmlist_scan/fmscan.inc ]; then
   cp $HOME/.config/fmlist_scan/fmscan.inc ${FMLIST_SCAN_RAM_DIR}/
 fi
@@ -202,4 +209,7 @@ if [ ${FMLIST_SCAN_SAVE_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   sleep 1
   scanToneFeedback.sh final
 fi
+
+touch "${FMLIST_SCAN_RAM_DIR}/stopGps"
+rm -f "${FMLIST_SCAN_RAM_DIR}/gpscoor.log"
 

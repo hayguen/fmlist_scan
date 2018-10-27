@@ -23,6 +23,7 @@ export FMLIST_SCAN_PATH="$(pwd)/scanner"
 export FMLIST_SCAN_USER="${FMLIST_SCAN_USER}"   # default OS user is "pi"
 export FMLIST_SCAN_RASPI="${FMLIST_SCAN_RASPI}" # "0" or "1"; default is "1" for a Raspberry Pi hardware
 export FMLIST_SCAN_SETUP_GPS="${FMLIST_SCAN_SETUP_GPS}"  # default "1" to activate gpsd and cronjob for user
+export FMLIST_SCAN_GPS_LOOP_SLEEP="2"           # try to get gps coordinates every 2 sec
 export FMLIST_USER="${FMLIST_USER}"             # optional: username (email) at https://www.fmlist.org/
 export FMLIST_OM_ID="${FMLIST_OM_ID}"           # optional: OM id at https://www.fmlist.org/
 export FMLIST_SCAN_GPS_COORDS="${GPS_DEFAULT}"  # "gps" and "static" are exclusive; "auto" for gps if available, fallback to static

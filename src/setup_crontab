@@ -7,10 +7,9 @@ fi
 # see http://theunixtips.com/bash-automate-cron-job-maintenance/
 (
   echo 'MAILTO=""'
-  crontab -l -u ${FMLIST_SCAN_USER} | grep -v "MAILTO=" | grep -v startBgScanLoop.sh | grep -v checkBgScanLoop.sh | grep -v "# min hour dom mon dow" | grep -v /bin/gpstime.sh  2>/dev/null
-  echo "@reboot                  sleep 30 ; bash -l /home/${FMLIST_SCAN_USER}/bin/startBgScanLoop.sh autostart  >/dev/null 2>&1"
+  crontab -l -u ${FMLIST_SCAN_USER} | grep -v "MAILTO=" | grep -v startBgScanLoop.sh | grep -v checkBgScanLoop.sh | grep -v "# min hour dom mon dow"  2>/dev/null
+  echo "@reboot                  sleep 5 ; bash -l /home/${FMLIST_SCAN_USER}/bin/startBgScanLoop.sh autostart  >/dev/null 2>&1"
   echo "# min hour dom mon dow   command"
-  echo "  *   *    *   *   *     nice -n 15 /home/${FMLIST_SCAN_USER}/bin/gpstime.sh  >/dev/null 2>&1"
   echo "  *   *    *   *   *     /home/${FMLIST_SCAN_USER}/bin/checkBgScanLoop.sh  >/dev/null 2>&1"
 ) | crontab -u ${FMLIST_SCAN_USER} -
 
