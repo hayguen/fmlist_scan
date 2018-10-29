@@ -14,6 +14,17 @@ fi
 if [ -z "${FMLIST_SCAN_SETUP_GPS}" ]; then
   export FMLIST_SCAN_SETUP_GPS="1"
 fi
+
+if [ -z "${FMLIST_SCAN_MOUNT}" ]; then
+  export FMLIST_SCAN_MOUNT="1"
+fi
+if [ -z "${FMLIST_SCAN_RESULT_DEV}" ]; then
+  export FMLIST_SCAN_RESULT_DEV="/dev/sda1"
+fi
+if [ -z "${FMLIST_SCAN_RESULT_DIR}" ]; then
+  export FMLIST_SCAN_RESULT_DIR="/mnt/sda1"
+fi
+
 if [ -z "${FMLIST_USER}" ]; then
   export FMLIST_USER=""
 fi
