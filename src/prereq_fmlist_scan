@@ -3,6 +3,9 @@ BASE=$(pwd)
 if [ -z "${FMLIST_SCAN_USER}" ]; then
   export FMLIST_SCAN_USER="pi"
 fi
+if [ -z "${FMLIST_SCAN_MOUNT}" ]; then
+  export FMLIST_SCAN_MOUNT="1"
+fi
 
 apt-get -y install htop powertop at lsof mc nano vim zip alpine
 apt-get -y install ncdu screen parallel sshfs wget iftop dos2unix
@@ -17,11 +20,15 @@ fi
 apt-get -y install build-essential git git-gui gitk cmake libtool autotools-dev automake colordiff jq
 apt-get -y install usbutils libusb-1.0-0-dev libsndfile1-dev
 
-sed -i '/\/mnt\/sda1/d' /etc/fstab
-cat fstab >>/etc/fstab
-mkdir -p /mnt/sda1
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /mnt/sda1
-
+if [ "${FMLIST_SCAN_MOUNT}" = "1" ]; then
+  #sed -i '/\/mnt\/sda1/d' /etc/fstab
+  # deletion with sed requires the '/' for the regexp. thus '/' requires to be escaped
+  DELEXPR=$( echo -n "${FMLIST_SCAN_RESULT_DIR}" | sed 's#/#\\/#g' )
+  sed -i "/${DELEXPR}/d" /etc/fstab
+  echo "${FMLIST_SCAN_RESULT_DEV}  ${FMLIST_SCAN_RESULT_DIR}  vfat    defaults,noatime,user,noauto  0  0" >>/etc/fstab
+  mkdir -p ${FMLIST_SCAN_RESULT_DIR}
+  chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} ${FMLIST_SCAN_RESULT_DIR}
+fi
 
 if [ ! -f /home/${FMLIST_SCAN_USER}/.bash_aliases ]; then
   sudo -u ${FMLIST_SCAN_USER} bash -c "touch /home/${FMLIST_SCAN_USER}/.bash_aliases"

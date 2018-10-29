@@ -44,3 +44,18 @@ for f in `ls -1 *.sh scanner/*.sh` ; do
     echo "$b not in ${BINDIR}"
   fi
 done
+
+# simplify diff with current settings
+
+CONFDIR="${BINDIR}/../.config/fmlist_scan"
+cat "${CONFDIR}/config"            >setup_config.user
+echo ""                           >>setup_config.user
+cat "${CONFDIR}/fmscan.inc"       >>setup_config.user
+echo ""                           >>setup_config.user
+cat "${CONFDIR}/dabscan.inc"      >>setup_config.user
+echo ""                           >>setup_config.user
+cat "${CONFDIR}/dab_chanlist.txt" >>setup_config.user
+
+crontab -l >crontab.user
+
+cp /lib/systemd/system/gpio-input.service pishutdown/gpio-input.service.sys
