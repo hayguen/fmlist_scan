@@ -8,7 +8,7 @@ if [ -z "${FMLIST_SCAN_MOUNT}" ]; then
 fi
 
 apt-get -y install htop powertop at lsof mc nano vim zip alpine
-apt-get -y install ncdu screen parallel sshfs wget iftop dos2unix
+apt-get -y install ncdu screen parallel sshfs wget curl iftop dos2unix
 apt-get -y install sox lame alsa-utils
 if [ ${FMLIST_SCAN_SETUP_GPS} = "1" ]; then
   apt-get -y install gpsd gpsd-clients
