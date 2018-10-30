@@ -15,6 +15,7 @@ cp scanner/scanToneFeedback.sh  /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/saveScanResults.sh   /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/concatScanResults.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/prepareScanResultsForUpload.sh /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/uploadScanResults.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/redsea.json2csv.sh   /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanTest.sh          /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/recDAB.sh            /home/${FMLIST_SCAN_USER}/bin/
