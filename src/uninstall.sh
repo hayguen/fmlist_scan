@@ -42,6 +42,8 @@ rm -f "$HOME/bin/saveScanResults.sh"
 rm -f "$HOME/bin/concatScanResults.sh"
 rm -f "$HOME/bin/prepareScanResultsForUpload.sh"
 rm -f "$HOME/bin/redsea.json2csv.sh"
+rm -f "$HOME/bin/recDAB.sh"
+rm -f "$HOME/bin/recWFMchunk.sh"
 
 echo "removing calibration script from $HOME/bin .."
 rm -f "$HOME/bin/kal.sh"
