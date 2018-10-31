@@ -98,7 +98,17 @@ if [ -z "$NSMP" ]; then
   exit 0
 fi
 
-FN="DAB-${chan}_${DTFREC}_2048000Hz_PCM8_IQ.raw"
+$HOME/bin/gpstime.sh single
+if [ -f "${FMLIST_SCAN_RAM_DIR}/gpscoor.inc" ]; then
+  GPSV="$( ( flock -s 213 ; cat "${FMLIST_SCAN_RAM_DIR}/gpscoor.inc" 2>/dev/null ) 213>gps.lock )"
+  echo "${GPSV}" >${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+  source ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+  rm ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+  FN="DAB-${chan}_${DTFREC}_2048000Hz_PCM8IQ_${GPSFN}.raw"
+else
+  FN="DAB-${chan}_${DTFREC}_2048000Hz_PCM8IQ.raw"
+fi
+
 FPN="${FMLIST_SCAN_RAM_DIR}/${FN}"
 echo "running rtl_sdr -f ${freq} -s 2048000 -n ${NSMP} ${FMLIST_DAB_RTLSDR_OPT} ${FPN} .."
 rtl_sdr -f ${freq} -s 2048000 -n ${NSMP} ${FMLIST_DAB_RTLSDR_OPT} "${FPN}"
