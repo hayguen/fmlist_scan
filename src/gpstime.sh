@@ -5,6 +5,21 @@ if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
   mkdir -p "${FMLIST_SCAN_RAM_DIR}"
 fi
 
+# usage: gpstime.sh [single]
+#   single:  single pass, then exit
+if [ "$1" = "single" ]; then
+  if [ -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; then
+    rm "${FMLIST_SCAN_RAM_DIR}/stopGps"
+  fi
+  if [ -f "${FMLIST_SCAN_RAM_DIR}/gpscoor.inc" ]; then
+    rm "${FMLIST_SCAN_RAM_DIR}/gpscoor.inc"
+  fi
+fi
+if [ ! "${FMLIST_SCAN_SETUP_GPS}" = "1" ]; then
+  echo "error: gpsd not installed!"
+  exit 10
+fi
+
 while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
 
   source $HOME/.config/fmlist_scan/config
@@ -96,6 +111,8 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
       echo "GPSLON=\"${GPSLON}\""   >>gpscoor.inc
       echo "GPSMODE=\"${GPSMODE}\"" >>gpscoor.inc
       echo "GPSALT=\"${GPSALT}\""   >>gpscoor.inc
+      GPSFN="${GPSSRC}#${GPSMODE}#${GPSLAT}#${GPSLON}#${GPSALT}"
+      echo "GPSFN=\"${GPSFN}\""     >>gpscoor.inc
       if [ ${GPSMODE} -ne 0 ]; then
         echo "${GPSLAT},${GPSLON},${GPSALT},${GPSTIM},${SYSTIM}" >>gpscoor.csv
       fi
@@ -115,6 +132,10 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
     fi
   else
     echo "No GPS coordinates!"
+  fi
+
+  if [ "$1" = "single" ]; then
+    exit 0
   fi
 
   sleep ${FMLIST_SCAN_GPS_LOOP_SLEEP}

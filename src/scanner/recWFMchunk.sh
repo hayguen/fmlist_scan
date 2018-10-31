@@ -31,7 +31,17 @@ if [ -z "$chunknumsmp" ]; then
   exit 0
 fi
 
-FN="FM-${chan}M_${DTFREC}_${chunksrate}Hz_PCM8_IQ.raw"
+$HOME/bin/gpstime.sh single
+if [ -f "${FMLIST_SCAN_RAM_DIR}/gpscoor.inc" ]; then
+  GPSV="$( ( flock -s 213 ; cat "${FMLIST_SCAN_RAM_DIR}/gpscoor.inc" 2>/dev/null ) 213>gps.lock )"
+  echo "${GPSV}" >${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+  source ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+  rm ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
+  FN="FM-${chan}M_${DTFREC}_${chunksrate}Hz_PCM8IQ_${GPSFN}.raw"
+else
+  FN="FM-${chan}M_${DTFREC}_${chunksrate}Hz_PCM8IQ.raw"
+fi
+
 FPN="${FMLIST_SCAN_RAM_DIR}/${FN}"
 echo "running rtl_sdr -f ${freq} -s ${chunksrate} -n ${chunknumsmp} ${RTLSDR_OPT} ${RTL_BW_OPT} ${FPN} .."
 rtl_sdr -f ${freq} -s ${chunksrate} -n ${chunknumsmp} ${RTLSDR_OPT} ${RTL_BW_OPT} "${FPN}"
