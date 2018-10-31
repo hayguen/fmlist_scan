@@ -1,4 +1,1 @@
 
-* replace /etc/wpa_supplicant/wpa_supplicant.conf - if on exists on USB
-allows to add new wifi network with ssid and psk.
-
