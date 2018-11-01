@@ -13,6 +13,11 @@ if [ -z "${chan}" ] || [ "${chan}" = "-h" ] || [ "${chan}" = "--help" ] || [ -z 
   exit 0
 fi
 
+if [ -f "${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning" ]; then
+  echo "scanLoop is running! stop with 'stopBgScanLoop.sh' for recording"
+  exit 10
+fi
+
 freq="${chan}e6"
 
 DTFREC="$(date -u "+%Y-%m-%dT%Hh%Mm%SZ")"
