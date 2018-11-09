@@ -8,7 +8,7 @@ fi
 source $HOME/.config/fmlist_scan/config
 
 if [ ! "$HOME" = "/home/${FMLIST_SCAN_USER}" ]; then
-  echo "error: call sudo with option '-E' to preserver users home directory!"
+  echo "error: call sudo with option '-E' to preserve users home directory!"
   exit 0
 fi
 
