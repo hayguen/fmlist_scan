@@ -1,0 +1,11 @@
+
+BASE=$(pwd)
+
+# https://github.com/Phaeilo/layerpie.git
+GITUSER=Phaeilo
+GITPROJ=layerpie
+
+cd ${BASE}/git/${GITUSER}/${GITPROJ}
+sh installer
+
+cd ${BASE}
