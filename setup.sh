@@ -3,6 +3,7 @@
 #export FMLIST_SCAN_USER="hayguen"  # default OS user "pi"
 #export FMLIST_SCAN_RASPI="0"       # default "1" if Raspberry Pi hardware
 #export FMLIST_SCAN_SETUP_GPS="0"   # default "1" to activate gpsd and cronjob for user
+#export FMLIST_SCAN_SETUP_LPIE="0"  # default "1" to install layerpie
 
 #export FMLIST_SCAN_MOUNT="0"       # default "1" to setup FMLIST_SCAN_RESULT_DEV in /etc/fstab
 #export FMLIST_SCAN_RESULT_DEV="/dev/sda1"

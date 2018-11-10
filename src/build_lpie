@@ -1,0 +1,25 @@
+
+BASE=$(pwd)
+
+# https://github.com/Phaeilo/layerpie.git
+GITUSER=Phaeilo
+GITPROJ=layerpie
+
+if [ ! -d ${BASE}/git/${GITUSER} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}
+fi
+
+cd ${BASE}/git/${GITUSER}
+if [ -d ${GITPROJ} ]; then
+  cd ${GITPROJ}
+  git pull --rebase
+else
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+fi
+
+cd ${BASE}/git/${GITUSER}/${GITPROJ}
+sh mk_installer
+
+echo "remaining todo: sudo sh install"
+
+cd ${BASE}

@@ -121,7 +121,9 @@ while /bin/true; do
         echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
         echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         saveScanResults.sh savelog
+        echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES} .." >>"${FMLIST_SCAN_RESULT_DIR}/reboots.log"
         sudo reboot now
+        exit 0
       fi
       echo "retry test - because rtl_sdr test for FM failed!"
       continue
@@ -156,7 +158,9 @@ while /bin/true; do
         echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
         echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         saveScanResults.sh savelog
+        echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES} .." >>"${FMLIST_SCAN_RESULT_DIR}/reboots.log"
         sudo reboot now
+        exit 0
       fi
       echo "retry test - because rtl_sdr test for DAB failed!"
       continue
