@@ -6,7 +6,7 @@ make install
 
 if [ -x /usr/local/bin/pishutdown ]; then
   cd ${BASE}/pishutdown
-  cp gpio-input.service /lib/systemd/system/gpio-input.service
+  sed "s#%SCAN_USER%#${FMLIST_SCAN_USER}#g" gpio-input.service >/lib/systemd/system/gpio-input.service
   chmod 644 /lib/systemd/system/gpio-input.service
 
   systemctl daemon-reload
