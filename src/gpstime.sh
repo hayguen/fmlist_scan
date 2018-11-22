@@ -92,10 +92,10 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
     # try to restart gpsd
     sudo systemctl stop gpsd
     if [ $( grep -c "^DEVICES=\"/dev/ttyACM0" /etc/default/gpsd ) -ne 0 ]; then
-      sudo sed -i "/\/dev\/ttyACM0/d" /etc/default/gpsd
+      sudo sed -i "/^DEVICES=/d" /etc/default/gpsd
       sudo bash -c 'echo "DEVICES=\"/dev/ttyUSB0\"" >>/etc/default/gpsd'
-    elif [ $( grep -c "^DEVICES=\"/dev/ttyUSB0" /etc/default/gpsd ) -ne 0 ]; then
-      sudo sed -i "/\/dev\/ttyUSB0/d" /etc/default/gpsd
+    else # if [ $( grep -c "^DEVICES=\"/dev/ttyUSB0" /etc/default/gpsd ) -ne 0 ]; then
+      sudo sed -i "/^DEVICES=/d" /etc/default/gpsd
       sudo bash -c 'echo "DEVICES=\"/dev/ttyACM0\"" >>/etc/default/gpsd'
     fi
     sudo systemctl start gpsd
@@ -145,6 +145,7 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
     fi
   else
     echo "No GPS coordinates!"
+    echo "* ${NL_GPS}: ${GPSLAT} / ${GPSLON} / ${GPSALT} @ gpstime ${GPSTIM} / systime ${SYSTIM} / mode ${GPSMODE} ${GPSSRC}" >>gpsNL-Errs.log
   fi
 
   if [ "$1" = "single" ]; then
