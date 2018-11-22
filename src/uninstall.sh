@@ -46,6 +46,13 @@ rm -f "$HOME/bin/redsea.json2csv.sh"
 rm -f "$HOME/bin/scanTest.sh"
 rm -f "$HOME/bin/recDAB.sh"
 rm -f "$HOME/bin/recWFMchunk.sh"
+rm -f "$HOME/bin/atx-knob.sh"
+rm -f "$HOME/bin/listUSBdevices.sh"
+rm -f "$HOME/bin/powerOff_rtl_by_serial.sh"
+rm -f "$HOME/bin/powerOn_rtl_by_serial.sh"
+rm -f "$HOME/bin/resetScanDevice.sh"
+rm -f "$HOME/bin/rmmod_rtl_dvb.sh"
+
 
 echo "removing calibration script from $HOME/bin .."
 rm -f "$HOME/bin/kal.sh"

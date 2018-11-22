@@ -20,10 +20,22 @@ cp scanner/redsea.json2csv.sh   /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanTest.sh          /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/recDAB.sh            /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/recWFMchunk.sh       /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/atx-knob.sh          /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/listUSBdevices.sh    /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/powerOff_rtl_by_serial.sh /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/powerOn_rtl_by_serial.sh  /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/resetScanDevice.sh   /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/rmmod_rtl_dvb.sh     /home/${FMLIST_SCAN_USER}/bin/
 
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*scan*.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*Scan*.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/redsea.json2csv.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/recDAB.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/recWFMchunk.sh
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/atx-knob.sh
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/listUSBdevices.sh
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/powerOff_rtl_by_serial.sh
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/powerOn_rtl_by_serial.sh
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/resetScanDevice.sh
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/rmmod_rtl_dvb.sh
 
