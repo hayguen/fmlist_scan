@@ -3,3 +3,8 @@ checkSpectrumForCarrier/build
 prescanDAB/build
 pipwm/build
 pishutdown/build
+pishutdown/gpio-input.service.sys
+crontab.user
+fstab.sys
+gpsd.conf.sys
+setup_config.user

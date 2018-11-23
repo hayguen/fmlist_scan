@@ -59,3 +59,4 @@ cat "${CONFDIR}/dab_chanlist.txt" >>setup_config.user
 crontab -l >crontab.user
 
 cp /lib/systemd/system/gpio-input.service pishutdown/gpio-input.service.sys
+cp /etc/default/gpsd gpsd.conf.sys
