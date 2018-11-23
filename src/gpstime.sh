@@ -89,6 +89,17 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
     GPSLAT="${FMLIST_SCAN_GPS_LAT}"
     GPSLON="${FMLIST_SCAN_GPS_LON}"
     GPSALT="${FMLIST_SCAN_GPS_ALT}"
+    # try to restart gpsd
+    sudo systemctl stop gpsd
+    if [ $( grep -c "^DEVICES=\"/dev/ttyACM0" /etc/default/gpsd ) -ne 0 ]; then
+      sudo sed -i "/^DEVICES=/d" /etc/default/gpsd
+      sudo bash -c 'echo "DEVICES=\"/dev/ttyUSB0\"" >>/etc/default/gpsd'
+    else # if [ $( grep -c "^DEVICES=\"/dev/ttyUSB0" /etc/default/gpsd ) -ne 0 ]; then
+      sudo sed -i "/^DEVICES=/d" /etc/default/gpsd
+      sudo bash -c 'echo "DEVICES=\"/dev/ttyACM0\"" >>/etc/default/gpsd'
+    fi
+    sudo systemctl start gpsd
+    FMLIST_SCAN_GPS_LOOP_SLEEP="$[ ${FMLIST_SCAN_GPS_LOOP_SLEEP} + 3 ]"
   elif [ ${SET_NONE} -eq 1 ]; then
     GPSTIM="${SYSTIM}"
     GPSMODE="0"
@@ -99,7 +110,9 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
     GPSALT="0"
   fi
 
-  if [ ! -z "${GPSTIM}" ] && [ ! -z "${GPSLAT}" ] && [ ! -z "${GPSLON}" ]; then
+  NL_GPS="$( echo -n "${GPSLAT} / ${GPSLON} / ${GPSALT} @ gpstime ${GPSTIM} / systime ${SYSTIM} / mode ${GPSMODE} ${GPSSRC}" | wc -l )"
+
+  if [ ! -z "${GPSTIM}" ] && [ ! -z "${GPSLAT}" ] && [ ! -z "${GPSLON}" ] && [ "${NL_GPS}" = "0" ] && [ "${GPSSRC}" != "none" ]; then
     #echo "time with coordinates B: ${GPSLAT} / ${GPSLON} @ ${GPSTIM}"
     ( flock -x 213
       echo "${GPSLAT} / ${GPSLON} / ${GPSALT} @ gpstime ${GPSTIM} / systime ${SYSTIM} / mode ${GPSMODE} ${GPSSRC}"
@@ -132,6 +145,7 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
     fi
   else
     echo "No GPS coordinates!"
+    echo "* ${NL_GPS}: ${GPSLAT} / ${GPSLON} / ${GPSALT} @ gpstime ${GPSTIM} / systime ${SYSTIM} / mode ${GPSMODE} ${GPSSRC}" >>gpsNL-Errs.log
   fi
 
   if [ "$1" = "single" ]; then
