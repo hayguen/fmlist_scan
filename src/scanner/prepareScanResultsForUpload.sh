@@ -1,25 +1,26 @@
 #!/bin/bash
 
+# usage: $0 [all]
+
 source $HOME/.config/fmlist_scan/config
 if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
   mkdir -p "${FMLIST_SCAN_RAM_DIR}"
 fi
 
-
-MNTC=$( mount | grep -c /mnt/sda1 )
+MNTC=$( mount | grep -c "${FMLIST_SCAN_RESULT_DIR}" )
 if [ $MNTC -eq 0 ] && [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
 
-  mount /mnt/sda1
+  mount "${FMLIST_SCAN_RESULT_DIR}"
 
-  MNTC=$( mount | grep -c /mnt/sda1 )
+  MNTC=$( mount | grep -c "${FMLIST_SCAN_RESULT_DIR}" )
   if [ $MNTC -eq 0 ]; then
-    echo "Error: USB stick is not available on /mnt/sda1 !"
+    echo "Error: USB stick is not available on ${FMLIST_SCAN_RESULT_DIR} !"
     exit 0
   fi
 fi
 
 if [ ! -d "${FMLIST_SCAN_RESULT_DIR}" ]; then
-  echo "error"
+  echo "error: ${FMLIST_SCAN_RESULT_DIR} not a directory!"
   exit 10
 fi
 
@@ -46,7 +47,10 @@ t="$(date -u "+%Hh%Mm%SZ")"
 
 GREPOPT="$(date -u "+%Y-%m-%d")"
 if [ "$1" = "all" ]; then
+  echo "detected option 'all': going to prepare ALL data"
   GREPOPT="ignore"
+else
+  echo "option 'all' not used: going to prepare data - up to yesterday"
 fi
 
 ls -1 |egrep "^[0-9]{4}-[0-9]{2}-[0-9]{2}\$" |grep -v "${GREPOPT}" |while read d ; do
