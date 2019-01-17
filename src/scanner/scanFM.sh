@@ -27,7 +27,7 @@ echo "FM scan started at ${DTF}"
 echo "FM scan started at ${DTF}" >${rec_path}/scan_duration.txt
 
 # get ${GPSSRC} for use in fmscan.inc
-GPSVALS=$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>gps.lock )
+GPSVALS=$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )
 echo "${GPSVALS}" >${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
 source ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
 rm ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
@@ -161,7 +161,7 @@ for chunkfreq in $( echo $chunkfrqs EOL ) ; do
 
   if [ ! "$chunkfreq" == "EOL" ]; then
     GPS_ACT="$($HOME/bin/get_gpstime.sh)"
-    GPSV_ACT="$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>gps.lock )"
+    GPSV_ACT="$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )"
     DTF_ACT="$(date -u "+%Y-%m-%dT%T.%N Z")"
     echo "recording frequency $chunkfreq in background. last gps ${GPS_ACT}. now ${DTF_ACT}: rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw"
     if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then

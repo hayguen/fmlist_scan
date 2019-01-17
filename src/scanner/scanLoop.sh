@@ -32,7 +32,7 @@ if [ -f $HOME/.config/fmlist_scan/dab_chanlist.txt ]; then
   cp $HOME/.config/fmlist_scan/dab_chanlist.txt ${FMLIST_SCAN_RAM_DIR}/
 fi
 
-N=1
+N=0
 NUM_RTL_FAILS=0
 
 cd ${FMLIST_SCAN_RAM_DIR}
@@ -99,6 +99,7 @@ while /bin/true; do
     break
   fi
 
+  N=$[ $N + 1 ]
   echo "scanloop iteration $N"
 
   # test RTL dongle for FM
@@ -206,7 +207,6 @@ while /bin/true; do
     sudo -E $HOME/bin/rpi3b_led_blinkRed.sh
   fi
 
-  N=$[ $N + 1 ]
 done
 
 echo -e "\\nend of scanLoop. calling saveScanResults.sh savelog .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log

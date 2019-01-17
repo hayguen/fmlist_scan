@@ -27,7 +27,7 @@ echo "DAB scan started at ${DTF}"
 echo "DAB scan started at ${DTF}" >${rec_path}/scan_duration.txt
 
 # get ${GPSSRC} for use in dabscan.inc
-GPSVALS=$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>gps.lock )
+GPSVALS=$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )
 echo "${GPSVALS}" >${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
 source ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
 rm ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
@@ -100,7 +100,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
   fi
   DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
   GPS="$($HOME/bin/get_gpstime.sh)"
-  GPSV="$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>gps.lock )"
+  GPSV="$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )"
   echo "${GPSV}" >${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
   source ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
   rm ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc

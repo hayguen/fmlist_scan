@@ -129,7 +129,7 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
       if [ ${GPSMODE} -ne 0 ]; then
         echo "${GPSLAT},${GPSLON},${GPSALT},${GPSTIM},${SYSTIM}" >>gpscoor.csv
       fi
-    ) 213>gps.lock
+    ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock
 
     if [ ${SET_SYSTIM} -eq 1 ]; then
       SYST=$(date -d "${SYSTIM}" -u +%s)
