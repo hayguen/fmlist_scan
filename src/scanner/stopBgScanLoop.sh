@@ -8,5 +8,5 @@ fi
 touch "${FMLIST_SCAN_RAM_DIR}/stopScanLoop"
 rm -f ${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
 
-touch "${FMLIST_SCAN_RAM_DIR}/stopGps"
+$HOME/bin/stopGpsLoop.sh
 

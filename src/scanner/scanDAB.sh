@@ -81,8 +81,8 @@ echo "" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 
 if [ ${FMLIST_SCAN_DAB_USE_PRESCAN} -ne 0 ]; then
   allchans=$( tr '\n' ',' <"${chanpath}" |sed 's#,$##g' )
-  echo "running prescanDAB -W 64 -A 2 -C ${FMLIST_SCAN_DAB_MIN_AUTOCORR} -L ${allchans} .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-  prescanDAB -W 64 -A 2 -C ${FMLIST_SCAN_DAB_MIN_AUTOCORR} -L "${allchans}" >${FMLIST_SCAN_RAM_DIR}/dabscanout.inc
+  echo "running prescanDAB -W 64 -A 2 -C ${FMLIST_SCAN_DAB_MIN_AUTOCORR} ${DABPRESCANOPT} -L ${allchans} .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  prescanDAB -W 64 -A 2 -C ${FMLIST_SCAN_DAB_MIN_AUTOCORR} ${DABPRESCANOPT} -L "${allchans}" >${FMLIST_SCAN_RAM_DIR}/dabscanout.inc
   echo "" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
   cat ${FMLIST_SCAN_RAM_DIR}/dabscanout.inc >>${FMLIST_SCAN_RAM_DIR}/scanner.log
   . ${FMLIST_SCAN_RAM_DIR}/dabscanout.inc
