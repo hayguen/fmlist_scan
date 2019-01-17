@@ -1,6 +1,9 @@
 #!/bin/bash
 
 source $HOME/.config/fmlist_scan/config
+if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
+  mkdir -p "${FMLIST_SCAN_RAM_DIR}"
+fi
 
 if [ "${FMLIST_SCAN_FM}" == "0" ] || [ "${FMLIST_SCAN_FM}" == "OFF" ]; then
   echo "FM scan is deactivated with FMLIST_SCAN_FM=${FMLIST_SCAN_FM} in $HOME/.config/fmlist_scan/config"

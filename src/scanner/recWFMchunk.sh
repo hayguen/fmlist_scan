@@ -7,9 +7,11 @@ fi
 
 chan="$1"
 durs="$2"
+shift
+shift
 
 if [ -z "${chan}" ] || [ "${chan}" = "-h" ] || [ "${chan}" = "--help" ] || [ -z "${durs}" ]; then
-  echo "usage: $0 <frequency in MHz> <duration in seconds>"
+  echo "usage: $0 <frequency in MHz> <duration in seconds> [<additional options to rtl_sdr>]"
   exit 0
 fi
 
@@ -48,8 +50,8 @@ else
 fi
 
 FPN="${FMLIST_SCAN_RAM_DIR}/${FN}"
-echo "running rtl_sdr -f ${freq} -s ${chunksrate} -n ${chunknumsmp} ${RTLSDR_OPT} ${RTL_BW_OPT} ${FPN} .."
-rtl_sdr -f ${freq} -s ${chunksrate} -n ${chunknumsmp} ${RTLSDR_OPT} ${RTL_BW_OPT} "${FPN}"
+echo "running rtl_sdr -f ${freq} -s ${chunksrate} -n ${chunknumsmp} ${RTLSDR_OPT} ${RTL_BW_OPT} $@ ${FPN} .."
+rtl_sdr -f ${freq} -s ${chunksrate} -n ${chunknumsmp} ${RTLSDR_OPT} ${RTL_BW_OPT} "$@" "${FPN}"
 
 echo "recorded file is: $( ls -lh "${FPN}" )"
 

@@ -42,6 +42,7 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
       echo "${DTF}: checkBgScanLoop.sh: scanLoopBg screen session is not running! saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       echo "${DTF}: checkBgScanLoop.sh: scanLoopBg screen session is not running! saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
       saveScanResults.sh savelog
+      resetScanDevice.sh all
       pkill scanFM.sh
       pkill scanDAB.sh
       pkill dab-rtlsdr
@@ -57,6 +58,7 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
       echo "${DTF}: checkBgScanLoop.sh: scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       echo "${DTF}: checkBgScanLoop.sh: scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
       stopBgScanLoop.sh
+      resetScanDevice.sh all
       pkill scanLoop.sh
       pkill scanFM.sh
       pkill scanDAB.sh
