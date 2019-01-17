@@ -7,18 +7,7 @@ if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
 fi
 
 # start gps in background?
-rm -f "${FMLIST_SCAN_RAM_DIR}/stopGps"
-rm -f "${FMLIST_SCAN_RAM_DIR}/gpscoor.log"
-echo "FMLIST_SCAN_SETUP_GPS = ${FMLIST_SCAN_SETUP_GPS}" >${FMLIST_SCAN_RAM_DIR}/gpstime.log
-if [ "${FMLIST_SCAN_SETUP_GPS}" = "1" ]; then
-  echo "starting gpstime.sh in background with log to ${FMLIST_SCAN_RAM_DIR}/gpstime.log"
-  echo "starting gpstime.sh in background with log to ${FMLIST_SCAN_RAM_DIR}/gpstime.log" >>${FMLIST_SCAN_RAM_DIR}/gpstime.log
-  #nice -n 15 $HOME/bin/gpstime.sh >>${FMLIST_SCAN_RAM_DIR}/gpstime.log 2>&1 &
-  nice -n 15 $HOME/bin/gpstime.sh >>/dev/null 2>&1 &
-else
-  echo "NOT starting gpstime.sh in background with log to ${FMLIST_SCAN_RAM_DIR}/gpstime.log"
-  echo "NOT starting gpstime.sh in background with log to ${FMLIST_SCAN_RAM_DIR}/gpstime.log" >>${FMLIST_SCAN_RAM_DIR}/gpstime.log
-fi
+$HOME/bin/startGpsLoop.sh
 
 if [ -f $HOME/.config/fmlist_scan/fmscan.inc ]; then
   cp $HOME/.config/fmlist_scan/fmscan.inc ${FMLIST_SCAN_RAM_DIR}/
@@ -221,6 +210,5 @@ if [ ${FMLIST_SCAN_SAVE_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   scanToneFeedback.sh final
 fi
 
-touch "${FMLIST_SCAN_RAM_DIR}/stopGps"
-rm -f "${FMLIST_SCAN_RAM_DIR}/gpscoor.log"
+$HOME/bin/stopGpsLoop.sh
 

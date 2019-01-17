@@ -117,10 +117,15 @@ cp "$HOME/.config/fmlist_scan/fmscan.inc"       "${FMLIST_SCAN_RESULT_DIR}/confi
 sync
 
 
-if [ "$1" = "autostart" ] && [ ${FMLIST_SCAN_AUTOSTART} -eq 0 ]; then
-  echo "autostart is deactivated in $HOME/.config/fmlist_scan/config"
-  echo "autostart is deactivated in $HOME/.config/fmlist_scan/config" >>"${FMLIST_SCAN_RESULT_DIR}/error.log"
-  exit 10
+if [ "$1" = "autostart" ] ; then
+  if [ "${FMLIST_SCAN_GPS_ALL_TIME}" = "1" ]; then
+    $HOME/bin/startGpsLoop.sh
+  fi
+  if [ ${FMLIST_SCAN_AUTOSTART} -eq 0 ]; then
+    echo "autostart is deactivated in $HOME/.config/fmlist_scan/config"
+    echo "autostart is deactivated in $HOME/.config/fmlist_scan/config" >>"${FMLIST_SCAN_RESULT_DIR}/error.log"
+    exit 10
+   fi
 fi
 
 echo "starting screen session 'scanLoopBg' .."

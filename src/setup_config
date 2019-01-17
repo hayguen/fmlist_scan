@@ -34,6 +34,7 @@ export FMLIST_SCAN_SETUP_GPS="${FMLIST_SCAN_SETUP_GPS}"  # default "1" to activa
 export FMLIST_SCAN_GPS_LOOP_SLEEP="2"           # try to get gps coordinates every 2 sec
 export FMLIST_USER="${FMLIST_USER}"             # optional: username (email) at https://www.fmlist.org/
 export FMLIST_OM_ID="${FMLIST_OM_ID}"           # optional: OM id at https://www.fmlist.org/
+export FMLIST_SCAN_GPS_ALL_TIME="1"   # run gps all time
 export FMLIST_SCAN_GPS_COORDS="${GPS_DEFAULT}"  # "gps" and "static" are exclusive; "auto" for gps if available, fallback to static
 export FMLIST_SCAN_GPS_LAT=""               # latitude  for static, e.g. 48.885582
 export FMLIST_SCAN_GPS_LON=""               # longitude for static, e.g. 8.702656
@@ -124,7 +125,10 @@ fi
 # do NOT use options '-s' (samplerate), '-n' (number of samples), '-f' (frequency) or '-w' (bandwidth) here!
 #   reuse devicename from config: \${FMLIST_FM_RTLSDR_DEV}
 
-RTLSDR_OPT=""
+# activate bias-Tee : 4.5V for pream/LNA? by un/commenting correct line below
+BIASTEE="-O T=0"
+#BIASTEE="-O T=1"
+RTLSDR_OPT="\${BIASTEE}"
 if [ ! -z "\${FMLIST_FM_RTLSDR_DEV}" ]; then
   RTLSDR_OPT="\${RTLSDR_OPT} -d \${FMLIST_FM_RTLSDR_DEV}"
 fi
@@ -141,12 +145,19 @@ chanlist="dab_chanlist.txt"
 #   with option '-x', activation enhanced tii algorithm with quality values, reduced -A to 6000 ms
 #   options -t,  -a and -r specify how tii statistics should work ..
 
-DABOPT="-Q -E 3 -W 5000 -A 6000 -c -t 5 -a 0.8 -r 5 -x"
+# activate bias-Tee : 4.5V for pream/LNA? by un/commenting correct line below
+BIASTEE="-O T=0"
+#BIASTEE="-O T=1"
+
+DABOPT="-Q -E 3 -W 5000 -A 6000 -c -t 5 -a 0.8 -r 5 -x \${BIASTEE}"
+DABPRESCANOPT="\${BIASTEE}"
+DABLISTENOPT="-Q -t 40 -a 0.95 -r 40 -x \${BIASTEE}"
 
 if [ "\${GPSSRC}" = "static" ]; then
   # spend more time on scanning in static environment
-  DABOPT="-Q -E 3 -W 8000 -A 12000 -c -t 10 -a 0.9 -r 10 -x"
+  DABOPT="-Q -E 3 -W 8000 -A 12000 -c -t 10 -a 0.9 -r 10 -x \${BIASTEE}"
 fi
+
 
 # select rtlsdr device with option '-s <serial>'.
 #   program 'rtl_test' will list all devices with their serial numbers 'SN'.
@@ -155,6 +166,7 @@ fi
 
 if [ ! -z "\${FMLIST_DAB_RTLSDR_DEV}" ]; then
   DABOPT="\${DABOPT} -s \${FMLIST_DAB_RTLSDR_DEV}"
+  DABLISTENOPT="\${DABLISTENOPT} -s \${FMLIST_DAB_RTLSDR_DEV}"
 fi
 
 EOF
