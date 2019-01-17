@@ -86,6 +86,9 @@ void usage(void)
 		"\t[-w tuner_bandwidth (default: automatic)]\n"
 		"\t[-d device_index (default: 0)]\n"
 		"\t[-g gain (default: 0 for auto)]\n"
+		"\t[-O set RTL options string seperated with ':' ]\n"
+		"\t  f=<freqHz>:bw=<bw_in_kHz>:agc=<tuner_gain_mode>:gain=<tenth_dB>\n"
+		"\t  dagc=<rtl_agc>:ds=<direct_sampling_mode>:T=<bias_tee>\n"
 		"\t[-p ppm_error (default: 0)]\n"
 		"\t[-b output_block_size (default: 16 * 16384)]\n"
 		"\t[-S force sync output (default: async)]\n" );
@@ -327,13 +330,14 @@ int main(int argc, char **argv)
 	int gain = 0;
 	int ppm_error = 0;
 	FILE *file = NULL;
+	const char * rtlOpts = NULL;
 	uint8_t *buffer;
 	int dev_index = 0;
 	int dev_given = 0;
 	uint32_t frequency = 100000000;
 	uint32_t bandwidth = DEFAULT_BANDWIDTH;
 	uint32_t out_block_size = DEFAULT_BUF_LENGTH;
-    int numCorrs = 3 * 96; // => minimum 2 full frames from 1st minimum
+	int numCorrs = 3 * 96; // => minimum 2 full frames from 1st minimum
 	{
 		for (int k = 0; k < 256; ++k)
 			chanCorrCoeff[k] = -16.0F;
@@ -349,7 +353,7 @@ int main(int argc, char **argv)
         }
 	}
 
-	while ((opt = getopt(argc, argv, "c:L:C:A:N:W:s:w:d:g:p:b:v")) != -1)
+	while ((opt = getopt(argc, argv, "c:L:C:A:N:W:s:w:d:g:O:p:b:v")) != -1)
 	{
 		switch (opt) {
 		case 'c':
@@ -383,6 +387,9 @@ int main(int argc, char **argv)
 			break;
 		case 'g':
 			gain = (int)(atof(optarg) * 10); /* tenths of a dB */
+			break;
+		case 'O':
+			rtlOpts = optarg;
 			break;
 		case 'p':
 			ppm_error = atoi(optarg);
@@ -487,6 +494,10 @@ int main(int argc, char **argv)
 	}
 
 	verbose_ppm_set(dev, ppm_error);
+
+	if (rtlOpts) {
+		rtlsdr_set_opt_string(dev, rtlOpts, 1);
+	}
 
 	/* Reset endpoint before we start reading from it (mandatory) */
 	verbose_reset_buffer(dev);
