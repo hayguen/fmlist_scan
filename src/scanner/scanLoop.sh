@@ -132,7 +132,7 @@ while /bin/true; do
         sudo reboot now
         exit 0
       fi
-      echo "retry test - because rtl_sdr test for FM failed!"
+      echo "retry ${NUM_RTL_FAILS} of test - because rtl_sdr test for FM failed!"
       continue
     fi
   fi
@@ -169,7 +169,7 @@ while /bin/true; do
         sudo reboot now
         exit 0
       fi
-      echo "retry test - because rtl_sdr test for DAB failed!"
+      echo "retry ${NUM_RTL_FAILS} of test - because rtl_sdr test for DAB failed!"
       continue
     fi
   fi
