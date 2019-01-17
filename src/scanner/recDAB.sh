@@ -107,7 +107,7 @@ fi
 
 $HOME/bin/gpstime.sh single
 if [ -f "${FMLIST_SCAN_RAM_DIR}/gpscoor.inc" ]; then
-  GPSV="$( ( flock -s 213 ; cat "${FMLIST_SCAN_RAM_DIR}/gpscoor.inc" 2>/dev/null ) 213>gps.lock )"
+  GPSV="$( ( flock -s 213 ; cat "${FMLIST_SCAN_RAM_DIR}/gpscoor.inc" 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )"
   echo "${GPSV}" >${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
   source ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
   rm ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc

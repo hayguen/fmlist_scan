@@ -6,7 +6,7 @@ if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
 fi
 
 cd ${FMLIST_SCAN_RAM_DIR}
-COOR=$( ( flock -x 213 ; cat gpscoor.log 2>/dev/null ) 213>gps.lock )
+COOR=$( ( flock -x 213 ; cat gpscoor.log 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )
 if [ -z "$COOR" ]; then
   COOR="NO-GPS_SYSTIME $(date -u "+%Y-%m-%dT%T.%NZ")"
 fi
