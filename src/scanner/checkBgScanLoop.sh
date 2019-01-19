@@ -31,13 +31,22 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
   echo "${DTF}: checkBgScanLoop.sh: Error: No stations in last $D seconds!" >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
 
   if [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
-    echo "going for reboot. reboot is activated in $HOME/.config/fmlist_scan/config"
-    echo "${DTF}: checkBgScanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-    echo "${DTF}: checkBgScanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
-    echo "${DTF}: checkBgScanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
-
-    saveScanResults.sh savelog
-    sudo reboot now
+    NSSH=$(sudo netstat -tpn |grep '^tcp' |grep ESTABLISHED |awk '{ print $7; }' |grep -c '/sshd')
+    if [ ${NSSH} -eq 0 ]; then
+      echo "going for reboot. reboot is activated in $HOME/.config/fmlist_scan/config"
+      echo "${DTF}: checkBgScanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "${DTF}: checkBgScanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
+      echo "${DTF}: checkBgScanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
+      saveScanResults.sh savelog
+      sudo reboot now
+    else
+      echo "would go for reboot .. but there are active ssh sessions"
+      echo "${DTF}: checkBgScanLoop.sh: would go for reboot - but there are active ssh sessions" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "${DTF}: checkBgScanLoop.sh: would go for reboot - but there are active ssh sessions" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
+      echo "${DTF}: checkBgScanLoop.sh: would go for reboot - but there are active ssh sessions" >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
+      saveScanResults.sh savelog
+      wall "checkBgScanLoop.sh: Error: No stations in last $D seconds! Would go for reboot - but there are active ssh sessions!"
+    fi
   else
     SSESSION="$( screen -ls | grep scanLoopBg )"
     if [ -z "$SSESSION" ]; then
