@@ -34,7 +34,7 @@ if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/config" ]; then
 fi
 
 # copy/use new configuration - if exists
-if [ $( ls -1 "${FMLIST_SCAN_RESULT_DIR}/config_new/" | wc -l ) -ne 0 ]; then
+if [ $( ls -1 "${FMLIST_SCAN_RESULT_DIR}/config/" | wc -l ) -ne 0 ]; then
 
   # check, if there any new config file to apply?
   HAVE_NEW_CONF="0"
@@ -63,6 +63,9 @@ if [ $( ls -1 "${FMLIST_SCAN_RESULT_DIR}/config_new/" | wc -l ) -ne 0 ]; then
   if [ -f "${FMLIST_SCAN_RESULT_DIR}/config/wpa_supplicant.conf" ]; then
     dos2unix "${FMLIST_SCAN_RESULT_DIR}/config/wpa_supplicant.conf"
     sudo bash -c "cat ${FMLIST_SCAN_RESULT_DIR}/config/wpa_supplicant.conf >>/etc/wpa_supplicant/wpa_supplicant.conf"
+    if [ -s ${FMLIST_SCAN_RESULT_DIR}/config/wpa_supplicant.conf ] ; then
+      touch "${FMLIST_SCAN_RESULT_DIR}/config/reboot"
+    fi
   fi
   # replace config files
   if [ -f "${FMLIST_SCAN_RESULT_DIR}/config/config" ]; then
@@ -102,11 +105,11 @@ if [ $( ls -1 "${FMLIST_SCAN_RESULT_DIR}/config_new/" | wc -l ) -ne 0 ]; then
   source $HOME/.config/fmlist_scan/config
 fi
 
-echo "# additional network config. example:" >"${FMLIST_SCAN_RESULT_DIR}/config/old_wpa_supplicant.conf"
-echo "# network={"            >>"${FMLIST_SCAN_RESULT_DIR}/config/old_wpa_supplicant.conf"
-echo "#   ssid=\"SSID\""      >>"${FMLIST_SCAN_RESULT_DIR}/config/old_wpa_supplicant.conf"
-echo "#   psk=\"passphrase\"" >>"${FMLIST_SCAN_RESULT_DIR}/config/old_wpa_supplicant.conf"
-echo "# }"                    >>"${FMLIST_SCAN_RESULT_DIR}/config/old_wpa_supplicant.conf"
+echo "# additional network config. fill in your SSID and passphrase and rename this file:" >"${FMLIST_SCAN_RESULT_DIR}/config/old_wpa_supplicant.conf"
+echo "network={"            >>"${FMLIST_SCAN_RESULT_DIR}/config/old_wpa_supplicant.conf"
+echo "  ssid=\"SSID\""      >>"${FMLIST_SCAN_RESULT_DIR}/config/old_wpa_supplicant.conf"
+echo "  psk=\"passphrase\"" >>"${FMLIST_SCAN_RESULT_DIR}/config/old_wpa_supplicant.conf"
+echo "}"                    >>"${FMLIST_SCAN_RESULT_DIR}/config/old_wpa_supplicant.conf"
 
 cp "$HOME/.config/fmlist_scan/config"           "${FMLIST_SCAN_RESULT_DIR}/config/old_config"
 cp "$HOME/.config/fmlist_scan/dab_chanlist.txt" "${FMLIST_SCAN_RESULT_DIR}/config/old_dab_chanlist.txt"
