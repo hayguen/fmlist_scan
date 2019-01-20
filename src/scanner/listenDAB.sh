@@ -11,6 +11,8 @@ chan="$1"
 
 if [ -z "${chan}" ] || [ "${chan}" = "-h" ] || [ "${chan}" = "--help" ]; then
   echo "usage: $0 <channel> [<additional options to dab-rtlsdr>]"
+  echo " additional options - as in dab-rtlsdr:"
+  dab-rtlsdr -h
   exit 0
 fi
 
@@ -26,6 +28,9 @@ fi
 
 echo "control volume with amixer set <control> 90%"
 echo "starting   dab-rtlsdr ${DABLISTENOPT} -P Dlf -C $@ | aplay -r 48000 -f S16_LE -t raw -c 2 .."
+
+# save DAB images in RAM
+cd "${FMLIST_SCAN_RAM_DIR}"
 
 # dab-rtlsdr -Q -W 5000 -A 6000 -c -t 5 -a 0.8 -r 5 -x -P Dlf -C "$@" | aplay -r 48000 -f S16_LE -t raw -c 2
 dab-rtlsdr ${DABLISTENOPT} -P Dlf -C "$@" | aplay -r 48000 -f S16_LE -t raw -c 2
