@@ -9,8 +9,9 @@ fi
 if [ "${FMLIST_SCAN_GPS_ALL_TIME}" = "0" ] || [ "$1" = "force" ] ; then
   touch "${FMLIST_SCAN_RAM_DIR}/stopGps"
   rm -f "${FMLIST_SCAN_RAM_DIR}/gpscoor.log"
+elif [ "$1" = "silent" ]; then
+  echo "" >/dev/null
 else
   echo "usage: $0 [force]"
-
 fi
 

@@ -8,5 +8,10 @@ fi
 touch "${FMLIST_SCAN_RAM_DIR}/stopScanLoop"
 rm -f ${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
 
-$HOME/bin/stopGpsLoop.sh
+stopGpsLoop.sh silent
+
+if [ "$1" = "wait" ]; then
+  shift
+  waitScreenTermination.sh scanLoopBg "$@"
+fi
 
