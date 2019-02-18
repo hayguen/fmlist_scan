@@ -7,9 +7,12 @@ if [ -z "${FMLIST_SCAN_MOUNT}" ]; then
   export FMLIST_SCAN_MOUNT="1"
 fi
 
-apt-get -y install htop powertop at lsof mc nano vim zip alpine
-apt-get -y install ncdu screen parallel sshfs wget curl iftop dos2unix
-apt-get -y install sox lame alsa-utils
+apt-get -y install htop powertop at lsof mc nano vim zip alpine dpkg
+apt-get -y install ncdu screen parallel sshfs wget curl iftop util-linux
+apt-get -y install dos2unix exfat-utils dosfstools
+apt-get -y install sox lame espeak-ng alsa-utils
+apt-get -y install netcat-openbsd netcat-traditional socat
+
 if [ ${FMLIST_SCAN_SETUP_GPS} = "1" ]; then
   apt-get -y install gpsd gpsd-clients
 fi
@@ -67,9 +70,6 @@ source setup_scanner
 
 # add crontab entry: execute scanner @restart
 source setup_crontab
-
-
-echo "hold back: apt-get install x11-xserver-utils meld"
 
 cd ${BASE}
 

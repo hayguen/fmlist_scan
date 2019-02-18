@@ -35,9 +35,10 @@ if [ -z "${FMLIST_OM_ID}" ]; then
   export FMLIST_OM_ID=""
 fi
 
-echo "$0 [syspre|pre|rtl|csdr|lfec|ldsp|redsea|dabcmd|pipwm|pishutd|chkspec|pscan|kal|lpie]"
+echo "$0 [syspre|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|pipwm|pishutd|chkspec|pscan|kal|lpie]"
 echo "  syspre  install system prerequisites"
 echo "  pre     install prerequisites for all tools to be compiled"
+echo "  gui     install gui software/tools"
 echo "  rtl     install prerequisites, build & install librtlsdr - rtlsdr 'driver' lib"
 echo "  csdr    install prerequisites, build & install for csdr - sdr command line tools"
 echo "  lfec    install prerequisites, build & install for libfec aka libcorrect - required from liquid-dsp"
@@ -58,18 +59,28 @@ echo "set FMLIST_SCAN_USER=<user>   # default user \"pi\""
 echo "set FMLIST_SCAN_RASPI=<1/0>   # default \"1\" if Raspberry Pi hardware"
 echo ""
 
+
 if [ "$1" == "-h" ] || [ "$1" == "--h" ] || [ "$1" == "--help" ]; then
   exit 0
 fi
 
-if [ "$1" == "" ]; then
-  echo "will install/build ALL - without parameters"
+if [ "$1" == "" ] && [ "$2" == "gui" ]; then
+  echo "will install/build ALL (including gui) - with empty 1st parameter"
+  sleep 5
+elif [ "$1" == "" ] && [ "$2" == "" ]; then
+  echo "will install/build ALL (except gui) - without parameters"
   sleep 5
 fi
 
 if [ "$1" == "syspre" ] || [ "$1" == "" ]; then
   echo "installing system prerequisites"
   . prereq_fmlist_scan
+fi
+
+# gui software is not installed automatically
+if [ "$1" == "gui" ] || [ "$2" == "gui" ]; then
+  echo "installing gui software/tools"
+  . prereq_gui_software
 fi
 
 if [ "$1" == "pre" ] || [ "$1" == "" ]; then
@@ -80,7 +91,6 @@ if [ "$1" == "pre" ] || [ "$1" == "" ]; then
   . prereq_redsea
   . prereq_dab-cmdline
 fi
-
 
 if [ "$1" == "rtl" ] || [ "$1" == "" ]; then
   echo "building librtlsdr"
