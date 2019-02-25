@@ -16,8 +16,8 @@ echo 0 > /sys/class/leds/led0/brightness	# green OFF
 echo 1 > /sys/class/leds/led1/brightness	# red ON
 
 # external ATX LEDs
-gpio mode 27 output		# init external green LED
-gpio mode 26 output		# init external red LED
-gpio write 27 off	# green OFF
-gpio write 26 off	# red OFF
+gpio mode ${FMLIST_SCAN_WPI_LED_GREEN} output # init external green LED (was 27)
+gpio mode ${FMLIST_SCAN_WPI_LED_RED} output   # init external red LED
+gpio write ${FMLIST_SCAN_WPI_LED_GREEN} off   # green OFF (was 27)
+gpio write ${FMLIST_SCAN_WPI_LED_RED} off     # red OFF
 
