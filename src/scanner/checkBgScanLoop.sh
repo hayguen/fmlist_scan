@@ -25,7 +25,7 @@ echo "Delta from LAST to CURR = $D secs" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoo
 
 if [ $D -ge 60 ]; then
   DTF="$(date -u "+%Y-%m-%dT%T Z")"
-  echo "${DTF}: checkBgScanLoop.sh: Error: No stations in last $D seconds!" >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
+  echo "${DTF}: checkBgScanLoop.sh: Error: No stations in last $D seconds!" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
 fi
 
 if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
@@ -33,7 +33,7 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
   echo "${DTF}: No stations in last $D seconds!"
   echo "${DTF}: checkBgScanLoop.sh: Error: No stations in last $D seconds!" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
   echo "${DTF}: checkBgScanLoop.sh: Error: No stations in last $D seconds!" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
-  echo "${DTF}: checkBgScanLoop.sh: Error: No stations in last $D seconds!" >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
+  echo "${DTF}: checkBgScanLoop.sh: Error: No stations in last $D seconds!" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
 
   if [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
     NSSH=$(sudo netstat -tpn |grep '^tcp' |grep ESTABLISHED |awk '{ print $7; }' |grep -c '/sshd')
@@ -41,15 +41,15 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
       echo "going for reboot. reboot is activated in $HOME/.config/fmlist_scan/config"
       echo "${DTF}: checkBgScanLoop.sh: after $D seconds: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       echo "${DTF}: checkBgScanLoop.sh: after $D seconds: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
-      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: saving results, then rebooting .." >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
+      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: saving results, then rebooting .." >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
       saveScanResults.sh savelog
-      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: rebooting!" >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
-      sudo reboot now >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
+      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: rebooting!" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+      sudo reboot now >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
     else
       echo "would go for reboot .. but there are active ssh sessions"
       echo "${DTF}: checkBgScanLoop.sh: after $D seconds: would go for reboot - but there are active ssh sessions" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       echo "${DTF}: checkBgScanLoop.sh: after $D seconds: would go for reboot - but there are active ssh sessions" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
-      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: would go for reboot - but there are active ssh sessions" >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
+      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: would go for reboot - but there are active ssh sessions" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
       saveScanResults.sh savelog
       wall "checkBgScanLoop.sh: Error: No stations in last $D seconds! Would go for reboot - but there are active ssh sessions!"
     fi
@@ -59,7 +59,7 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
       echo "scanLoopBg screen session is not running! saving results, then restarting scanLoop .."
       echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is not running! saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is not running! saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
-      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is not running! saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
+      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is not running! saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
       saveScanResults.sh savelog
       resetScanDevice.sh all
       pkill scanFM.sh
@@ -76,7 +76,7 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
       echo "scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .."
       echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
-      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RESULT_DIR}/checkBgScanLoop.log
+      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
       stopBgScanLoop.sh
       resetScanDevice.sh all
       pkill scanLoop.sh

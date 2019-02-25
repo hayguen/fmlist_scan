@@ -9,9 +9,7 @@ fi
 
 MNTC=$( mount | grep -c "${FMLIST_SCAN_RESULT_DIR}" )
 if [ $MNTC -eq 0 ] && [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
-
   mount "${FMLIST_SCAN_RESULT_DIR}"
-
   MNTC=$( mount | grep -c "${FMLIST_SCAN_RESULT_DIR}" )
   if [ $MNTC -eq 0 ]; then
     echo "Error: USB stick is not available on ${FMLIST_SCAN_RESULT_DIR} !"
@@ -24,7 +22,11 @@ if [ ! -d "${FMLIST_SCAN_RESULT_DIR}" ]; then
   exit 10
 fi
 
-cd "${FMLIST_SCAN_RESULT_DIR}"
+if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner" ]; then
+  mkdir -p "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner"
+fi
+
+cd "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner"
 
 if [ ! -d "summaries" ]; then
   mkdir "summaries"
@@ -87,7 +89,7 @@ ls -1 |egrep "^[0-9]{4}-[0-9]{2}-[0-9]{2}\$" |grep -v "${GREPOPT}" |while read d
   sed 's/^/30,/' summaries/${d}_${t}_fm_rds.csv        >>${TF}
   sed 's/^/31,/' summaries/${d}_${t}_fm_carrier.csv    >>${TF}
 
-  echo "compressing to ${FMLIST_SCAN_RESULT_DIR}/up_outbox/${d}_${t}_upload.csv.gz"
+  echo "compressing to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_outbox/${d}_${t}_upload.csv.gz"
   cat ${TF} |gzip -c >up_outbox/${d}_${t}_upload.csv.gz
   mv "$d" "processed/${d}_${t}"
   rm ${TF}
