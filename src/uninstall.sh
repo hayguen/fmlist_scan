@@ -32,6 +32,7 @@ rm -f "$HOME/bin/gpstime.sh"
 # remove scan scripts
 echo "removing scan scripts from $HOME/bin .."
 rm -f "$HOME/bin/checkBgScanLoop.sh"
+rm -f "$HOME/bin/monitorBgScanLoop.sh"
 rm -f "$HOME/bin/scanFM.sh"
 rm -f "$HOME/bin/scanDAB.sh"
 rm -f "$HOME/bin/scanLoop.sh"
