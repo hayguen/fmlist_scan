@@ -32,7 +32,7 @@ else
   TEND="$( echo -n "${4}1" |sed 's/^0*//' )"
 fi
 
-cd "${FMLIST_SCAN_RESULT_DIR}/${DT}"
+cd "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/${DT}"
 find . -iname "scan_${DT}T*_${FTYPE}.csv" |sort |while read f ; do
   # 0        1        12   2     3
   # 1234567890123456789012345678901234567890

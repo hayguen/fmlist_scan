@@ -118,7 +118,7 @@ while /bin/true; do
         echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
         echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         saveScanResults.sh savelog
-        echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES} .." >>"${FMLIST_SCAN_RESULT_DIR}/reboots.log"
+        echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES} .." >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/reboots.log"
         sudo reboot now
         exit 0
       fi
@@ -155,7 +155,7 @@ while /bin/true; do
         echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
         echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         saveScanResults.sh savelog
-        echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES} .." >>"${FMLIST_SCAN_RESULT_DIR}/reboots.log"
+        echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES} .." >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/reboots.log"
         sudo reboot now
         exit 0
       fi

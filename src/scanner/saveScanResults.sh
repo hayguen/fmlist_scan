@@ -10,14 +10,16 @@ cd ${FMLIST_SCAN_RAM_DIR}
 
 MNTC=$( mount | grep -c ${FMLIST_SCAN_RESULT_DIR} )
 if [ $MNTC -eq 0 ] && [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
-
   mount ${FMLIST_SCAN_RESULT_DIR}
-
   MNTC=$( mount | grep -c ${FMLIST_SCAN_RESULT_DIR} )
   if [ $MNTC -eq 0 ]; then
     echo "Error: Device (USB memory stick) is not available on ${FMLIST_SCAN_RESULT_DIR} !"
     exit 0
   fi
+fi
+
+if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner" ]; then
+  mkdir -p "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner"
 fi
 
 if [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
@@ -29,8 +31,8 @@ if [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
 fi
 
 S="$(date -u "+%Y-%m-%d")"
-if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/$S" ]; then
-  mkdir "${FMLIST_SCAN_RESULT_DIR}/$S"
+if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S" ]; then
+  mkdir -p "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S"
 fi
 
 cd ${FMLIST_SCAN_RAM_DIR}
@@ -82,7 +84,7 @@ ls -1 | grep ^scan_ | while read d ; do
       popd
     fi
 
-    zip -r "${FMLIST_SCAN_RESULT_DIR}/$S/$d.zip" "$d"
+    zip -r "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/$d.zip" "$d"
     rm -rf "$d"
   fi
 done
@@ -95,50 +97,50 @@ if [ "$1" = "savelog" ]; then
     echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/cputemp.csv ]; then
-    cp ${FMLIST_SCAN_RAM_DIR}/cputemp.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_cputemp.csv
+    cp ${FMLIST_SCAN_RAM_DIR}/cputemp.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_cputemp.csv
     rm ${FMLIST_SCAN_RAM_DIR}/cputemp.csv
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/gpscoor.csv ]; then
     COOR=$( ( flock -x 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.csv 2>/dev/null ; rm -f ${FMLIST_SCAN_RAM_DIR}/gpscoor.csv 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )
-    echo "$COOR" >${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_gpscoor.csv
+    echo "$COOR" >${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_gpscoor.csv
   fi
 
   if [ -f ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv ]; then
-    cp ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_fm_carrier.csv
+    cp ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_fm_carrier.csv
     rm ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv ]; then
-    cp ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_fm_rds.csv
+    cp ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_fm_rds.csv
     rm ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/fm_count.csv ]; then
-    cp ${FMLIST_SCAN_RAM_DIR}/fm_count.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_fm_count.csv
+    cp ${FMLIST_SCAN_RAM_DIR}/fm_count.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_fm_count.csv
     rm ${FMLIST_SCAN_RAM_DIR}/fm_count.csv
   fi
 
   if [ -f ${FMLIST_SCAN_RAM_DIR}/dab_ensemble.csv ]; then
-    cp ${FMLIST_SCAN_RAM_DIR}/dab_ensemble.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_dab_ensemble.csv
+    cp ${FMLIST_SCAN_RAM_DIR}/dab_ensemble.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_ensemble.csv
     rm ${FMLIST_SCAN_RAM_DIR}/dab_ensemble.csv
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/dab_gps.csv ]; then
-    cp ${FMLIST_SCAN_RAM_DIR}/dab_gps.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_dab_gps.csv
+    cp ${FMLIST_SCAN_RAM_DIR}/dab_gps.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_gps.csv
     rm ${FMLIST_SCAN_RAM_DIR}/dab_gps.csv
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/dab_audio.csv ]; then
-    cp ${FMLIST_SCAN_RAM_DIR}/dab_audio.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_dab_audio.csv
+    cp ${FMLIST_SCAN_RAM_DIR}/dab_audio.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_audio.csv
     rm ${FMLIST_SCAN_RAM_DIR}/dab_audio.csv
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/dab_packet.csv ]; then
-    cp ${FMLIST_SCAN_RAM_DIR}/dab_packet.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_dab_packet.csv
+    cp ${FMLIST_SCAN_RAM_DIR}/dab_packet.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_packet.csv
     rm ${FMLIST_SCAN_RAM_DIR}/dab_packet.csv
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/dab_count.csv ]; then
-    cp ${FMLIST_SCAN_RAM_DIR}/dab_count.csv ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_dab_count.csv
+    cp ${FMLIST_SCAN_RAM_DIR}/dab_count.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_count.csv
     rm ${FMLIST_SCAN_RAM_DIR}/dab_count.csv
   fi
 
-  #cp ${FMLIST_SCAN_RAM_DIR}/scanner.log ${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_scanner.log
-  gzip -kc ${FMLIST_SCAN_RAM_DIR}/scanner.log >${FMLIST_SCAN_RESULT_DIR}/$S/scan_${DTFREC}_scanner.log.gz
+  #cp ${FMLIST_SCAN_RAM_DIR}/scanner.log ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_scanner.log
+  gzip -kc ${FMLIST_SCAN_RAM_DIR}/scanner.log >${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_scanner.log.gz
   # do NOT remove file - just truncate
   echo "" >${FMLIST_SCAN_RAM_DIR}/scanner.log
 else
@@ -147,7 +149,7 @@ fi
 
 
 
-#sync -f "${FMLIST_SCAN_RESULT_DIR}/$S"
+#sync -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S"
 sync
 
 if [ ${FMLIST_SCAN_SAVE_RAW} -gt 0 ]; then
