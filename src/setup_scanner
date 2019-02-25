@@ -6,6 +6,7 @@ sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/bin"
 
 # copy all scripts
 cp scanner/checkBgScanLoop.sh   /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/monitorBgScanLoop.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanFM.sh            /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanDAB.sh           /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanLoop.sh          /home/${FMLIST_SCAN_USER}/bin/
