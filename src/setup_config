@@ -39,9 +39,9 @@ export FMLIST_SCAN_GPS_COORDS="${GPS_DEFAULT}"  # "gps" and "static" are exclusi
 export FMLIST_SCAN_GPS_LAT=""               # latitude  for static, e.g. 48.885582
 export FMLIST_SCAN_GPS_LON=""               # longitude for static, e.g. 8.702656
 export FMLIST_SCAN_GPS_ALT=""               # altitude  for static, e.g. 307
-export FMLIST_SCAN_DEAD_TIME="600"              # default is "600": assume something is hanging after 600 seconds
+export FMLIST_SCAN_DEAD_TIME="300"              # default is "600": assume something is hanging after 600 seconds
 export FMLIST_SCAN_DEAD_RTL_TRIES="10"           # assume RTL dongle dead after N (=3) rtl recording tests
-export FMLIST_SCAN_DEAD_REBOOT="0"              # "0" or "1"; default is "0" for rebooting when dead
+export FMLIST_SCAN_DEAD_REBOOT="1"              # "0" or "1"; default is "0" for rebooting when dead
 export FMLIST_SCAN_AUTOSTART="0"                # default is "1": autostart scanner in background
 export FMLIST_SCAN_FM="1"                       # "0" or "1"; default is "1" for active UKW/FM scan
 export FMLIST_SCAN_DAB="1"                      # "0" or "1"; default is "1" for active DAB scan
@@ -60,6 +60,8 @@ export FMLIST_SCAN_SAVE_PWMTONE="1"             # "0" or "1"; default is "1". fo
 export FMLIST_SCAN_SAVE_LEDPLAY="0"             # "0" or "1"; default is "0". for playing LEDs  after each saving
 export FMLIST_SCAN_FOUND_PWMTONE="0"            # "0" or "1"; default is "0". for playing tones after each detected carrier
 export FMLIST_SCAN_FOUND_LEDPLAY="1"            # "0" or "1"; default is "0". for playing LEDs  after each detected carrier
+export FMLIST_SCAN_WPI_LED_GREEN="27"           # old atx cables wpi pin: 27, new/short cables pin: 28
+export FMLIST_SCAN_WPI_LED_RED="26"             # 
 export FMLIST_SCAN_PWM_FEEDBACK="1"             # "0" or "1"; default is "1" for signaling of FM/DAB scan success every scan
 export FMLIST_SCAN_RAM_DIR="/dev/shm/${FMLIST_SCAN_USER}_fmlist_scan"  # /dev/shm is automatically mounted from linux
 export FMLIST_SCAN_MOUNT="${FMLIST_SCAN_MOUNT}"                    # "0" or "1"; default is "1". saving results requires successful mount of /mnt/sda1
@@ -128,7 +130,9 @@ fi
 # activate bias-Tee : 4.5V for pream/LNA? by un/commenting correct line below
 BIASTEE="-O T=0"
 #BIASTEE="-O T=1"
-RTLSDR_OPT="\${BIASTEE}"
+RTLSDR_OPT="\${BIASTEE}"    # add option '-g <gain>' for using fixed gain - deactivating tuner agc
+                            # interesting for dongles with E4000 tuner
+                            # or for working around oversteering
 if [ ! -z "\${FMLIST_FM_RTLSDR_DEV}" ]; then
   RTLSDR_OPT="\${RTLSDR_OPT} -d \${FMLIST_FM_RTLSDR_DEV}"
 fi
