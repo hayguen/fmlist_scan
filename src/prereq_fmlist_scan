@@ -54,7 +54,7 @@ cp get_gpstime.sh /home/${FMLIST_SCAN_USER}/bin/
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/gpstime.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/get_gpstime.sh
 
-if [ ${FMLIST_SCAN_SETUP_GPS} ="1" ]; then
+if [ "${FMLIST_SCAN_SETUP_GPS}" = "1" ]; then
   systemctl stop gpsd.socket
   systemctl disable gpsd.socket
   cp gpsd.conf /etc/default/gpsd
