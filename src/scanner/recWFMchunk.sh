@@ -9,6 +9,10 @@ chan="$1"
 durs="$2"
 shift
 shift
+fext="raw"
+if [ "$1" = "-H" ]; then
+  fext="wav"
+fi
 
 if [ -z "${chan}" ] || [ "${chan}" = "-h" ] || [ "${chan}" = "--help" ] || [ -z "${durs}" ]; then
   echo "usage: $0 <frequency in MHz> <duration in seconds> [<additional options to rtl_sdr>]"
@@ -44,9 +48,9 @@ if [ -f "${FMLIST_SCAN_RAM_DIR}/gpscoor.inc" ]; then
   echo "${GPSV}" >${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
   source ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
   rm ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
-  FN="FM-${chan}M_${DTFREC}_${chunksrate}Hz_PCM8IQ_${GPSFN}.raw"
+  FN="FM-${chan}M_${DTFREC}_${chunksrate}Hz_PCM8IQ_${GPSFN}.${fext}"
 else
-  FN="FM-${chan}M_${DTFREC}_${chunksrate}Hz_PCM8IQ.raw"
+  FN="FM-${chan}M_${DTFREC}_${chunksrate}Hz_PCM8IQ.${fext}"
 fi
 
 FPN="${FMLIST_SCAN_RAM_DIR}/${FN}"
