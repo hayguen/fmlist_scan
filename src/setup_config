@@ -34,12 +34,12 @@ export FMLIST_SCAN_SETUP_GPS="${FMLIST_SCAN_SETUP_GPS}"  # default "1" to activa
 export FMLIST_SCAN_GPS_LOOP_SLEEP="2"           # try to get gps coordinates every 2 sec
 export FMLIST_USER="${FMLIST_USER}"             # optional: username (email) at https://www.fmlist.org/
 export FMLIST_OM_ID="${FMLIST_OM_ID}"           # optional: OM id at https://www.fmlist.org/
-export FMLIST_SCAN_GPS_ALL_TIME="1"   # run gps all time
+export FMLIST_SCAN_GPS_ALL_TIME="1"             # run gps all time
 export FMLIST_SCAN_GPS_COORDS="${GPS_DEFAULT}"  # "gps" and "static" are exclusive; "auto" for gps if available, fallback to static
 export FMLIST_SCAN_GPS_LAT=""               # latitude  for static, e.g. 48.885582
 export FMLIST_SCAN_GPS_LON=""               # longitude for static, e.g. 8.702656
 export FMLIST_SCAN_GPS_ALT=""               # altitude  for static, e.g. 307
-export FMLIST_SCAN_DEAD_TIME="300"              # default is "600": assume something is hanging after 600 seconds
+export FMLIST_SCAN_DEAD_TIME="300"              # default is "300": assume something is hanging after 600 seconds
 export FMLIST_SCAN_DEAD_RTL_TRIES="10"           # assume RTL dongle dead after N (=3) rtl recording tests
 export FMLIST_SCAN_DEAD_REBOOT="1"              # "0" or "1"; default is "0" for rebooting when dead
 export FMLIST_SCAN_AUTOSTART="0"                # default is "1": autostart scanner in background

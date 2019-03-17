@@ -210,5 +210,7 @@ if [ ${FMLIST_SCAN_SAVE_PWMTONE} -ne 0 ] && [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   scanToneFeedback.sh final
 fi
 
-$HOME/bin/stopGpsLoop.sh
+if [ ! "${FMLIST_SCAN_GPS_ALL_TIME}" = "1" ]; then
+  stopGpsLoop.sh silent
+fi
 

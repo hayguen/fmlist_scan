@@ -1,8 +1,9 @@
 
 BASE=$(pwd)
 
-# https://github.com/librtlsdr/librtlsdr
-GITUSER=librtlsdr
+# old: https://github.com/librtlsdr/librtlsdr
+# new: https://github.com/hayguen/librtlsdr
+GITUSER=hayguen
 GITPROJ=librtlsdr
 
 if [ ! -d ${BASE}/git/${GITUSER} ]; then
