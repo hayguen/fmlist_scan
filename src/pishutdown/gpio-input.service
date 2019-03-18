@@ -5,8 +5,23 @@ After=multi-user.target
 
 [Service]
 Type=idle
-ExecStart=/usr/local/bin/pishutdown 29 up 0 1 "/sbin/shutdown -H now"   6 up 0 1 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh" &
+ExecStart=/usr/local/bin/pishutdown \
+  29 up 0 1 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh A1" \
+  29 up 0 2 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh A2" \
+  29 up 0 3 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh A3" \
+  29 up 0 4 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh A4" \
+  29 up 0 5 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh A5" \
+  29 up 0 6 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh A6" \
+   6 up 0 1 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh B1" \
+   6 up 0 2 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh B2" \
+   6 up 0 3 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh B3" \
+   6 up 0 4 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh B4" \
+   6 up 0 5 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh B5" \
+   6 up 0 6 "sudo -u %SCAN_USER% /home/%SCAN_USER%/bin/atx-knob.sh B6" &
 
 [Install]
 WantedBy=multi-user.target
 
+
+#
+# sudo FMLIST_SCAN_USER=pi ./inst_pishutdown
