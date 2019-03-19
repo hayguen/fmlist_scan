@@ -2,7 +2,7 @@
 
 if [ ! -f /etc/sidedoor/id_rsa_sidedoor ]; then
   >&2 echo "uploadScanFilesToDeveloper.sh requires following steps:"
-  >&2 echo "sudo ln /etc/sidedoor/id_rsa /etc/sidedoor/id_rsa_sidedoor"
+  >&2 echo "sudo cp /etc/sidedoor/id_rsa /etc/sidedoor/id_rsa_sidedoor"
   >&2 echo "sudo chown pi:pi /etc/sidedoor/id_rsa_sidedoor"
   >&2 echo "sudo chmod 600 /etc/sidedoor/id_rsa_sidedoor"
   exit 10
