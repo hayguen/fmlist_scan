@@ -70,10 +70,10 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
       fi
       SET_SYSTIM="1"
       GPSTIM="$( sed -r 's/.*"time":"([^"]*)".*/\1/' gpsline.log )"
-      GPSLAT="$( sed -r 's/.*"lat":([0-9.]*).*/\1/'  gpsline.log )"
-      GPSLON="$( sed -r 's/.*"lon":([0-9.]*).*/\1/'  gpsline.log )"
+      GPSLAT="$( sed -r 's/.*"lat":([0-9.\-]*).*/\1/'  gpsline.log )"
+      GPSLON="$( sed -r 's/.*"lon":([0-9.\-]*).*/\1/'  gpsline.log )"
       if [ $MdThree -ne 0 ]; then
-        GPSALT="$( sed -r 's/.*"alt":([0-9.]*).*/\1/'  gpsline.log )"
+        GPSALT="$( sed -r 's/.*"alt":([0-9.\-]*).*/\1/'  gpsline.log )"
       else
         GPSALT="-"
       fi
