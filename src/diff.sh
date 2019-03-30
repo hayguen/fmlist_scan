@@ -7,10 +7,18 @@ if [ -z "$1" ]; then
   echo ""
 fi
 
+if [ "$1" == "print" ]; then
+  OPTPRINT="1"
+  shift
+else
+  OPTPRINT=""
+fi
+
+
 #BINDIR="$HOME/bin"
 BINDIR="../../bin"
-if [ ! -z "$2" ]; then
-  BINDIR="$2"
+if [ ! -z "$1" ]; then
+  BINDIR="$1"
 fi
 
 DIFF="$(which colordiff)"
@@ -19,7 +27,7 @@ if [ -z "${DIFF}" ]; then
 fi
 
 
-for f in `ls -1 *.sh scanner/*.sh` ; do
+for f in $( ls -1 *.sh scanner/*.sh ) ; do
   b=$( basename "$f" )
 
   if [ "$b" == "all.sh" ]; then
@@ -35,13 +43,19 @@ for f in `ls -1 *.sh scanner/*.sh` ; do
       echo -e "diff $f:\t\tequal"
     else
       echo -e "diff $f:\t\tNOT equal"
-      if [ "$1" == "print" ]; then
+      if [ "${OPTPRINT}" = "1" ]; then
         ${DIFF} "$f" "${BINDIR}/$b"
         echo ""
       fi
     fi
   else
     echo "$b not in ${BINDIR}"
+  fi
+done
+
+for f in $( ls -1 "${BINDIR}" ) ; do
+  if [ ! -f "$f" ] && [ ! -f "scanner/$f" ]; then
+    echo "file $f exists in ${BINDIR} but neither in . nor in scanner"
   fi
 done
 
