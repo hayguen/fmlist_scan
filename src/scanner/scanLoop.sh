@@ -42,6 +42,10 @@ if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
   rm "${FMLIST_SCAN_RAM_DIR}/stopScanLoop"
 fi
 
+if [ -f "${FMLIST_SCAN_RAM_DIR}/abortScanLoop" ]; then
+  rm "${FMLIST_SCAN_RAM_DIR}/abortScanLoop"
+fi
+
 #
 
 echo -e "\\nSTARTING_SCANNER\\n\\n" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
@@ -117,7 +121,11 @@ while /bin/true; do
         DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
         echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
         echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-        saveScanResults.sh savelog
+        if [ "${FMLIST_SCAN_SAVE_PARTIAL}" = "1" ]; then
+          saveScanResults.sh savelog
+        else
+          rmScanResults.sh
+        fi
         echo "${DTF}: going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES} .." >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/reboots.log"
         sudo reboot now
         exit 0
@@ -154,7 +162,11 @@ while /bin/true; do
         DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
         echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
         echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-        saveScanResults.sh savelog
+        if [ "${FMLIST_SCAN_SAVE_PARTIAL}" = "1" ]; then
+          saveScanResults.sh savelog
+        else
+          rmScanResults.sh
+        fi
         echo "${DTF}: going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES} .." >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/reboots.log"
         sudo reboot now
         exit 0
@@ -198,9 +210,16 @@ while /bin/true; do
 
 done
 
-echo -e "\\nend of scanLoop. calling saveScanResults.sh savelog .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-saveScanResults.sh savelog
-
+if [ ! -f "${FMLIST_SCAN_RAM_DIR}/abortScanLoop" ]; then
+  if [ "${FMLIST_SCAN_SAVE_PARTIAL}" = "1" ]; then
+    echo -e "\\nend of scanLoop. calling saveScanResults.sh savelog .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+    saveScanResults.sh savelog
+  else
+    rmScanResults.sh
+  fi
+else
+  rmScanResults.sh
+fi
 
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   sudo -E $HOME/bin/rpi3b_led_init.sh

@@ -19,6 +19,7 @@ cp scanner/waitScreenTermination.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanToneFeedback.sh  /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/pipwm.sh             /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/saveScanResults.sh   /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/rmScanResults.sh     /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/concatScanResults.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/prepareScanResultsForUpload.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/uploadScanResults.sh /home/${FMLIST_SCAN_USER}/bin/

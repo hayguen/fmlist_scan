@@ -28,6 +28,7 @@
     "FMLIST_SCAN_FOUND_LEDPLAY"      \
     "FMLIST_SCAN_PWM_FEEDBACK"       \
     "FMLIST_SCAN_MOUNT"              \
+    "FMLIST_SCAN_SAVE_PARTIAL"       \
   )
 
   VARS_TO_EXIST=( \
