@@ -20,7 +20,7 @@ if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   apt-get -y install libraspberrypi-bin
 fi
 
-apt-get -y install build-essential git git-gui gitk cmake libtool autotools-dev automake colordiff jq
+apt-get -y install build-essential git git-gui gitk cmake cmake-curses-gui libtool autotools-dev automake colordiff jq
 apt-get -y install usbutils libusb-1.0-0-dev libsndfile1-dev
 
 if [ "${FMLIST_SCAN_MOUNT}" = "1" ]; then
