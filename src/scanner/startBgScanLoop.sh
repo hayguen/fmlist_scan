@@ -146,5 +146,6 @@ if [ -z "$SSESSION" ]; then
   exit 10
 fi
 
+echo "" >${FMLIST_SCAN_RAM_DIR}/LAST
 echo "1" >${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
 
