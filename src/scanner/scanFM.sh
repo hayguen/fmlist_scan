@@ -39,6 +39,8 @@ if [ ! -f ${FMLIST_SCAN_RAM_DIR}/fmscan.inc ]; then
   else
     cat - <<EOF >${FMLIST_SCAN_RAM_DIR}/fmscan.inc
 chunkduration=4
+selchunkduration=4
+selchunkfreqs=()
 par_jobs=3
 ddc_step=100000
 ukw_beg=87500000
@@ -74,22 +76,39 @@ chunkbw=$[ $mpxsrate * $mpxsrate_chunkbw_factor ]
 chunknumsmp=$[ $chunkduration * $chunksrate ]
 chunkrectimeout=$[ $chunkduration + 2 ]
 chunkreckilltime=$[ $chunkduration + 5 ]
+selchunknumsmp=$[ $selchunkduration * $chunksrate ]
+selchunkrectimeout=$[ $selchunkduration + 2 ]
+selchunkreckilltime=$[ $selchunkduration + 5 ]
 chunk2mpx_nfc=$( echo "1.0 / $chunk2mpx_dec" | octave -q --no-gui | sed 's/ans = //g' )
 
 ddc_hstep=$[ ${ddc_step} / 2 ]
-ddc_beg=$[ -$chunkbw / 2 + $ddc_step / 2 ]
-ddc_end=$[ $chunkbw / 2 - $ddc_step / 2 ]
-ddc_pfreqs="$(seq $ddc_hstep $ddc_step $ddc_end)"
-ddc_nfreqs="$(seq -$ddc_hstep -$ddc_step -$ddc_end)"
-ddc_freqs=$( ( seq $ddc_hstep $ddc_step $ddc_end ; seq -$ddc_hstep -$ddc_step -$ddc_end ) | sort -n )
-ddc_fmin=$( echo "$ddc_freqs" | head -n 1 )
-ddc_fmax=$( echo "$ddc_freqs" | tail -n 1 )
-ddc_span=$[ $ddc_fmax + $ddc_fmax + $ddc_step ]
-ddc_freqs=$( ( seq $ddc_hstep $ddc_step $ddc_end ; seq -$ddc_hstep -$ddc_step -$ddc_end ) | sort -n | sed -z 's/\n/ /g' )
+if [ -z "${center_beg}" ] || [ -z "${center_last}" ]; then
+  ddc_beg=$[ -$chunkbw / 2 + $ddc_step / 2 ]
+  ddc_end=$[ $chunkbw / 2 - $ddc_step / 2 ]
+  ddc_pfreqs="$(seq $ddc_hstep $ddc_step $ddc_end)"
+  ddc_nfreqs="$(seq -$ddc_hstep -$ddc_step -$ddc_end)"
+  ddc_freqs=$( ( seq $ddc_hstep $ddc_step $ddc_end ; seq -$ddc_hstep -$ddc_step -$ddc_end ) | sort -n )
+  ddc_fmin=$( echo "$ddc_freqs" | head -n 1 )
+  ddc_fmax=$( echo "$ddc_freqs" | tail -n 1 )
+  ddc_span=$[ $ddc_fmax + $ddc_fmax + $ddc_step ]
+  ddc_freqs=$( ( seq $ddc_hstep $ddc_step $ddc_end ; seq -$ddc_hstep -$ddc_step -$ddc_end ) | sort -n | sed -z 's/\n/ /g' )
+  NrfFileBase="ddc_freqs_bw${chunkbw}_step${ddc_step}_fs${chunksrate}"
+else
+  beg_sgn=$[  ${center_beg}  / ${center_beg#-}  ]
+  last_sgn=$[ ${center_last} / ${center_last#-} ]
+  ddc_beg=$[ ( ( ( ${center_beg#-}  - ${ddc_hstep} ) / ${ddc_step} ) * ${ddc_step} + ${ddc_hstep} ) * ${beg_sgn}  ]
+  ddc_end=$[ ( ( ( ${center_last#-} - ${ddc_hstep} ) / ${ddc_step} ) * ${ddc_step} + ${ddc_hstep} ) * ${last_sgn} ]
+  ddc_freqs=$( ( seq $ddc_beg $ddc_step $ddc_end ) | sort -n )
+  ddc_fmin=$( echo "$ddc_freqs" | head -n 1 )
+  ddc_fmax=$( echo "$ddc_freqs" | tail -n 1 )
+  ddc_span=$[ $ddc_fmax - $ddc_fmin + $ddc_step ]
+  ddc_freqs=$( ( seq $ddc_beg $ddc_step $ddc_end ) | sort -n | sed -z 's/\n/ /g' )
+  NrfFileBase="ddc_freqs_${mpxsrate_chunkbw_factor}_${ddc_fmin}_to_${ddc_fmax}_step${ddc_step}_fs${chunksrate}"
+fi
 Nddc_freqs="$( echo "${ddc_freqs}" | wc -w )"
 
-cachedNrfFile="${FMLIST_SCAN_RAM_DIR}/ddc_freqs_bw${chunkbw}_step${ddc_step}_fs${chunksrate}.inc"
-localNrfFile="${FMLIST_SCAN_PATH}/ddc_freqs_bw${chunkbw}_step${ddc_step}_fs${chunksrate}.inc"
+cachedNrfFile="${FMLIST_SCAN_RAM_DIR}/${NrfFileBase}.inc"
+localNrfFile="${FMLIST_SCAN_PATH}/${NrfFileBase}.inc"
 if [ ! -f "${cachedNrfFile}" ]; then
   if [ -f "${localNrfFile}" ]; then
     # copy, then source / include from cache
@@ -111,7 +130,7 @@ else
   source "${cachedNrfFile}"
 fi
 
-chunks_beg_f=$[ $ukw_beg + $ddc_fmax ]
+chunks_beg_f=$[ $ukw_beg - $ddc_fmin ]
 chunks_end_f=$[ $ukw_end + $ddc_fmax ]
 chunkfrqs=$( seq ${chunks_beg_f} ${ddc_span} ${chunks_end_f} | tr '\n' ' ' )
 Nchunkfrqs="$( echo "${chunkfrqs}" | wc -w )"
