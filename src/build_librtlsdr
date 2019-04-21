@@ -17,9 +17,13 @@ fi
 cd ${BASE}/git/${GITUSER}
 if [ -d ${GITPROJ} ]; then
   cd ${GITPROJ}
+  git fetch && git fetch --tags
+  git checkout development
   git pull --rebase
+  git checkout FMLIST
 else
-  git clone https://github.com/${GITUSER}/${GITPROJ}.git -b development
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+  git checkout FMLIST
 fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
