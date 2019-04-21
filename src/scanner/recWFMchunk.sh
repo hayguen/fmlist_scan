@@ -150,9 +150,8 @@ fi
 FPN="${FMLIST_SCAN_RAM_DIR}/${FN}"
 echo "FN is  ${FN}"
 echo "FPN is ${FPN}"
-echo "running rtl_sdr -R 600 -f ${freq} -s ${chunksrate} -n ${chunknumsmp} ${RTLSDR_OPT} ${RTL_BW_OPT} $@ ${FPN} .."
-rtl_sdr -R 600 -f ${freq} -s ${chunksrate} -n ${chunknumsmp} ${RTLSDR_OPT} ${RTL_BW_OPT} "$@" "${FPN}"
-#rtl_sdr -f ${freq} -s ${chunksrate} -n ${chunknumsmp} ${RTLSDR_OPT} ${RTL_BW_OPT} "$@" "${FPN}"
+echo "running rtl_sdr -f ${freq} -s ${chunksrate} -n ${chunknumsmp} ${RTLSDR_OPT} ${RTL_BW_OPT} $@ ${FPN} .."
+rtl_sdr -f ${freq} -s ${chunksrate} -n ${chunknumsmp} ${RTLSDR_OPT} ${RTL_BW_OPT} "$@" "${FPN}"
 
 echo "recorded file is: $( ls -lh "${FPN}" )"
 
