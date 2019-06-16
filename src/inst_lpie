@@ -9,3 +9,17 @@ cd ${BASE}/git/${GITUSER}/${GITPROJ}
 sh installer
 
 cd ${BASE}
+
+if [ -z "${FMLIST_SCAN_USER}" ]; then
+  export FMLIST_SCAN_USER="pi"
+fi
+
+if [ ! -f /home/${FMLIST_SCAN_USER}/.bashrc ]; then
+  sudo -u ${FMLIST_SCAN_USER} bash -c "touch /home/${FMLIST_SCAN_USER}/.bashrc"
+fi
+ALIASEXPR="$( echo -n "$(pwd)/lpie_status.sh" |sed "s#/#\\\\/#g" )"
+sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPR}/d' /home/${FMLIST_SCAN_USER}/.bashrc"
+sudo -u ${FMLIST_SCAN_USER} bash -c "echo \". $(pwd)/lpie_status.sh\" >>/home/${FMLIST_SCAN_USER}/.bashrc"
+
+cd ${BASE}
+

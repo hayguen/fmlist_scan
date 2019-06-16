@@ -24,6 +24,11 @@ echo "removing entries from ~/.bash_aliases .."
 ALIASEXPR="$( echo -n "$(pwd)/.bash_aliases" |sed "s#/#\\\\/#g" )"
 sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPR}/d' /home/${FMLIST_SCAN_USER}/.bash_aliases"
 
+# remove login status message
+echo "removing lpie status message from ~/.bashrc .."
+ALIASEXPR="$( echo -n "$(pwd)/lpie_status.sh" |sed "s#/#\\\\/#g" )"
+sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPR}/d' /home/${FMLIST_SCAN_USER}/.bashrc"
+
 # remove gps scripts
 echo "removing gps scripts from $HOME/bin .."
 rm -f "$HOME/bin/get_gpstime.sh"
