@@ -27,6 +27,7 @@ cp scanner/uploadScanFilesToDeveloper.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/redsea.json2csv.sh   /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanTest.sh          /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/recDAB.sh            /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/recDABaudio.sh       /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/listenDAB.sh         /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/recWFMchunk.sh       /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/atx-knob.sh          /home/${FMLIST_SCAN_USER}/bin/
@@ -43,6 +44,7 @@ chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/stop
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/waitScreenTermination.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/redsea.json2csv.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/recDAB.sh
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/recDABaudio.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/listenDAB.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/recWFMchunk.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/atx-knob.sh
