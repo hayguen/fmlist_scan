@@ -48,8 +48,8 @@ if [ -z "${chan}" ]; then
   exit 0
 fi
 
-durationClose=$[ ${durationSeconds} + 10 ]
-durationKill=$[ ${durationSeconds} + 17 ]
+durationClose=$[ ${durationSeconds} + 20 ]
+durationKill=$[ ${durationSeconds} + 30 ]
 DTFREC="$(date -u "+%Y-%m-%dT%Hh%Mm%SZ")"
 FN="DAB-${chan}_${DTFREC}_${fnID}.wav"
 FL="DAB-${chan}_${DTFREC}_${fnID}.log"
