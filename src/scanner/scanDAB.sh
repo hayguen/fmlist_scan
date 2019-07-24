@@ -119,7 +119,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
     echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
   fi
 
-  dab-rtlsdr -C $CH ${DABOPT} &>"${rec_path}/DAB_$CH.log"
+  LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" dab-rtlsdr -C $CH ${DABOPT} &>"${rec_path}/DAB_$CH.log"
   grep ",CSV_ENSEMBLE," "${rec_path}/DAB_$CH.log" | sed "s#,CSV_ENSEMBLE,#,${GPSCOLS},#g" >>"${rec_path}/dab_ensemble.csv"
   grep ",CSV_GPSCOOR,"  "${rec_path}/DAB_$CH.log" | sed "s#,CSV_GPSCOOR,#,${GPSCOLS},#g"  >>"${rec_path}/dab_gps.csv"
   grep ",CSV_AUDIO,"    "${rec_path}/DAB_$CH.log" | sed "s#,CSV_AUDIO,#,${GPSCOLS},#g"    >>"${rec_path}/dab_audio.csv"
