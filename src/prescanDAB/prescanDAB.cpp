@@ -45,7 +45,8 @@
 #define MINIMAL_BUF_LENGTH		512
 #define MAXIMAL_BUF_LENGTH		(256 * 16384)
 
-static int do_exit = 0;
+static volatile int do_exit = 0;
+static int async_proc = 0;
 static rtlsdr_dev_t *dev = NULL;
 static uint32_t samp_rate = DEFAULT_SAMPLE_RATE;
 
@@ -86,12 +87,11 @@ void usage(void)
 		"\t[-w tuner_bandwidth (default: automatic)]\n"
 		"\t[-d device_index (default: 0)]\n"
 		"\t[-g gain (default: 0 for auto)]\n"
-		"\t[-O set RTL options string seperated with ':' ]\n"
-		"\t  f=<freqHz>:bw=<bw_in_kHz>:agc=<tuner_gain_mode>:gain=<tenth_dB>\n"
-		"\t  dagc=<rtl_agc>:ds=<direct_sampling_mode>:T=<bias_tee>\n"
+		"%s"
 		"\t[-p ppm_error (default: 0)]\n"
 		"\t[-b output_block_size (default: 16 * 16384)]\n"
-		"\t[-S force sync output (default: async)]\n" );
+		"\t[-S force sync output (default: async)]\n\n"
+		, rtlsdr_get_opt_help(1) );
 	exit(1);
 }
 
@@ -102,7 +102,8 @@ sighandler(int signum)
 	if (CTRL_C_EVENT == signum) {
 		fprintf(stderr, "Signal caught, exiting!\n");
 		do_exit = 1;
-		rtlsdr_cancel_async(dev);
+		if (async_proc)
+			rtlsdr_cancel_async(dev);
 		return TRUE;
 	}
 	return FALSE;
@@ -112,7 +113,8 @@ static void sighandler(int signum)
 {
 	fprintf(stderr, "Signal caught, exiting!\n");
 	do_exit = 1;
-	rtlsdr_cancel_async(dev);
+	if (async_proc)
+		rtlsdr_cancel_async(dev);
 }
 #endif
 
@@ -121,16 +123,16 @@ static void sighandler(int signum)
 template<class ForwardIt>
 ForwardIt min_element(ForwardIt first, ForwardIt last)
 {
-    if (first == last) return last;
+	if (first == last) return last;
 
-    ForwardIt smallest = first;
-    ++first;
-    for (; first != last; ++first) {
-        if (*first < *smallest) {
-            smallest = first;
-        }
-    }
-    return smallest;
+	ForwardIt smallest = first;
+	++first;
+	for (; first != last; ++first) {
+		if (*first < *smallest) {
+			smallest = first;
+		}
+	}
+	return smallest;
 }
 
 
@@ -199,26 +201,26 @@ static void rtlsdr_callback(unsigned char *buf, uint32_t len, void *ctx)
 		buf += waitSmpAfterSetFreqLeft*2;
 		waitSmpAfterSetFreqLeft = 0;
 
-        const float alpha = powerExpAvgAlfa;
-        const float beta = 1.0F - powerExpAvgAlfa;
-        const int corrBufLenPre = corrBufLen;
+		const float alpha = powerExpAvgAlfa;
+		const float beta = 1.0F - powerExpAvgAlfa;
+		const int corrBufLenPre = corrBufLen;
 		int bufIdx = 0;
-        if ( !corrBufLen && lenSmp > 0 )
-        {
-            const float re = int(buf[bufIdx] - 127) / 128.0F;
-            const float im = int(buf[bufIdx+1] - 127) / 128.0F;
-            const float pwr = re * re + im * im;
-            powerBuf[0] = pwr;
-            powerBuf = powerBuf + 1;
-        }
+		if ( !corrBufLen && lenSmp > 0 )
+		{
+			const float re = int(buf[bufIdx] - 127) / 128.0F;
+			const float im = int(buf[bufIdx+1] - 127) / 128.0F;
+			const float pwr = re * re + im * im;
+			powerBuf[0] = pwr;
+			powerBuf = powerBuf + 1;
+		}
 		while ( lenSmp > 0 )
 		{
 			const float re = int(buf[bufIdx++] - 127) / 128.0F;
 			const float im = int(buf[bufIdx++] - 127) / 128.0F;
-            const float pwr = re * re + im * im;
-            corrBuf[corrBufLen] = std::complex<float>(re, im);
-            powerBuf[corrBufLen] = alpha * pwr + beta * powerBuf[corrBufLen-1];
-            ++corrBufLen;
+			const float pwr = re * re + im * im;
+			corrBuf[corrBufLen] = std::complex<float>(re, im);
+			powerBuf[corrBufLen] = alpha * pwr + beta * powerBuf[corrBufLen-1];
+			++corrBufLen;
 			--lenSmp;
 		}
 
@@ -260,47 +262,47 @@ static void rtlsdr_callback(unsigned char *buf, uint32_t len, void *ctx)
 				fprintf(stdout, "%f, %s, %d\n", corrCoeff, chanList[chanIdx], chanIdx+1);
 			}
 
-            chanCorrCoeff[chanIdx] = corrCoeff;
+			chanCorrCoeff[chanIdx] = corrCoeff;
 
-            if ( ( 1 || corrCoeff >= minAutoCorrCoeff ) && corrBufLen >= 2*196608 )
-            {
-                double nullSymbSumPwr = 0.0;
-                double chanFrameSymbSumPwr = 0.0;
-                int chanFrameSymbNumPwr = 0;
-                const float * ptrMin = min_element( powerBuf+0, powerBuf+corrBufLen );
-                const int iAbsMinIdx = ptrMin - powerBuf;
-                const int iFirstMinIdx = iAbsMinIdx % 196608;
-                float nullSymbMaxPwr = *ptrMin;
-                float frameSymbMinPwr = 1000.0F;
-                chanNullNumFrames[chanIdx] = 0;
-                for ( int nullIdx = iFirstMinIdx; nullIdx + 196608 < corrBufLen; nullIdx += 196608 )
-                {
-                    ++chanNullNumFrames[chanIdx];
-                    nullSymbSumPwr += powerBuf[nullIdx];
+			if ( ( 1 || corrCoeff >= minAutoCorrCoeff ) && corrBufLen >= 2*196608 )
+			{
+				double nullSymbSumPwr = 0.0;
+				double chanFrameSymbSumPwr = 0.0;
+				int chanFrameSymbNumPwr = 0;
+				const float * ptrMin = min_element( powerBuf+0, powerBuf+corrBufLen );
+				const int iAbsMinIdx = ptrMin - powerBuf;
+				const int iFirstMinIdx = iAbsMinIdx % 196608;
+				float nullSymbMaxPwr = *ptrMin;
+				float frameSymbMinPwr = 1000.0F;
+				chanNullNumFrames[chanIdx] = 0;
+				for ( int nullIdx = iFirstMinIdx; nullIdx + 196608 < corrBufLen; nullIdx += 196608 )
+				{
+					++chanNullNumFrames[chanIdx];
+					nullSymbSumPwr += powerBuf[nullIdx];
 
-                    nullSymbMaxPwr = std::max( nullSymbMaxPwr, powerBuf[nullIdx] );
-                    for ( int frameSymIdx = nullIdx + (2656+2552)/2; frameSymIdx < nullIdx + 196608; frameSymIdx += 2552 )
-                    {
-                        chanFrameSymbSumPwr += powerBuf[frameSymIdx];
-                        ++chanFrameSymbNumPwr;
-                        frameSymbMinPwr = std::min( frameSymbMinPwr, powerBuf[frameSymIdx] );
-                    }
-                }
-                const float fLowestSamplePwr = (1.0F/128.0F) * (1.0F/128.0F);
-                nullSymbMaxPwr = std::max( nullSymbMaxPwr, fLowestSamplePwr );
-
-                chanNullSymbMaxPwr[chanIdx] = nullSymbMaxPwr;
-                chanNullSymbAvgPwr[chanIdx] = nullSymbSumPwr / chanNullNumFrames[chanIdx];
-
-                chanFrameSymbMinPwr[chanIdx] = frameSymbMinPwr;
-                chanFrameSymbAvgPwr[chanIdx] = chanFrameSymbSumPwr / chanFrameSymbNumPwr;
-                chanFrameSymbStdPwr[chanIdx] = 0.0F;
-
-                if ( frameSymbMinPwr >= 0.1F * nullSymbMaxPwr )
-                    chanNullSymbDist[chanIdx] = frameSymbMinPwr / nullSymbMaxPwr;
-                else
-                    chanNullSymbDist[chanIdx] = 0.0F;
-            }
+					nullSymbMaxPwr = std::max( nullSymbMaxPwr, powerBuf[nullIdx] );
+					for ( int frameSymIdx = nullIdx + (2656+2552)/2; frameSymIdx < nullIdx + 196608; frameSymIdx += 2552 )
+					{
+					chanFrameSymbSumPwr += powerBuf[frameSymIdx];
+					++chanFrameSymbNumPwr;
+					frameSymbMinPwr = std::min( frameSymbMinPwr, powerBuf[frameSymIdx] );
+					}
+				}
+				const float fLowestSamplePwr = (1.0F/128.0F) * (1.0F/128.0F);
+				nullSymbMaxPwr = std::max( nullSymbMaxPwr, fLowestSamplePwr );
+				
+				chanNullSymbMaxPwr[chanIdx] = nullSymbMaxPwr;
+				chanNullSymbAvgPwr[chanIdx] = nullSymbSumPwr / chanNullNumFrames[chanIdx];
+				
+				chanFrameSymbMinPwr[chanIdx] = frameSymbMinPwr;
+				chanFrameSymbAvgPwr[chanIdx] = chanFrameSymbSumPwr / chanFrameSymbNumPwr;
+				chanFrameSymbStdPwr[chanIdx] = 0.0F;
+				
+				if ( frameSymbMinPwr >= 0.1F * nullSymbMaxPwr )
+					chanNullSymbDist[chanIdx] = frameSymbMinPwr / nullSymbMaxPwr;
+				else
+					chanNullSymbDist[chanIdx] = 0.0F;
+			}
 
 			if ( 0 && corrCoeff >= minAutoCorrCoeff )
 			{
@@ -341,16 +343,16 @@ int main(int argc, char **argv)
 	{
 		for (int k = 0; k < 256; ++k)
 			chanCorrCoeff[k] = -16.0F;
-        for (int k = 0; k < 256; ++k)
-        {
-            chanNullSymbDist[k] = -1.0F;
-            chanNullSymbMaxPwr[k] = 0.0F;
-            chanNullSymbAvgPwr[k] = 0.0F;
-            chanFrameSymbMinPwr[k] = 0.0F;
-            chanFrameSymbAvgPwr[k] = 0.0F;
-            chanFrameSymbStdPwr[k] = 0.0F;
-            chanNullNumFrames[k] = 0;
-        }
+		for (int k = 0; k < 256; ++k)
+		{
+			chanNullSymbDist[k] = -1.0F;
+			chanNullSymbMaxPwr[k] = 0.0F;
+			chanNullSymbAvgPwr[k] = 0.0F;
+			chanFrameSymbMinPwr[k] = 0.0F;
+			chanFrameSymbAvgPwr[k] = 0.0F;
+			chanFrameSymbStdPwr[k] = 0.0F;
+			chanNullNumFrames[k] = 0;
+		}
 	}
 
 	while ((opt = getopt(argc, argv, "c:L:C:A:N:W:s:w:d:g:O:p:b:v")) != -1)
@@ -421,9 +423,9 @@ int main(int argc, char **argv)
 	tauSmp = int( 0.5F + samp_rate / 1000.0F );
 	totalCorrLen = int( 0.5F + float(numCorrs) * samp_rate / 1000.0F );
 
-    const double expAvgFiveTau = 0.001246 / 3.0;    // 1/3 of symbol duration
-    const double expAvgTau = expAvgFiveTau / 5.0;
-    powerExpAvgAlfa = float( 1.0 - exp( -1.0 / (expAvgTau * samp_rate) ) );
+	const double expAvgFiveTau = 0.001246 / 3.0;    // 1/3 of symbol duration
+	const double expAvgTau = expAvgFiveTau / 5.0;
+	powerExpAvgAlfa = float( 1.0 - exp( -1.0 / (expAvgTau * samp_rate) ) );
 
 	if (verbosity)
 	{
@@ -449,7 +451,7 @@ int main(int argc, char **argv)
 
 	buffer = (uint8_t*)malloc(out_block_size * sizeof(uint8_t));
 	corrBuf = new std::complex<float>[ totalCorrLen + tauSmp + out_block_size ];
-    powerBuf = new float[ 1 + totalCorrLen + tauSmp + out_block_size ];
+	powerBuf = new float[ 1 + totalCorrLen + tauSmp + out_block_size ];
 
 	if (!dev_given) {
 		dev_index = verbose_device_search("0");
@@ -510,10 +512,14 @@ int main(int argc, char **argv)
 
 	if (1)
 	{
+		async_proc = 0;
 		fprintf(stderr, "Reading samples in sync mode...\n");
 		while (!do_exit)
 		{
 			r = rtlsdr_read_sync(dev, buffer, out_block_size, &n_read);
+			if (do_exit)
+				break;
+
 			if (r < 0) {
 				fprintf(stderr, "WARNING: sync read failed.\n");
 				break;
@@ -528,6 +534,7 @@ int main(int argc, char **argv)
 		}
 	} else {
 		fprintf(stderr, "Reading samples in async mode...\n");
+		async_proc = 1;
 		r = rtlsdr_read_async(dev, rtlsdr_callback, NULL, 0, out_block_size);
 	}
 
@@ -541,13 +548,13 @@ int main(int argc, char **argv)
 
 	std::string corrs( "dabchancorrsK=( " );
 	std::string chans( "dabchannels=( " );
-    std::string frameNullRatio( "framenullratioK=( " );
-    std::string frameNullRatioC( "# framenullratioK: " );
-    std::string frameNullC_A( "# null symb max: " );
-    std::string frameNullC_B( "# null symb avg: " );
-    std::string frameNullC_C( "# framesymb min: " );
-    std::string frameNullC_D( "# framesymb avg: " );
-    std::string frameNullC_E( "# #frames: " );
+	std::string frameNullRatio( "framenullratioK=( " );
+	std::string frameNullRatioC( "# framenullratioK: " );
+	std::string frameNullC_A( "# null symb max: " );
+	std::string frameNullC_B( "# null symb avg: " );
+	std::string frameNullC_C( "# framesymb min: " );
+	std::string frameNullC_D( "# framesymb avg: " );
+	std::string frameNullC_E( "# #frames: " );
 
     for ( int k = 0; k < numChannels; ++k )
 	{
@@ -560,32 +567,32 @@ int main(int argc, char **argv)
 			chans += chanList[k];
 			chans += " ";
 		}
-        int chanNullSymbDistI = int( 0.5 + chanNullSymbDist[k] * 1000.0 );
-        frameNullRatio += std::to_string( chanNullSymbDistI );
-        frameNullRatio += " ";
+		int chanNullSymbDistI = int( 0.5 + chanNullSymbDist[k] * 1000.0 );
+		frameNullRatio += std::to_string( chanNullSymbDistI );
+		frameNullRatio += " ";
 
-        if ( chanNullSymbDistI > 0 )
-        {
-            frameNullRatioC += std::string(chanList[k]) + ": " + std::to_string( chanNullSymbDistI ) + "  ";
-            frameNullC_A += std::string(chanList[k]) + ": " + std::to_string(chanNullSymbMaxPwr[k]) + "  ";  // "# null symb max: "
-            frameNullC_B += std::string(chanList[k]) + ": " + std::to_string(chanNullSymbAvgPwr[k]) + "  ";  // "# null symb avg: "
-            frameNullC_C += std::string(chanList[k]) + ": " + std::to_string(chanFrameSymbMinPwr[k]) + "  ";  // "# framesymb min: "
-            frameNullC_D += std::string(chanList[k]) + ": " + std::to_string(chanFrameSymbAvgPwr[k]) + "  ";  // "# framesymb avg: "
-            frameNullC_E += std::string(chanList[k]) + ": " + std::to_string(chanNullNumFrames[k]) + "  ";  // "# #frames: "
-        }
+		if ( chanNullSymbDistI > 0 )
+		{
+			frameNullRatioC += std::string(chanList[k]) + ": " + std::to_string( chanNullSymbDistI ) + "  ";
+			frameNullC_A += std::string(chanList[k]) + ": " + std::to_string(chanNullSymbMaxPwr[k]) + "  ";  // "# null symb max: "
+			frameNullC_B += std::string(chanList[k]) + ": " + std::to_string(chanNullSymbAvgPwr[k]) + "  ";  // "# null symb avg: "
+			frameNullC_C += std::string(chanList[k]) + ": " + std::to_string(chanFrameSymbMinPwr[k]) + "  ";  // "# framesymb min: "
+			frameNullC_D += std::string(chanList[k]) + ": " + std::to_string(chanFrameSymbAvgPwr[k]) + "  ";  // "# framesymb avg: "
+			frameNullC_E += std::string(chanList[k]) + ": " + std::to_string(chanNullNumFrames[k]) + "  ";  // "# #frames: "
+		}
 	}
 	corrs += ")";
 	chans += ")";
-    frameNullRatio += ")";
-    fprintf(stdout, "%s\n", corrs.c_str());
-    fprintf(stdout, "%s\n", frameNullRatio.c_str());
-    fprintf(stdout, "%s\n", frameNullRatioC.c_str());
-    fprintf(stdout, "%s\n", frameNullC_A.c_str());
-    fprintf(stdout, "%s\n", frameNullC_B.c_str());
-    fprintf(stdout, "%s\n", frameNullC_C.c_str());
-    fprintf(stdout, "%s\n", frameNullC_D.c_str());
-    fprintf(stdout, "%s\n", frameNullC_E.c_str());
-    fprintf(stdout, "%s\n", chans.c_str());
+	frameNullRatio += ")";
+	fprintf(stdout, "%s\n", corrs.c_str());
+	fprintf(stdout, "%s\n", frameNullRatio.c_str());
+	fprintf(stdout, "%s\n", frameNullRatioC.c_str());
+	fprintf(stdout, "%s\n", frameNullC_A.c_str());
+	fprintf(stdout, "%s\n", frameNullC_B.c_str());
+	fprintf(stdout, "%s\n", frameNullC_C.c_str());
+	fprintf(stdout, "%s\n", frameNullC_D.c_str());
+	fprintf(stdout, "%s\n", frameNullC_E.c_str());
+	fprintf(stdout, "%s\n", chans.c_str());
 
 out:
 	return r >= 0 ? r : -r;
