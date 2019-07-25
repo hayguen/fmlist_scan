@@ -120,18 +120,18 @@ if [ "\${GPSSRC}" = "static" ]; then
   # spend more time on scanning in static environment
   chunkduration="8"
 
-# mpxsrate_chunkbw_factor="2";  RTL_BW_OPT="-w 450000"  # +/- 50000 Hz, N= 2,  chunkbw=  342 kHz (=factor*171 kHz)
-# mpxsrate_chunkbw_factor="3";  RTL_BW_OPT="-w 550000"  # +/-150000 Hz, N= 4,  chunkbw=  513 kHz; chunkduration=8 => 492sec, 22 RDS +36 plain carriers; 493s, 21+29; minT=52*8=416s
-# mpxsrate_chunkbw_factor="4";  RTL_BW_OPT="-w 900000"  # +/-250000 Hz, N= 6,  chunkbw=  684 kHz; chunkduration=8 => 332sec, 21 RDS +31 plain carriers; 332s, 20+28; minT=35*8=280s
-#[mpxsrate_chunkbw_factor="5";  RTL_BW_OPT="-w 1200000" # +/-350000 Hz, N= 8,  chunkbw=  855 kHz] => same filter bw!
-#[mpxsrate_chunkbw_factor="6";  RTL_BW_OPT="-w 1200000" # +/-450000 Hz, N= 10, chunkbw= 1026 kHz] => same filter bw!
-# mpxsrate_chunkbw_factor="7";  RTL_BW_OPT="-w 1200000" # +/-450000 Hz, N= 10, chunkbw= 1197 kHz; chunkduration=8 => 200sec, 20 RDS +26 plain carriers; 199s, 17+30; minT=21*8=168s
-# mpxsrate_chunkbw_factor="8";  RTL_BW_OPT="-w 1450000" # +/-550000 Hz, N= 12, chunkbw= 1368 kHz; chunkduration=8 => 173sec, 19 RDS +23 plain carriers; 176s, 19+26; minT=18*8=144s
-# mpxsrate_chunkbw_factor="9";  RTL_BW_OPT="-w 1600000" # +/-650000 Hz, N= 14, chunkbw= 1539 kHz; chunkduration=8 => 146sec, 19 RDS +26 plain carriers; 148s, 18+27; minT=15*8=120s
-# mpxsrate_chunkbw_factor="10"; RTL_BW_OPT="-w 1800000" # +/-750000 Hz, N= 16, chunkbw= 1710 kHz; chunkduration=8 => 140sec, 17 RDS +33 plain carriers; 141s, 18+38; minT=13*8=108s
-# mpxsrate_chunkbw_factor="11"; RTL_BW_OPT="-w 2080000" # +/-850000 Hz, N= 18, chunkbw= 1881 kHz; chunkduration=8 => 125sec, 12 RDS +30 plain carriers; 123s, 14+25; minT=12*8=96s
+# mpxsrate_chunkbw_factor="2";  RTL_BW_OPT="-w 450000"; center_beg="-200000"; center_last="750000"
+# mpxsrate_chunkbw_factor="3";  RTL_BW_OPT="-w 550000"; center_beg="-200000"; center_last="750000"
+# mpxsrate_chunkbw_factor="4";  RTL_BW_OPT="-w 900000"; center_beg="-400000"; center_last="750000"
+#[mpxsrate_chunkbw_factor="5";  RTL_BW_OPT="-w 1200000"; center_beg="-500000"; center_last="750000"
+#[mpxsrate_chunkbw_factor="6";  RTL_BW_OPT="-w 1200000"; center_beg="-500000"; center_last="750000"
+# mpxsrate_chunkbw_factor="7";  RTL_BW_OPT="-w 1200000"; center_beg="-500000"; center_last="750000"
+# mpxsrate_chunkbw_factor="8";  RTL_BW_OPT="-w 1450000"; center_beg="-600000"; center_last="800000"
+# mpxsrate_chunkbw_factor="9";  RTL_BW_OPT="-w 1600000"; center_beg="-650000"; center_last="800000"
+# mpxsrate_chunkbw_factor="10"; RTL_BW_OPT="-w 1800000"; center_beg="-700000"; center_last="800000"
+# mpxsrate_chunkbw_factor="11"; RTL_BW_OPT="-w 2080000"; center_beg="-700000"; center_last="800000"
 
-  mpxsrate_chunkbw_factor="7";  RTL_BW_OPT="-w 1200000"
+  mpxsrate_chunkbw_factor="7";  RTL_BW_OPT="-w 1200000"; center_beg="-500000"; center_last="750000"
 
 fi
 
