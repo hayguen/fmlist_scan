@@ -23,6 +23,7 @@ if [ -d ${GITPROJ} ]; then
   git checkout FMLIST
 else
   git clone https://github.com/${GITUSER}/${GITPROJ}.git
+  cd ${GITPROJ}
   git checkout FMLIST
 fi
 
