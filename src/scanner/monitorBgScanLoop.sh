@@ -12,9 +12,15 @@ while /bin/true; do
   clear
   echo ""
   cat gpscoor.log
-  echo -en "\nLAST: "
+  echo -en "\nLast found station: "
   cat LAST
+
+  CURR="$(date -u +%s)"
+  LAST="$(stat -c %Y ${FMLIST_SCAN_RAM_DIR}/LAST)"
+  D=$[ $CURR - $LAST ]
+  echo "Delta from LAST to CURR = $D secs"
+
   echo ""
-  tail -n 10 checkBgScanLoop.log
+  tail -n 10 checkBgScanLoop.log | grep -v "Delta from LAST to CURR"
   sleep 2
 done

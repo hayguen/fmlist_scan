@@ -92,6 +92,8 @@ while /bin/true; do
     break
   fi
 
+  echo "1" >${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
+
   N=$[ $N + 1 ]
   echo "scanloop iteration $N"
 
@@ -179,11 +181,13 @@ while /bin/true; do
 
   NUM_RTL_FAILS=0
 
+  echo "1" >${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
   scanFM.sh
   if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
     break
   fi
 
+  echo "1" >${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
   scanDAB.sh
   if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
     break
@@ -233,3 +237,4 @@ if [ ! "${FMLIST_SCAN_GPS_ALL_TIME}" = "1" ]; then
   stopGpsLoop.sh silent
 fi
 
+rm -f ${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
