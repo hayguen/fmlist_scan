@@ -40,9 +40,9 @@ for f in $( ls -1 *.sh scanner/*.sh ) ; do
   if [ -f "${BINDIR}/$b" ]; then
     ND=$( diff $f "${BINDIR}/$b" | wc -l )
     if [ $ND -eq 0 ]; then
-      echo -e "diff $f:\t\tequal"
+      echo -e "diff $f\t\tequal"
     else
-      echo -e "diff $f:\t\tNOT equal"
+      echo -e "diff $f\t\tNOT equal\t\tmeld ${BINDIR}/$b $f"
       if [ "${OPTPRINT}" = "1" ]; then
         ${DIFF} "$f" "${BINDIR}/$b"
         echo ""
