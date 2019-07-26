@@ -11,7 +11,6 @@ if [ "$1" = "abort" ]; then
 fi
 
 touch "${FMLIST_SCAN_RAM_DIR}/stopScanLoop"
-rm -f ${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
 
 stopGpsLoop.sh silent
 

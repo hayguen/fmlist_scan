@@ -135,6 +135,9 @@ if [ "$1" = "autostart" ] ; then
    fi
 fi
 
+echo "" >${FMLIST_SCAN_RAM_DIR}/LAST
+rm -f ${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
+
 echo "starting screen session 'scanLoopBg' .."
 
 screen -d -m -S scanLoopBg bash "$HOME/bin/scanLoop.sh"
@@ -145,7 +148,4 @@ if [ -z "$SSESSION" ]; then
   echo "Error starting screen session" >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/error.log"
   exit 10
 fi
-
-echo "" >${FMLIST_SCAN_RAM_DIR}/LAST
-echo "1" >${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
 
