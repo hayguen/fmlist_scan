@@ -397,7 +397,7 @@ DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
 echo "FM scan finished at ${DTF}"
 echo "FM scan finished at ${DTF}" >>${rec_path}/scan_duration.txt
 echo "FM scan duration ${TDUR} sec"
-echo "FM scan finished ${TDUR} sec" >>${rec_path}/scan_duration.txt
+echo "FM scan duration ${TDUR} sec" >>${rec_path}/scan_duration.txt
 echo "FM scan found ${NUMRDS} RDS carriers and ${NUMCAR} plain carriers"
 echo "FM scan found ${NUMRDS} RDS carriers and ${NUMCAR} plain carriers" >>${rec_path}/scan_duration.txt
 if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then

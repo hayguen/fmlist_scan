@@ -163,7 +163,7 @@ DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
 echo "DAB scan finished at ${DTF}"
 echo "DAB scan finished at ${DTF}" >>${rec_path}/scan_duration.txt
 echo "DAB scan duration ${TDUR} sec"
-echo "DAB scan finished ${TDUR} sec" >>${rec_path}/scan_duration.txt
+echo "DAB scan duration ${TDUR} sec" >>${rec_path}/scan_duration.txt
 echo "DAB scan found ${NUMFOUND} stations"
 echo "DAB scan found ${NUMFOUND} stations" >>${rec_path}/scan_duration.txt
 if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then

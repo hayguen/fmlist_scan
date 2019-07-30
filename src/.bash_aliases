@@ -29,9 +29,13 @@ alias listDABens="cat scan_*_dab_ensemble.csv |awk -F, '{ OFS=\",\"; print \$7,\
 alias listDABprogs="cat scan_*_dab_audio.csv scan_*_dab_packet.csv | awk -F, '{ OFS=\",\"; print \$7,\$8,\$9,\$10,\$11; }' |sort |uniq"
 alias listDABaudio="cat scan_*_dab_audio.csv | awk -F, '{ OFS=\",\"; print \$7,\$8,\$9,\$10,\$11; }' |sort |uniq"
 alias listDABdata="cat scan_*_dab_packet.csv | awk -F, '{ OFS=\",\"; print \$7,\$8,\$9,\$10,\$11; }' |sort |uniq"
+alias listDABfound='for f in $(ls -1 *_DAB.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "DAB scan found" ; done'
+alias listDABdur='for f in $(ls -1 *_DAB.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "DAB scan duration" ; done'
+
 
 alias listFMp="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$3,\$13,\$15; }' |sort |uniq"
-
+alias listFMfound='for f in $(ls -1 *_FM.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "FM scan found" ; done'
+alias listFMdur='for f in $(ls -1 *_FM.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "FM scan duration" ; done'
 
 
 function showZipDABprogs {
@@ -59,4 +63,5 @@ function showZipFMp {
   done
   popd &>/dev/null
 }
+
 
