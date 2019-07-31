@@ -57,8 +57,20 @@ EOF
     echo "wrote default scan parameters to ${FMLIST_SCAN_RAM_DIR}/fmscan.inc. edit this file for use with next scan."
   fi
 fi
+
+
+if [ -f "${FMLIST_SCAN_RAM_DIR}/fmscan.no" ]; then
+  export FMSCAN_NO=$( cat "${FMLIST_SCAN_RAM_DIR}/fmscan.no" )
+else
+  export FMSCAN_NO="0"
+fi
+export FMSCAN_NO=$[ ${FMSCAN_NO} + 1 ]
+
 echo "reading scan parameters (chunkduration, par_jobs, ddc_step, ukw_beg, ukw_end) from ${FMLIST_SCAN_RAM_DIR}/fmscan.inc"
 source ${FMLIST_SCAN_RAM_DIR}/fmscan.inc
+
+echo -n "${FMSCAN_NO}" >${FMLIST_SCAN_RAM_DIR}/fmscan.no
+
 
 DISPLAY=""
 pilotfreq=19000
@@ -96,13 +108,23 @@ if [ -z "${center_beg}" ] || [ -z "${center_last}" ]; then
 else
   beg_sgn=$[  ${center_beg}  / ${center_beg#-}  ]
   last_sgn=$[ ${center_last} / ${center_last#-} ]
-  ddc_beg=$[ ( ( ( ${center_beg#-}  - ${ddc_hstep} ) / ${ddc_step} ) * ${ddc_step} + ${ddc_hstep} ) * ${beg_sgn}  ]
-  ddc_end=$[ ( ( ( ${center_last#-} - ${ddc_hstep} ) / ${ddc_step} ) * ${ddc_step} + ${ddc_hstep} ) * ${last_sgn} ]
-  ddc_freqs=$( ( seq $ddc_beg $ddc_step $ddc_end ) | sort -n )
-  ddc_fmin=$( echo "$ddc_freqs" | head -n 1 )
-  ddc_fmax=$( echo "$ddc_freqs" | tail -n 1 )
-  ddc_span=$[ $ddc_fmax - $ddc_fmin + $ddc_step ]
-  ddc_freqs=$( ( seq $ddc_beg $ddc_step $ddc_end ) | sort -n | sed -z 's/\n/ /g' )
+  if [ "${beg_sgn}" = "${last_sgn}" ]; then
+    ddc_beg="${center_beg}"
+    ddc_end=$[ ( ( ${center_last#-} / ${ddc_step} ) * ${ddc_step} ) * ${last_sgn} ]
+    ddc_freqs=$( ( seq $ddc_beg $ddc_step $ddc_end ) | sort -n )
+    ddc_fmin=$( echo "$ddc_freqs" | head -n 1 )
+    ddc_fmax=$( echo "$ddc_freqs" | tail -n 1 )
+    ddc_span=$[ $ddc_fmax - $ddc_fmin + $ddc_step ]
+    ddc_freqs=$( ( seq $ddc_beg $ddc_step $ddc_end ) | sort -n | sed -z 's/\n/ /g' )
+  else
+    ddc_beg=$[ ( ( ( ${center_beg#-}  - ${ddc_hstep} ) / ${ddc_step} ) * ${ddc_step} + ${ddc_hstep} ) * ${beg_sgn}  ]
+    ddc_end=$[ ( ( ( ${center_last#-} - ${ddc_hstep} ) / ${ddc_step} ) * ${ddc_step} + ${ddc_hstep} ) * ${last_sgn} ]
+    ddc_freqs=$( ( seq $ddc_beg $ddc_step $ddc_end ) | sort -n )
+    ddc_fmin=$( echo "$ddc_freqs" | head -n 1 )
+    ddc_fmax=$( echo "$ddc_freqs" | tail -n 1 )
+    ddc_span=$[ $ddc_fmax - $ddc_fmin + $ddc_step ]
+    ddc_freqs=$( ( seq $ddc_beg $ddc_step $ddc_end ) | sort -n | sed -z 's/\n/ /g' )
+  fi
   NrfFileBase="ddc_freqs_${mpxsrate_chunkbw_factor}_${ddc_fmin}_to_${ddc_fmax}_step${ddc_step}_fs${chunksrate}"
 fi
 Nddc_freqs="$( echo "${ddc_freqs}" | wc -w )"
