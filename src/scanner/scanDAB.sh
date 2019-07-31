@@ -45,8 +45,19 @@ EOF
     echo "wrote default scan parameters to ${FMLIST_SCAN_RAM_DIR}/dabscan.inc. edit this file for use with next scan."
   fi
 fi
+
+if [ -f "${FMLIST_SCAN_RAM_DIR}/fmscan.no" ]; then
+  export DABSCAN_NO=$( cat "${FMLIST_SCAN_RAM_DIR}/dabscan.no" )
+else
+  export DABSCAN_NO="0"
+fi
+export DABSCAN_NO=$[ ${DABSCAN_NO} + 1 ]
+
 echo "reading scan parameters (chanlist, DABOPT) from ${FMLIST_SCAN_RAM_DIR}/dabscan.inc"
 source ${FMLIST_SCAN_RAM_DIR}/dabscan.inc
+
+echo -n "${DABSCAN_NO}" >${FMLIST_SCAN_RAM_DIR}/dabscan.no
+
 
 if [ ! -z "${FMLIST_SCAN_PPM}" ]; then
   DABOPT="${DABOPT} -p ${FMLIST_SCAN_PPM}"
