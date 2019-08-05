@@ -33,7 +33,143 @@ alias listDABfound='for f in $(ls -1 *_DAB.zip) ; do echo -n "$f : " ; 7z x -so 
 alias listDABdur='for f in $(ls -1 *_DAB.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "DAB scan duration" ; done'
 
 
-alias listFMp="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$3,\$13,\$15; }' |sort |uniq"
+alias listFMp="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$3,\$13,\$15; }' |sort -n |uniq"
+
+alias listFMbySnrL="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$5,\$6,\$3,\$13,\$15; }' |sort -n | awk -F, '{ OFS=\",\"; print \$3,\$4,\$5,\$1,\$2; }' |uniq"
+alias listFMbySnrR="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$6,\$5,\$3,\$13,\$15; }' |sort -n | awk -F, '{ OFS=\",\"; print \$3,\$4,\$5,\$2,\$1; }' |uniq"
+alias listFMbySnrS="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$5+\$6,\$5,\$6,\$3,\$13,\$15; }' |sort -n | awk -F, '{ OFS=\",\"; print \$4,\$5,\$6,\$2,\$3,int(\$1/2); }' |uniq"
+
+function listFMPIbySnrL() {
+  cat scan_*_fm_rds.csv |awk -F, "{ if (\$13 == \"0x$1\") print \$0; }" | awk -F, '{ OFS=","; print $5,$6,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $3,$4,$5,$1; }' |uniq
+}
+function listFMPIbySnrR() {
+  cat scan_*_fm_rds.csv |awk -F, "{ if (\$13 == \"0x$1\") print \$0; }" | awk -F, '{ OFS=","; print $6,$5,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $3,$4,$5,$1; }' |uniq
+}
+function listFMPIbySnrS() {
+  cat scan_*_fm_rds.csv |awk -F, "{ if (\$13 == \"0x$1\") print \$0; }" | awk -F, '{ OFS=","; print $5+$6,$5,$6,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $4,$5,$6,int($1/2); }' |uniq
+}
+
+function listFMfreqBySnrL() {
+  cat scan_*_fm_rds.csv |awk -F, "{ if (\$3 == \"${1}000\") print \$0; }" | awk -F, '{ OFS=","; print $5,$6,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $3,$4,$5,$1; }' |uniq
+}
+function listFMfreqBySnrR() {
+  cat scan_*_fm_rds.csv |awk -F, "{ if (\$3 == \"${1}000\") print \$0; }" | awk -F, '{ OFS=","; print $6,$5,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $3,$4,$5,$1; }' |uniq
+}
+function listFMfreqBySnrS() {
+  cat scan_*_fm_rds.csv |awk -F, "{ if (\$3 == \"${1}000\") print \$0; }" | awk -F, '{ OFS=","; print $5+$6,$5,$6,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $4,$5,$6,int($1/2); }' |uniq
+}
+
+function listFMfreqs() {
+  cat scan_*_fm_rds.csv |awk -F, '{ OFS=","; print $3; }' |sort -n |uniq |sed 's/...$//g'
+}
+
+function listFMfreqsByMinSnrL() {
+  for freq in $( listFMfreqs ) ; do  listFMfreqBySnrL $freq |head -n 1  ; done
+}
+function listFMfreqsByMinSnrR() {
+  for freq in $( listFMfreqs ) ; do  listFMfreqBySnrR $freq |head -n 1  ; done
+}
+function listFMfreqsByMinSnrS() {
+  for freq in $( listFMfreqs ) ; do  listFMfreqBySnrS $freq |head -n 1  ; done
+}
+
+function listFMfreqsByMaxSnrL() {
+  for freq in $( listFMfreqs ) ; do  listFMfreqBySnrL $freq |tail -n 1  ; done
+}
+function listFMfreqsByMaxSnrR() {
+  for freq in $( listFMfreqs ) ; do  listFMfreqBySnrR $freq |tail -n 1  ; done
+}
+function listFMfreqsByMaxSnrS() {
+  for freq in $( listFMfreqs ) ; do  listFMfreqBySnrS $freq |tail -n 1  ; done
+}
+
+
+function lastFMPIbySnrL() {
+  N="$2"
+  if [ -z "$N" ]; then N="1" ; fi
+  FILES=$( ls -1 scan_*_fm_rds.csv | sort | tail -n $N )
+  cat ${FILES} |awk -F, "{ if (\$13 == \"0x$1\") print \$0; }" | awk -F, '{ OFS=","; print $5,$6,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $3,$4,$5,$1; }' |uniq
+}
+function lastFMPIbySnrR() {
+  N="$2"
+  if [ -z "$N" ]; then N="1" ; fi
+  FILES=$( ls -1 scan_*_fm_rds.csv | sort | tail -n $N )
+  cat ${FILES} |awk -F, "{ if (\$13 == \"0x$1\") print \$0; }" | awk -F, '{ OFS=","; print $6,$5,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $3,$4,$5,$1; }' |uniq
+}
+function lastFMPIbySnrS() {
+  N="$2"
+  if [ -z "$N" ]; then N="1" ; fi
+  FILES=$( ls -1 scan_*_fm_rds.csv | sort | tail -n $N )
+  cat ${FILES} |awk -F, "{ if (\$13 == \"0x$1\") print \$0; }" | awk -F, '{ OFS=","; print $5+$6,$5,$6,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $4,$5,$6,int($1/2); }' |uniq
+}
+
+function lastFMfreqBySnrL() {
+  N="$2"
+  if [ -z "$N" ]; then N="1" ; fi
+  FILES=$( ls -1 scan_*_fm_rds.csv | sort | tail -n $N )
+  cat ${FILES} |awk -F, "{ if (\$3 == \"${1}000\") print \$0; }" | awk -F, '{ OFS=","; print $5,$6,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $3,$4,$5,$1; }' |uniq
+}
+function lastFMfreqBySnrR() {
+  N="$2"
+  if [ -z "$N" ]; then N="1" ; fi
+  FILES=$( ls -1 scan_*_fm_rds.csv | sort | tail -n $N )
+  cat ${FILES} |awk -F, "{ if (\$3 == \"${1}000\") print \$0; }" | awk -F, '{ OFS=","; print $6,$5,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $3,$4,$5,$1; }' |uniq
+}
+function lastFMfreqBySnrS() {
+  N="$2"
+  if [ -z "$N" ]; then N="1" ; fi
+  FILES=$( ls -1 scan_*_fm_rds.csv | sort | tail -n $N )
+  cat ${FILES} |awk -F, "{ if (\$3 == \"${1}000\") print \$0; }" | awk -F, '{ OFS=","; print $5+$6,$5,$6,$3,$13,$15; }' |sort -n | awk -F, '{ OFS=","; print $4,$5,$6,int($1/2); }' |uniq
+}
+
+function lastFMfreqs() {
+  N="$1"
+  if [ -z "$N" ]; then N="1" ; fi
+  FILES=$( ls -1 scan_*_fm_rds.csv | sort | tail -n $N )
+  cat ${FILES} |awk -F, '{ OFS=","; print $3; }' |sort -n |uniq |sed 's/...$//g'
+}
+
+function lastFMfreqsByMinSnrLu() {
+  for freq in $( lastFMfreqs $1 ) ; do  lastFMfreqBySnrL $freq $1 |head -n 1  ; done
+}
+function lastFMfreqsByMinSnrRu() {
+  for freq in $( lastFMfreqs $1 ) ; do  lastFMfreqBySnrR $freq $1 |head -n 1  ; done
+}
+function lastFMfreqsByMinSnrSu() {
+  for freq in $( lastFMfreqs $1 ) ; do  lastFMfreqBySnrS $freq $1 |head -n 1  ; done
+}
+
+function lastFMfreqsByMaxSnrLu() {
+  for freq in $( lastFMfreqs $1 ) ; do  lastFMfreqBySnrL $freq $1 |tail -n 1  ; done
+}
+function lastFMfreqsByMaxSnrRu() {
+  for freq in $( lastFMfreqs $1 ) ; do  lastFMfreqBySnrR $freq $1 |tail -n 1  ; done
+}
+function lastFMfreqsByMaxSnrSu() {
+  for freq in $( lastFMfreqs $1 ) ; do  lastFMfreqBySnrS $freq $1 |tail -n 1  ; done
+}
+
+
+function lastFMfreqsByMinSnrL() {
+  lastFMfreqsByMinSnrLu $1 |awk -F, '{ OFS=","; print $4,$1,$2,$3; }' |sort -n |awk -F, '{ OFS=","; print $2,$3,$4,$1; }'
+}
+function lastFMfreqsByMinSnrR() {
+  lastFMfreqsByMinSnrRu $1 |awk -F, '{ OFS=","; print $4,$1,$2,$3; }' |sort -n |awk -F, '{ OFS=","; print $2,$3,$4,$1; }'
+}
+function lastFMfreqsByMinSnrS() {
+  lastFMfreqsByMinSnrSu $1 |awk -F, '{ OFS=","; print $4,$1,$2,$3; }' |sort -n |awk -F, '{ OFS=","; print $2,$3,$4,$1; }'
+}
+
+function lastFMfreqsByMaxSnrL() {
+  lastFMfreqsByMaxSnrLu $1 |awk -F, '{ OFS=","; print $4,$1,$2,$3; }' |sort -n |awk -F, '{ OFS=","; print $2,$3,$4,$1; }'
+}
+function lastFMfreqsByMaxR() {
+  lastFMfreqsByMaxSnrRu $1 |awk -F, '{ OFS=","; print $4,$1,$2,$3; }' |sort -n |awk -F, '{ OFS=","; print $2,$3,$4,$1; }'
+}
+function lastFMfreqsByMaxSnrS() {
+  lastFMfreqsByMaxSnrSu $1 |awk -F, '{ OFS=","; print $4,$1,$2,$3; }' |sort -n |awk -F, '{ OFS=","; print $2,$3,$4,$1; }'
+}
+
 alias listFMfound='for f in $(ls -1 *_FM.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "FM scan found" ; done'
 alias listFMdur='for f in $(ls -1 *_FM.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "FM scan duration" ; done'
 
