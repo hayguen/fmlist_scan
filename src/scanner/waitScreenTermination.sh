@@ -10,6 +10,7 @@ fi
 
 N="0"
 while screen -list | grep -q "${SCR_SESSION}" ; do
+  echo "screen '${SCR_SESSION}' is running. wait 1 sec .."
   sleep 1
   N=$[ $N + 1 ]
   if [ ! -z "${TIMEOUT}" ] ; then
@@ -19,4 +20,5 @@ while screen -list | grep -q "${SCR_SESSION}" ; do
     fi
   fi
 done
+echo "screen '${SCR_SESSION}' is finished"
 exit 0
