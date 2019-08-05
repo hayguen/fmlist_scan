@@ -7,7 +7,7 @@ if [ -z "${FMLIST_SCAN_MOUNT}" ]; then
   export FMLIST_SCAN_MOUNT="1"
 fi
 
-apt-get -y install htop powertop at lsof mc nano vim zip alpine dpkg
+apt-get -y install htop powertop at lsof mc nano vim zip p7zip-full alpine dpkg
 apt-get -y install ncdu screen parallel sshfs wget curl iftop util-linux
 apt-get -y install dos2unix exfat-utils dosfstools
 apt-get -y install sox lame espeak-ng alsa-utils
