@@ -1,6 +1,12 @@
 
 BASE=$(pwd)
 
+hardware=$( fgrep Hardware /proc/cpuinfo | head -1 | awk '{ print $3 }' )
+if [ "${hardware}" = "BCM2835" ]; then
+  echo "skipping build/install of wiringPi on Raspberry Pi .."
+
+else
+
 # git://git.drogon.net/wiringPi
 # https://github.com/WiringPi/WiringPi.git
 
@@ -30,7 +36,13 @@ cd ${BASE}/git/${GITUSER}/${GITPROJ}
 #echo "remaining todo: sudo make install"
 #echo "remaining todo: sudo ldconfig"
 
+fi
+
+
 cd ${BASE}
 
 # download is for Raspberry Pi. Necessary for Model 4B
+if [ -f wiringpi-latest.deb ]; then
+  rm wiringpi-latest.deb
+fi
 wget https://project-downloads.drogon.net/wiringpi-latest.deb
