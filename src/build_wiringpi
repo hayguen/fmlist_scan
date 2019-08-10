@@ -4,8 +4,11 @@ BASE=$(pwd)
 # git://git.drogon.net/wiringPi
 # https://github.com/WiringPi/WiringPi.git
 
-GITUSER=drogon
-GITPROJ=wiringPi
+#GITUSER=drogon
+#GITPROJ=wiringPi
+
+GITUSER=WiringPi
+GITPROJ=WiringPi
 
 if [ ! -d ${BASE}/git/${GITUSER} ]; then
   mkdir -p ${BASE}/git/${GITUSER}
@@ -16,8 +19,8 @@ if [ -d ${GITPROJ} ]; then
   cd ${GITPROJ}
   git pull --rebase
 else
-  #git clone https://github.com/${GITUSER}/${GITPROJ}.git
-  git clone git://git.${GITUSER}.net/${GITPROJ}
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+  #git clone git://git.${GITUSER}.net/${GITPROJ}
 fi
 
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
@@ -29,3 +32,5 @@ cd ${BASE}/git/${GITUSER}/${GITPROJ}
 
 cd ${BASE}
 
+# download is for Raspberry Pi. Necessary for Model 4B
+wget https://project-downloads.drogon.net/wiringpi-latest.deb

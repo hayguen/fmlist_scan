@@ -1,0 +1,16 @@
+
+BASE=$(pwd)
+
+# cat /etc/os-release | grep 'ID=raspbian' > /dev/null; A=$?
+# if [ $A -eq 0 ] ; then
+
+# install downloaded package for Raspberry Pi Model 4B: BCM2711
+#   biut Raspbian report BCM2835
+hardware=$( fgrep Hardware /proc/cpuinfo | head -1 | awk '{ print $3 }' )
+if [ "${hardware}" = "BCM2835" ]; then
+  if [ -f wiringpi-latest.deb ]; then
+    dpkg -i wiringpi-latest.deb
+  fi
+fi
+
+cd ${BASE}

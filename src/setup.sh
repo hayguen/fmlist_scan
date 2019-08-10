@@ -131,6 +131,7 @@ fi
 if [ "$1" == "pipwm" ] || [ "$1" == "" ]; then
   echo "building libwiringPi, pipwm"
   sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi"
+  . inst_wpi
   sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pipwm"
   . setup_pipwm
 fi
@@ -138,6 +139,7 @@ fi
 if [ "$1" == "pishutd" ] || [ "$1" == "" ]; then
   echo "building libwiringPi, pishutdown"
   sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi"
+  . inst_wpi
   sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pishutdown"
   . inst_pishutdown
 fi
