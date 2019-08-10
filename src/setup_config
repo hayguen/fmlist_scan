@@ -40,13 +40,13 @@ export FMLIST_SCAN_GPS_COORDS="${GPS_DEFAULT}"  # "gps" and "static" are exclusi
 export FMLIST_SCAN_GPS_LAT=""               # latitude  for static, e.g. 48.885582
 export FMLIST_SCAN_GPS_LON=""               # longitude for static, e.g. 8.702656
 export FMLIST_SCAN_GPS_ALT=""               # altitude  for static, e.g. 307
-export FMLIST_SCAN_DEAD_TIME="300"              # default is "300": assume something is hanging after 600 seconds
+export FMLIST_SCAN_DEAD_TIME="360"              # default is "300": assume something is hanging after 600 seconds
 export FMLIST_SCAN_DEAD_RTL_TRIES="20"           # assume RTL dongle dead after N (=3) rtl recording tests
 export FMLIST_SCAN_DEAD_REBOOT="1"              # "0" or "1"; default is "0" for rebooting when dead
 export FMLIST_SCAN_AUTOSTART="0"                # default is "1": autostart scanner in background
 export FMLIST_SCAN_FM="1"                       # "0" or "1"; default is "1" for active UKW/FM scan
 export FMLIST_SCAN_DAB="1"                      # "0" or "1"; default is "1" for active DAB scan
-export FMLIST_SCAN_FM_MIN_PWR_RATIO="6.0"       # parameter to checkSpectrumForCarrier - now in dB
+export FMLIST_SCAN_FM_MIN_PWR_RATIO="4.0"       # parameter to checkSpectrumForCarrier - now in dB
 export FMLIST_SCAN_DAB_USE_PRESCAN="1"          # "0" or "1"; default is "1" for active prescanDAB
 export FMLIST_SCAN_DAB_MIN_AUTOCORR="0.15"      # parameter '-C' to prescanDAB: autocorrelation threshold in 0 .. 1
 export FMLIST_SCAN_SAVE_LOG_OPT="savelog"
@@ -69,9 +69,9 @@ export FMLIST_SCAN_MOUNT="${FMLIST_SCAN_MOUNT}"                    # "0" or "1";
 export FMLIST_SCAN_RESULT_DEV="${FMLIST_SCAN_RESULT_DEV}"       # which device to mount
 export FMLIST_SCAN_RESULT_DIR="${FMLIST_SCAN_RESULT_DIR}"       # where to save results - in subfolder fmlist_scanner
 export FMLIST_SCAN_SAVE_PARTIAL="0"             # copy/save partial results from ramdisk to FMLIST_SCAN_RESULT_DIR?
-export FMLIST_SCAN_PPM="0"                      # ppm value of RTLSDR receiver
 export FMLIST_FM_RTLSDR_DEV=""                  # FM:  optional device/serial, see rtl_test / rtl_eeprom
 export FMLIST_DAB_RTLSDR_DEV=""                 # DAB: optional device/serial
+export FMLIST_SCAN_PPM="0"                      # ppm value of RTLSDR receiver
 EOF
 
 
@@ -94,13 +94,30 @@ selchunkfreqs=( )
 # chunksrate = 171 * 14 = 2394 kHz, keep this value high to avoid aliasing!
 chunk2mpx_dec="14"
 
-# initialize/clear asymmetric filter.
+
+# switch tuner sideband with every scan
+if [ -z "${FMSCAN_NO}" ]; then
+  SBOPT=""
+  BCMUL="-1"   # default is LSB .. where steep low pass is at low frequency. let high pass run over right band
+else
+  SB=\$[ \${FMSCAN_NO} % 2 ]
+  SBOPT="sb=\${SB}"
+  # -1 for LSB with SB=0,  +1 for USB with SB=1
+  BCMUL=\$[ \${SB} * 2 - 1 ]
+fi
+
+# deactivate band center depending on tuner sideband
+# BCMUL="1"
+
+
+# initialize/clear asymetric filter.
 # fill in the first/last stations frequency - relative to center/LO
 # that is flat bandwidth region .. each side reduced by ~ 100 kHz
+mpxsrate_chunkbw_factor="3"
 center_beg=""
 center_last=""
 
-# R820T tuner bandwidths in kHz: 350, 450, 550, 700, 900, 1200, 1450, 1550, 1600, 1700, 1800, 1900, 1950, 2050, 2080
+# "old" R820T tuner bandwidths in kHz: 350, 450, 550, 700, 900, 1200, 1450, 1550, 1600, 1700, 1800, 1900, 1950, 2050, 2080
 # RTL_BW_OPTs measured with white noise generator at ~100 MHz to be still flat (< 1 dB to next missing channel, if possible)
 # mpxsrate_chunkbw_factor="2";  RTL_BW_OPT="-w 450000"; center_beg="-200000"; center_last="750000"  # +/- 50000 Hz, N= 2,  chunkbw=  342 kHz (=factor*171 kHz)
 # mpxsrate_chunkbw_factor="3";  RTL_BW_OPT="-w 550000"; center_beg="-200000"; center_last="750000"  # +/-150000 Hz, N= 4,  chunkbw=  513 kHz; chunkduration=4 => sec, 22 RDS +36 plain carriers; s, 21+29; minT=52*4=s
@@ -113,37 +130,45 @@ center_last=""
 # mpxsrate_chunkbw_factor="10"; RTL_BW_OPT="-w 1800000"; center_beg="-700000"; center_last="800000" # +/-750000 Hz, N= 16, chunkbw= 1710 kHz; chunkduration=4 => 81sec, 14 RDS +35 plain carriers; 86s, 17+41; minT=13*4=52s
 # mpxsrate_chunkbw_factor="11"; RTL_BW_OPT="-w 2080000"; center_beg="-700000"; center_last="800000" # +/-850000 Hz, N= 18, chunkbw= 1881 kHz; chunkduration=4 => 74sec, 15 RDS +31 plain carriers; 74s, 14+26; minT=12*4=48s
 
-# mpxsrate_chunkbw_factor="10"; RTL_BW_OPT="-w 1800000"; # center_beg="-700000"; center_last="800000"
-mpxsrate_chunkbw_factor="7";  RTL_BW_OPT="-w 1200000"; center_beg="-500000"; center_last="750000"
+# "new" good bws:
+#  290 kHz @ 600 kHz: 530 .. 670 kHz: 2 channels
+#  375 kHz @ 600 kHz: 488 .. 712 kHz: 3 channels
+#  420 kHz @ 600 kHz: 465 .. 735 kHz: 3 channels
+#  470 kHz @ 600 kHz: 440 .. 760 kHz: 4 channels
+#  600 kHz @ 600 kHz: 375 .. 825 kHz: 5 channels
+#  860 kHz @ 600 kHz: 245 .. 955 kHz: 8 channels
+#  950 kHz @ 500 kHz: 100 .. 900 kHz: 9 channels
+# 1100 kHz @ 0
+# 1300 kHz @ 0
+# 1500 kHz @ 0
+# 1600 kHz @ 0
+# 1750 kHz @ 0
+
+RTLBW="950"
+RTLC="500"
 
 if [ "\${GPSSRC}" = "static" ]; then
   # spend more time on scanning in static environment
-  chunkduration="8"
+  chunkduration="6"
 
-# mpxsrate_chunkbw_factor="2";  RTL_BW_OPT="-w 450000"; center_beg="-200000"; center_last="750000"
-# mpxsrate_chunkbw_factor="3";  RTL_BW_OPT="-w 550000"; center_beg="-200000"; center_last="750000"
-# mpxsrate_chunkbw_factor="4";  RTL_BW_OPT="-w 900000"; center_beg="-400000"; center_last="750000"
-#[mpxsrate_chunkbw_factor="5";  RTL_BW_OPT="-w 1200000"; center_beg="-500000"; center_last="750000"
-#[mpxsrate_chunkbw_factor="6";  RTL_BW_OPT="-w 1200000"; center_beg="-500000"; center_last="750000"
-# mpxsrate_chunkbw_factor="7";  RTL_BW_OPT="-w 1200000"; center_beg="-500000"; center_last="750000"
-# mpxsrate_chunkbw_factor="8";  RTL_BW_OPT="-w 1450000"; center_beg="-600000"; center_last="800000"
-# mpxsrate_chunkbw_factor="9";  RTL_BW_OPT="-w 1600000"; center_beg="-650000"; center_last="800000"
-# mpxsrate_chunkbw_factor="10"; RTL_BW_OPT="-w 1800000"; center_beg="-700000"; center_last="800000"
-# mpxsrate_chunkbw_factor="11"; RTL_BW_OPT="-w 2080000"; center_beg="-700000"; center_last="800000"
-
-  mpxsrate_chunkbw_factor="7";  RTL_BW_OPT="-w 1200000"; center_beg="-500000"; center_last="750000"
+  RTLBW="600"
+  RTLC="600"
 
 fi
+
+RTL_BW_OPT="-w \${RTLBW}000"
+center_beg=\$[  ( \${BCMUL} * \${RTLC} - \${RTLBW} / 2 + 75 ) * 1000 ]
+center_last=\$[ ( \${BCMUL} * \${RTLC} + \${RTLBW} / 2 - 75 ) * 1000 ]
 
 
 # options to rtl_sdr, e.g. select device with option '-d <serial>'.
 # do NOT use options '-s' (samplerate), '-n' (number of samples), '-f' (frequency) or '-w' (bandwidth) here!
 #   reuse devicename from config: \${FMLIST_FM_RTLSDR_DEV}
 
-# activate bias-Tee : 4.5V for pream/LNA? by un/commenting correct line below
-BIASTEE="-O T=0"
-#BIASTEE="-O T=1"
-RTLSDR_OPT="\${BIASTEE}"    # add option '-g <gain>' for using fixed gain - deactivating tuner agc
+
+RTLOPT="-O verbose:T=0:bw=\${RTLBW}:bc=\${RTLC}000:agc=1:agcv=-2:dagc=1:\${SBOPT}"
+
+RTLSDR_OPT="\${RTLOPT}"    # add option '-g <gain>' for using fixed gain - deactivating tuner agc
                             # interesting for dongles with E4000 tuner
                             # or for working around oversteering
 if [ ! -z "\${FMLIST_FM_RTLSDR_DEV}" ]; then
@@ -162,17 +187,24 @@ chanlist="dab_chanlist.txt"
 #   with option '-x', activation enhanced tii algorithm with quality values, reduced -A to 6000 ms
 #   options -t,  -a and -r specify how tii statistics should work ..
 
-# activate bias-Tee : 4.5V for pream/LNA? by un/commenting correct line below
-BIASTEE="-O T=0"
-#BIASTEE="-O T=1"
+if [ -z "\${DABSCAN_NO}" ]; then
+  SBOPT=""
+else
+  SB=\$[ \${DABSCAN_NO} % 2 ]
+  SBOPT="sb=\${SB}"
+fi
 
-DABOPT="-Q -E 3 -W 5000 -A 6000 -c -t 5 -a 0.8 -r 5 -x \${BIASTEE}"
-DABPRESCANOPT="\${BIASTEE}"
-DABLISTENOPT="-Q -t 40 -a 0.95 -r 40 -x \${BIASTEE}"
+# activate bias-Tee : 4.5V for pream/LNA? by un/commenting correct line below
+#RTLOPT="-O T=1"
+RTLOPT="-O verbose:T=0:dagc=1:softdeadtime=2:softscantime=20:softagc=0:bw=1600:\${SBOPT}"
+
+DABOPT="-Q -E 3 -W 5000 -A 6000 -c -t 5 -a 0.8 -r 5 -x \${RTLOPT}"
+DABPRESCANOPT="\${RTLOPT}"
+DABLISTENOPT="-Q -t 40 -a 0.95 -r 40 -x \${RTLOPT}"
 
 if [ "\${GPSSRC}" = "static" ]; then
   # spend more time on scanning in static environment
-  DABOPT="-Q -E 3 -W 8000 -A 12000 -c -t 10 -a 0.9 -r 10 -x \${BIASTEE}"
+  DABOPT="-Q -E 3 -W 8000 -A 12000 -c -t 10 -a 0.9 -r 10 -x \${RTLOPT}"
 fi
 
 
@@ -183,6 +215,7 @@ fi
 
 if [ ! -z "\${FMLIST_DAB_RTLSDR_DEV}" ]; then
   DABOPT="\${DABOPT} -s \${FMLIST_DAB_RTLSDR_DEV}"
+  DABPRESCANOPT="\${DABPRESCANOPT} -d \${FMLIST_DAB_RTLSDR_DEV}"
   DABLISTENOPT="\${DABLISTENOPT} -s \${FMLIST_DAB_RTLSDR_DEV}"
 fi
 
