@@ -96,7 +96,7 @@ chunk2mpx_dec="14"
 
 
 # switch tuner sideband with every scan
-if [ -z "${FMSCAN_NO}" ]; then
+if [ -z "\${FMSCAN_NO}" ]; then
   SBOPT=""
   BCMUL="-1"   # default is LSB .. where steep low pass is at low frequency. let high pass run over right band
 else

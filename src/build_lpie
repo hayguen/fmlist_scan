@@ -20,6 +20,4 @@ fi
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
 sh mk_installer
 
-echo "remaining todo: sudo sh install"
-
 cd ${BASE}
