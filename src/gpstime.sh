@@ -91,11 +91,11 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
     GPSALT="${FMLIST_SCAN_GPS_ALT}"
     # try to restart gpsd
     sudo systemctl stop gpsd
-    if [ $( grep -c "^DEVICES=\"/dev/ttyACM0" /etc/default/gpsd ) -ne 0 ]; then
-      sudo sed -i "/^DEVICES=/d" /etc/default/gpsd
+    if [ $( grep -c "DEVICES=\"/dev/ttyACM0" /etc/default/gpsd ) -ne 0 ]; then
+      sudo sed -i "/DEVICES=/d" /etc/default/gpsd
       sudo bash -c 'echo "DEVICES=\"/dev/ttyUSB0\"" >>/etc/default/gpsd'
-    else # if [ $( grep -c "^DEVICES=\"/dev/ttyUSB0" /etc/default/gpsd ) -ne 0 ]; then
-      sudo sed -i "/^DEVICES=/d" /etc/default/gpsd
+    else # if [ $( grep -c "DEVICES=\"/dev/ttyUSB0" /etc/default/gpsd ) -ne 0 ]; then
+      sudo sed -i "/DEVICES=/d" /etc/default/gpsd
       sudo bash -c 'echo "DEVICES=\"/dev/ttyACM0\"" >>/etc/default/gpsd'
     fi
     sudo systemctl start gpsd

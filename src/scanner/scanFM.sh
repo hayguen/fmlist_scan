@@ -106,6 +106,14 @@ if [ -z "${center_beg}" ] || [ -z "${center_last}" ]; then
   ddc_freqs=$( ( seq $ddc_hstep $ddc_step $ddc_end ; seq -$ddc_hstep -$ddc_step -$ddc_end ) | sort -n | sed -z 's/\n/ /g' )
   NrfFileBase="ddc_freqs_bw${chunkbw}_step${ddc_step}_fs${chunksrate}"
 else
+  # workaround - 0 doesn't calculate any ddc_freqs
+  if [ "${center_beg}" = "0" ]; then
+    center_beg="10000"
+  fi
+  if [ "${center_last}" = "0" ]; then
+    center_last="-10000"
+  fi
+
   beg_sgn=$[  ${center_beg}  / ${center_beg#-}  ]
   last_sgn=$[ ${center_last} / ${center_last#-} ]
   if [ "${beg_sgn}" = "${last_sgn}" ]; then
@@ -157,6 +165,14 @@ chunks_end_f=$[ $ukw_end + $ddc_fmax ]
 chunkfrqs=$( seq ${chunks_beg_f} ${ddc_span} ${chunks_end_f} | tr '\n' ' ' )
 Nchunkfrqs="$( echo "${chunkfrqs}" | wc -w )"
 
+echo "fmscan.inc: RTLBW       = '${RTLBW}'"
+echo "fmscan.inc: RTLC        = '${RTLC}'"
+echo "fmscan.inc: FMSCAN_NO   = '${FMSCAN_NO}'"
+echo "fmscan.inc: SCANMOD     = '${SCANMOD}'"
+echo "fmscan.inc: BCMUL       = '${BCMUL}'"
+echo "fmscan.inc: BCSHIFT     = '${BCSHIFT}'"
+echo "fmscan.inc: center_beg  = '${center_beg}'"
+echo "fmscan.inc: center_last = '${center_last}'"
 echo "mpx srate is ${mpxsrate}"
 echo "recording is in chunks of ${chunkduration} secs @ ${chunksrate} Hz"
 echo "ddc_freqs are ${ddc_freqs}"
@@ -167,6 +183,14 @@ echo "ddc_span is ${ddc_span}"
 echo "chunkfrqs are ${chunkfrqs}"
 echo "#chunkfrqs is ${Nchunkfrqs}"
 
+echo "fmscan.inc: RTLBW       = '${RTLBW}'"       >>${rec_path}/scan_duration.txt
+echo "fmscan.inc: RTLC        = '${RTLC}'"        >>${rec_path}/scan_duration.txt
+echo "fmscan.inc: FMSCAN_NO   = '${FMSCAN_NO}'"   >>${rec_path}/scan_duration.txt
+echo "fmscan.inc: SCANMOD     = '${SCANMOD}'"     >>${rec_path}/scan_duration.txt
+echo "fmscan.inc: BCMUL       = '${BCMUL}'"       >>${rec_path}/scan_duration.txt
+echo "fmscan.inc: BCSHIFT     = '${BCSHIFT}'"     >>${rec_path}/scan_duration.txt
+echo "fmscan.inc: center_beg  = '${center_beg}'"  >>${rec_path}/scan_duration.txt
+echo "fmscan.inc: center_last = '${center_last}'" >>${rec_path}/scan_duration.txt
 echo "mpx srate is ${mpxsrate}"      >>${rec_path}/scan_duration.txt
 echo "recording is in chunks of ${chunkduration} secs at ${chunksrate}" >>${rec_path}/scan_duration.txt
 echo "ddc freqs are ${ddc_freqs}"    >>${rec_path}/scan_duration.txt
@@ -273,8 +297,13 @@ cat ${rdy_rec_name}.raw \\
  | csdr fir_decimate_cc $chunk2mpx_dec $chunk2mpx_nfc HAMMING 2>/dev/null \\
  | csdr fmdemod_quadri_cf \\
  | csdr convert_f_s16 \\
- | redsea --bler \\
+ | redsea --bler --output-hex \\
+ > redsea.\${f}.spy
+
+cat redsea.\${f}.spy \\
+ | redsea --input-hex \\
  > redsea.\${f}.txt
+
 
 NL=\$(cat redsea.\${f}.txt | wc -l)
 echo "NUM_DECODED_JSON_LINES=\"\${NL}\"" >>redsea.\${f}.inc
@@ -286,6 +315,7 @@ if [ \$NL -le 0 ]; then
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
     echo "${DTF_RDY}: FM \${f}: NO RDS decode" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     mv redsea.\${f}.txt redsea.\${f}_noRDS.txt
+    mv redsea.\${f}.spy redsea.\${f}_noRDS.spy
 
     echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_carrier.\${f}.csv
     echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm_carrier.\${f}.csv
