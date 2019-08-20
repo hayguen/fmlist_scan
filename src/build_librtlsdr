@@ -17,6 +17,7 @@ fi
 cd ${BASE}/git/${GITUSER}
 if [ -d ${GITPROJ} ]; then
   cd ${GITPROJ}
+  git tag -d FMLIST
   git fetch && git fetch --tags
   git checkout development
   git pull --rebase

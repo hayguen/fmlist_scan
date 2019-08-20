@@ -180,6 +180,7 @@ function lastFMfreqsByMaxSnrS() {
 
 alias listFMfound='for f in $(ls -1 *_FM.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "FM scan found" ; done'
 alias listFMdur='for f in $(ls -1 *_FM.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "FM scan duration" ; done'
+alias listFMddcs='for f in $(ls -1 *_FM.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt ) |grep "^ddc freqs are" ; done'
 
 
 function showZipDABprogs {

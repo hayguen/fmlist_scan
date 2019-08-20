@@ -50,6 +50,10 @@ ls -1 | grep ^scan_ | while read d ; do
         rm -f $d/det*.csv
         rm -f $d/det*.txt
       fi
+      if [ ${FMLIST_SCAN_SAVE_RDSSPY} -eq 0 ]; then
+        echo "saveScanResults.sh: deleting $d/redsea.*.spy" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+        rm -f $d/redsea.*.spy
+      fi
       if [ ${FMLIST_SCAN_DEBUG_REDSEA} -eq 0 ]; then
         echo "saveScanResults.sh: deleting $d/redsea.*.txt" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         rm -f $d/redsea.*.txt
