@@ -32,6 +32,14 @@ alias listDABdata="cat scan_*_dab_packet.csv | awk -F, '{ OFS=\",\"; print \$7,\
 alias listDABfound='for f in $(ls -1 *_DAB.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "DAB scan found" ; done'
 alias listDABdur='for f in $(ls -1 *_DAB.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "DAB scan duration" ; done'
 
+function listDABch() {
+  cat scan_*_dab_ensemble.csv | grep -i ",\"$1\"," | sort -n
+}
+
+function listDABeid() {
+  cat scan_*_dab_ensemble.csv | grep -i ",0x$1," | sort -n
+}
+
 
 alias listFMp="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$3,\$13,\$15; }' |sort -n |uniq"
 
@@ -200,4 +208,6 @@ function showZipFMp {
   popd &>/dev/null
 }
 
+alias scanLog="echo -e 'abort with Ctrl-C\n' ; sleep 2 ; tail -f /dev/shm/$(whoami)_fmlist_scan/scanner.log"
+alias scanScreen="echo -e 'abort with Ctrl-A D\n' ; sleep 2 ; screen -r scanLoopBg"
 
