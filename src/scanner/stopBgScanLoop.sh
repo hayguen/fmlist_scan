@@ -5,12 +5,16 @@ if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
   mkdir -p "${FMLIST_SCAN_RAM_DIR}"
 fi
 
+# new desired state
+rm -f ${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
+
 if [ "$1" = "abort" ]; then
   shift
   touch "${FMLIST_SCAN_RAM_DIR}/abortScanLoop"
 fi
 
 touch "${FMLIST_SCAN_RAM_DIR}/stopScanLoop"
+
 
 stopGpsLoop.sh silent
 

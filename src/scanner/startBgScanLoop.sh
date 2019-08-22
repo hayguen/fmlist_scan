@@ -136,7 +136,9 @@ if [ "$1" = "autostart" ] ; then
 fi
 
 echo "" >${FMLIST_SCAN_RAM_DIR}/LAST
-rm -f ${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
+rm -f ${FMLIST_SCAN_RAM_DIR}/stopScanLoop
+# signal desired state - not the current one
+echo "1" >${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
 
 echo "starting screen session 'scanLoopBg' .."
 
