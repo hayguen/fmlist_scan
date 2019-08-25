@@ -98,7 +98,7 @@ while /bin/true; do
   # test RTL dongle for FM
   TESTED_FIRST_DEV="0"
   TESTED_FM_DEV="0"
-  if [ "${FMLIST_SCAN_FM}" != "0" ] && [ "${FMLIST_SCAN_FM}" != "OFF" ]; then
+  if [ "${FMLIST_SCAN_FM}" != "0" ] || [ "${FMLIST_SCAN_TEST}" != "0" ]; then
     echo "test rtl_sdr for FM ${FMLIST_FM_RTLSDR_DEV}"
     echo "test rtl_sdr for FM ${FMLIST_FM_RTLSDR_DEV}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     if [ -z "${FMLIST_FM_RTLSDR_DEV}" ]; then

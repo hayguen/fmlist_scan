@@ -125,12 +125,16 @@ sync
 
 
 if [ "$1" = "autostart" ] ; then
+  DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
+  echo "${DTF}: executing startBgScanLoop.sh with 'autostart' option" >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/reboots.log"
+
   if [ "${FMLIST_SCAN_GPS_ALL_TIME}" = "1" ]; then
     $HOME/bin/startGpsLoop.sh
   fi
   if [ ${FMLIST_SCAN_AUTOSTART} -eq 0 ]; then
-    echo "autostart is deactivated in $HOME/.config/fmlist_scan/config"
-    echo "autostart is deactivated in $HOME/.config/fmlist_scan/config" >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/error.log"
+    echo "${DTF}: autostart is deactivated in $HOME/.config/fmlist_scan/config"
+    echo "${DTF}: autostart is deactivated in $HOME/.config/fmlist_scan/config" >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/error.log"
+    echo "${DTF}: autostart is deactivated in $HOME/.config/fmlist_scan/config" >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/reboots.log"
     exit 10
    fi
 fi
