@@ -9,7 +9,10 @@ fi
 DTF="$(date -u "+%Y-%m-%dT%T Z")"
 echo "checkBgScanLoop.sh: last start at ${DTF}" >${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
 
-if [ ! -f ${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning ]; then
+if screen -list |grep -q "scanLoopBg" ; then
+  echo "scan Loop is running -> continue check"
+  echo "scan Loop is running -> continue check" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
+else
   echo "scan Loop not running -> no check"
   echo "scan Loop not running -> no check" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
   exit 0
@@ -17,7 +20,13 @@ fi
 
 
 CURR="$(date -u +%s)"
-LAST="$(stat -c %Y ${FMLIST_SCAN_RAM_DIR}/LAST)"
+if [ -f "${FMLIST_SCAN_RAM_DIR}/LAST" ]; then
+  LAST="$(stat -c %Y ${FMLIST_SCAN_RAM_DIR}/LAST)"
+else
+  LAST=$[ $CURR - ${FMLIST_SCAN_DEAD_TIME} -1 ]
+  echo "No LAST scan results. Setting to CURR - FMLIST_SCAN_DEAD_TIME"
+  echo "No LAST scan results. Setting to CURR - FMLIST_SCAN_DEAD_TIME" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
+fi
 D=$[ $CURR - $LAST ]
 
 echo "Delta from LAST to CURR = $D secs"

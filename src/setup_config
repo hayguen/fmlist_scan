@@ -46,6 +46,7 @@ export FMLIST_SCAN_DEAD_REBOOT="1"              # "0" or "1"; default is "0" for
 export FMLIST_SCAN_AUTOSTART="0"                # default is "1": autostart scanner in background
 export FMLIST_SCAN_FM="1"                       # "0" or "1"; default is "1" for active UKW/FM scan
 export FMLIST_SCAN_DAB="1"                      # "0" or "1"; default is "1" for active DAB scan
+export FMLIST_SCAN_TEST="1"                     # "0" or "1"; default is "1" for always testing the FM device
 export FMLIST_SCAN_FM_MIN_PWR_RATIO="6.0"       # parameter to checkSpectrumForCarrier - now in dB
 export FMLIST_SCAN_DAB_USE_PRESCAN="1"          # "0" or "1"; default is "1" for active prescanDAB
 export FMLIST_SCAN_DAB_MIN_AUTOCORR="0.15"      # parameter '-C' to prescanDAB: autocorrelation threshold in 0 .. 1

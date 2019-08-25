@@ -43,7 +43,7 @@ if /bin/true; then
       echo "uploadScanResults.sh .." >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/atx-knob.log
       uploadScanResults.sh
       echo "finished"
-      echo "finished" >>${FMLIST_SCAN_RESULT_DIR}/atx-knob.log
+      echo "finished" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/atx-knob.log
       sync
       scanToneFeedback.sh final
       if [ $R -ne 0 ]; then

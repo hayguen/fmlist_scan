@@ -43,6 +43,9 @@ function listDABeid() {
 
 alias listFMp="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$3,\$13,\$15; }' |sort -n |uniq"
 
+alias listFMcmpPS="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$3,\$13,\$15; }' |sort -n |uniq -c"
+alias listFMcmpPI="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$3,\$13; }' |sort -n |uniq -c"
+
 alias listFMbySnrL="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$5,\$6,\$3,\$13,\$15; }' |sort -n | awk -F, '{ OFS=\",\"; print \$3,\$4,\$5,\$1,\$2; }' |uniq"
 alias listFMbySnrR="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$6,\$5,\$3,\$13,\$15; }' |sort -n | awk -F, '{ OFS=\",\"; print \$3,\$4,\$5,\$2,\$1; }' |uniq"
 alias listFMbySnrS="cat scan_*_fm_rds.csv | awk -F, '{ OFS=\",\"; print \$5+\$6,\$5,\$6,\$3,\$13,\$15; }' |sort -n | awk -F, '{ OFS=\",\"; print \$4,\$5,\$6,\$2,\$3,int(\$1/2); }' |uniq"

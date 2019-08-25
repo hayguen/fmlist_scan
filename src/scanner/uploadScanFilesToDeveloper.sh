@@ -36,4 +36,4 @@ DESTDIR="$1"
 shift
 
 ssh -p 22345 -i /etc/sidedoor/id_rsa_sidedoor upload@hayguen.hopto.org "mkdir /pub/${DESTDIR}"
-scp -P 22345 -i /etc/sidedoor/id_rsa_sidedoor "$@" "upload@hayguen.hopto.org:pub/${DESTDIR}/"
+scp -P 22345 -i /etc/sidedoor/id_rsa_sidedoor -r "$@" "upload@hayguen.hopto.org:pub/${DESTDIR}/"
