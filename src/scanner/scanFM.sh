@@ -389,15 +389,25 @@ EOF
     rm ${rec_path}/rec${rec_freq}.sh
     rm ${rec_path}/rec${rec_freq}.txt
 
-    if [ ${FMLIST_SCAN_SAVE_RAW} -gt 0 ]; then
+    if [ "${FMLIST_SCAN_SAVE_RAW}" = "1" ]; then
       if [ ${rec_freq} -ge ${FMLIST_SCAN_SAVE_MINFREQ} ] && [ ${rec_freq} -le ${FMLIST_SCAN_SAVE_MAXFREQ} ]; then
         # see https://unix.stackexchange.com/questions/87908/how-do-you-empty-the-buffers-and-cache-on-a-linux-system
         sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'
         MFREE=$( free -m | grep "^Mem:" | awk '{ print $4; }' )
         if [ ${MFREE} -ge ${FMLIST_SCAN_SAVE_MIN_MEM} ]; then
-          mv ${rec_path}/${rdy_rec_name}.raw ${rec_path}/raw__srate_${chunksrate}__freq_${rec_freq}.bin
-          gzip ${rec_path}/raw__srate_${chunksrate}__freq_${rec_freq}.bin
-          echo "$(date -u "+%Y-%m-%dT%T Z"): keeping record as raw__srate_${chunksrate}__freq_${rec_freq}.bin" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+          DTFN="$(date -u "+%Y-%m-%dT%Hh%Mm%SZ")"
+          RFN="rec_${DTFN}_srate_${chunksrate}__freq_${rec_freq}.bin"
+          mv ${rec_path}/${rdy_rec_name}.raw ${rec_path}/${RFN}
+          if [ "${FMLIST_SCAN_SAVE_WAV}" = "1" ]; then
+            WFN="rec_${DTFN}_freq_${rec_freq}.wav"
+            rtl_raw2wav -w ${rec_path}/${WFN} -f ${rec_freq} -s ${chunksrate} ${rec_path}/${RFN}
+            rm ${rec_path}/${RFN}
+            #gzip ${rec_path}/${rec_path}/${WFN}
+            echo "$(date -u "+%Y-%m-%dT%T Z"): keeping record as ${WFN}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+          else
+            gzip ${rec_path}/${RFN}
+            echo "$(date -u "+%Y-%m-%dT%T Z"): keeping record as ${RFN}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+          fi
         else
           echo "$(date -u "+%Y-%m-%dT%T Z"): ${MFREE} MB free memory is below ${FMLIST_SCAN_SAVE_MIN_MEM}: NOT keeping record of freq ${rec_freq}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         fi
