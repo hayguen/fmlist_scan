@@ -52,6 +52,7 @@ export FMLIST_SCAN_DAB_USE_PRESCAN="1"          # "0" or "1"; default is "1" for
 export FMLIST_SCAN_DAB_MIN_AUTOCORR="0.15"      # parameter '-C' to prescanDAB: autocorrelation threshold in 0 .. 1
 export FMLIST_SCAN_SAVE_LOG_OPT="savelog"
 export FMLIST_SCAN_SAVE_RAW="0"                 # "0" or "1"; default is "0". "1" activates saving raw I/Q data
+export FMLIST_SCAN_SAVE_WAV="1"                 # "0" or "1"; default is "1". "1" convert raw files to .wav
 export FMLIST_SCAN_SAVE_MINFREQ="87500000"      # raw I/Q saving in this frequency range
 export FMLIST_SCAN_SAVE_MAXFREQ="108000000"
 export FMLIST_SCAN_SAVE_MIN_MEM="300"           # raw I/Q saving only when free memory in MBytes >= this value

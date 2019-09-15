@@ -41,8 +41,13 @@ cd ${FMLIST_SCAN_RAM_DIR}
 ls -1 | grep ^scan_ | while read d ; do
   if [ -d "$d" ]; then
     echo $d
-    if [ ${FMLIST_SCAN_SAVE_RAW} -eq 0 ]; then
+    if [ "${FMLIST_SCAN_SAVE_RAW}" = "0" ]; then
       rm -f "$d/A.raw" "$d/B.raw"
+    else
+      NFILES=$( ls -1 $d/rec_* | wc -l )
+      if [ ${NFILES} -gt 0 ]; then
+        mv $d/rec_* "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/"
+      fi
     fi
     if [ $(echo "$d" |grep -c "_FM\$") -ne 0 ]; then
       if [ ${FMLIST_SCAN_DEBUG_CHK_SPECTRUM} -eq 0 ]; then
@@ -156,7 +161,7 @@ fi
 #sync -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S"
 sync
 
-if [ ${FMLIST_SCAN_SAVE_RAW} -gt 0 ]; then
+if [ "${FMLIST_SCAN_SAVE_RAW}" = "1" ]; then
   # see https://unix.stackexchange.com/questions/87908/how-do-you-empty-the-buffers-and-cache-on-a-linux-system
   sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'
 fi
