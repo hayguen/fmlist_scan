@@ -233,8 +233,8 @@ for chunkfreq in $( echo $chunkfrqs EOL ) ; do
       echo -e "\\n$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before rtl_sdr -f ${chunkfreq}: $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
     fi
-    echo timeout -s SIGKILL -k ${chunkreckilltime} ${chunkrectimeout} rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw ..
-    timeout -s SIGKILL -k ${chunkreckilltime} ${chunkrectimeout} rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw &>${rec_path}/${act_rec_name}.log &
+    echo timeout -s SIGTERM -k ${chunkreckilltime} ${chunkrectimeout} rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw ..
+    timeout -s SIGTERM -k ${chunkreckilltime} ${chunkrectimeout} rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw &>${rec_path}/${act_rec_name}.log &
     recpid=$!
   fi
 
@@ -294,7 +294,7 @@ cat ${rdy_rec_name}.raw \\
  | csdr convert_u8_f \\
  | csdr fastdcblock_ff \\
  | csdr shift_addfast_cc \${ddcnrfreq[\$1]} 2>/dev/null \\
- | csdr fir_decimate_cc $chunk2mpx_dec $chunk2mpx_nfc HAMMING 2>/dev/null \\
+ | csdr fir_decimate_cc $chunk2mpx_dec 2>/dev/null \\
  | csdr fmdemod_quadri_cf \\
  | csdr convert_f_s16 \\
  | redsea --bler --output-hex \\
