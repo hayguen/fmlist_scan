@@ -42,7 +42,7 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
   while true ; do
     if [ "${FMLIST_SCAN_GPS_COORDS}" = "auto" ] || [ "${FMLIST_SCAN_GPS_COORDS}" = "gps" ]; then
       rm -f gpslines.log
-      timeout -s SIGKILL -k 5 3 bash -c "gpspipe -w |head -n 5" >gpslines.log
+      timeout -s SIGTERM -k 5 3 bash -c "gpspipe -w |head -n 5" >gpslines.log
       NL="$( cat gpslines.log | wc -l )"
       #echo "gpslines has $NL lines"
       if [ $NL -le 1 ]; then

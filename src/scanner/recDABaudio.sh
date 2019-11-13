@@ -48,8 +48,8 @@ if [ -z "${chan}" ]; then
   exit 0
 fi
 
-durationClose=$[ ${durationSeconds} + 20 ]
-durationKill=$[ ${durationSeconds} + 30 ]
+durationClose=$[ ${durationSeconds} + 60 ]
+durationKill=$[ ${durationSeconds} + 70 ]
 DTFREC="$(date -u "+%Y-%m-%dT%Hh%Mm%SZ")"
 FN="DAB-${chan}_${DTFREC}_${fnID}.wav"
 FL="DAB-${chan}_${DTFREC}_${fnID}.log"
@@ -59,7 +59,7 @@ echo "starting   dab-rtlsdr ${DABLISTENOPT} -n ${durationSeconds} -w ${FMLIST_SC
 mkdir -p "${FMLIST_SCAN_RAM_DIR}/DAB-${chan}_${DTFREC}_${fnID}"
 cd "${FMLIST_SCAN_RAM_DIR}/DAB-${chan}_${DTFREC}_${fnID}"
 
-LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" timeout -s SIGKILL -k ${durationKill} ${durationClose} \
+LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" timeout -v -s SIGTERM -k ${durationKill} ${durationClose} \
   dab-rtlsdr ${DABLISTENOPT} -n ${durationSeconds} -w "${FN}" -C "$@" 2>&1 | tee ${FL}
 
 cd "${FMLIST_SCAN_RAM_DIR}"
