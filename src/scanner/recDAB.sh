@@ -4,6 +4,7 @@ function chanFreq() {
   chan="$1"
   freqK=""
   case $chan in
+  TESTFM) freqK="100700" ;;
   5A)  freqK="174928" ;;
   5B)  freqK="176640" ;;
   5C)  freqK="178352" ;;
