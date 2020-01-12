@@ -39,7 +39,7 @@ fi
 
 if [ -z "$1" ]; then
   echo "usage: anonTimeForPreparedResults.sh <iso-date>"
-  echo "  iso-date in format like '2020-01-01'"
+  echo "  iso-date in format like '2020-01-01' or '2020-01-01T00:00'"
   echo ""
   echo "anonymizes all date/timestamps in all '${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_outbox/' files"
   echo "call after prepareScanResultsForUpload.sh - before uploadScanResults.sh"
@@ -50,31 +50,36 @@ fi
 
 cd "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_outbox"
 
-echo -n "" >"/dev/shm/${ND}_00h00m00Z_upload_anon_temp.csv"
+UT="$(date -d "${ND}" -u +%s)"
+DTF="$(date -d "@${UT}" -u "+%Y-%m-%dT%T")"
+DTU="$(date -d "@${UT}" -u "+%Y-%m-%d_%Hh%Mm%SZ")"
+echo "UT:  '${UT}'"
+echo "DTF: '${DTF}'"
+echo "DTU: '${DTU}'"
+
+INP="/dev/shm/${DTU}_upload_temp.csv"
+TMP="/dev/shm/${DTU}_upload.csv"
+OUT="${DTU}_upload.csv"
+
+echo "INP: ${INP}"
+echo "TMP: ${TMP}"
+echo "OUT: ${OUT}"
+
+echo -n "" >"${INP}"
 
 ls -1 |egrep "^.*_upload\.csv\.gz\$" |while read f ; do
 
   echo "unpack $f .."
-  gunzip -c "$f" >>"/dev/shm/${ND}_00h00m00Z_upload_anon_temp.csv"
+  gunzip -c "$f" >>"${INP}"
   mv "$f" "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_anon/"
 
 done
 
-INP="/dev/shm/${ND}_00h00m00Z_upload_anon_temp.csv"
-TMP="/dev/shm/${ND}_00h00m00Z_upload_anon.csv"
-OUT="${ND}_00h00m00Z_upload_anon.csv"
-DT="${ND}"
-
-UT="$(date -d "${DT}" -u +%s)"
-DTF="$(date -d "@${UT}" -u "+%Y-%m-%dT%T")"
-#echo "UT:  '${UT}'"
-#echo "DTF: '${DTF}'"
 
 echo -n "" >${TMP}
 
 for LID in $( awk -F "," '{ print $1; }' "${INP}" |sort |uniq ) ; do  echo "found line ID ${LID}" ; done
 
-#for LID in $( echo "30 31" ) ; do
 for LID in $( awk -F "," '{ print $1; }' "${INP}" |sort |uniq ) ; do
   case "${LID}" in
     1?)
@@ -97,7 +102,7 @@ for LID in $( awk -F "," '{ print $1; }' "${INP}" |sort |uniq ) ; do
         >>"${TMP}"
       ;;
     *)
-      echo "ignoring line id ${LID}"
+      echo "warning: ignoring line id ${LID}"
       ;;
   esac
 
@@ -106,4 +111,4 @@ done
 gzip "${TMP}"
 cp "${TMP}.gz" "${OUT}.gz"
 rm "${INP}"
-rm "${TMP}"
+rm "${TMP}.gz"
