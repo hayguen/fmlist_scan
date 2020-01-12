@@ -42,7 +42,7 @@ export FMLIST_SCAN_GPS_LON=""               # longitude for static, e.g. 8.70265
 export FMLIST_SCAN_GPS_ALT=""               # altitude  for static, e.g. 307
 export FMLIST_SCAN_DEAD_TIME="360"              # default is "300": assume something is hanging after 600 seconds
 export FMLIST_SCAN_DEAD_RTL_TRIES="20"           # assume RTL dongle dead after N (=3) rtl recording tests
-export FMLIST_SCAN_DEAD_REBOOT="1"              # "0" or "1"; default is "0" for rebooting when dead
+export FMLIST_SCAN_DEAD_REBOOT="1"              # "0" or "1"; default is "0". set "1" to rebooting when dead
 export FMLIST_SCAN_AUTOSTART="0"                # default is "1": autostart scanner in background
 export FMLIST_SCAN_FM="1"                       # "0" or "1"; default is "1" for active UKW/FM scan
 export FMLIST_SCAN_DAB="1"                      # "0" or "1"; default is "1" for active DAB scan
