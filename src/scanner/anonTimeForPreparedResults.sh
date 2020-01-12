@@ -76,11 +76,38 @@ ls -1 |egrep "^.*_upload\.csv\.gz\$" |while read f ; do
 done
 
 
-echo -n "" >${TMP}
-
 for LID in $( awk -F "," '{ print $1; }' "${INP}" |sort |uniq ) ; do  echo "found line ID ${LID}" ; done
 
-for LID in $( awk -F "," '{ print $1; }' "${INP}" |sort |uniq ) ; do
+echo -e "\nreorder all lineIDs"
+echo -n "" >"${TMP}"
+for LID in $( awk -F "," '{ print $1; }' "${INP}" |sort -n |uniq ) ; do
+  case "${LID}" in
+    1?)
+      echo "processing line id ${LID}"
+      grep "^${LID}," "${INP}" >>"${TMP}"
+      ;;
+    *)
+      echo "processing line id ${LID}"
+      grep "^${LID}," "${INP}" >>"${TMP}"
+      ;;
+  esac
+done
+# replace input with temp
+rm "${INP}"
+mv "${TMP}" "${INP}"
+# cp "${INP}" "${INP}_"
+
+echo -e "\nreplace all unix timestamps"
+awk -F "," "BEGIN { CTR=${UT}; OFS=\",\"; } /.*/ { if (\$1 >= 20) { \$2=CTR; ++CTR; }; print }" "${INP}" >"${TMP}"
+# replace input with temp
+rm "${INP}"
+mv "${TMP}" "${INP}"
+# cp "${INP}" "${INP}__"
+
+
+echo -e "\nreplace 'readable' timestamps"
+echo -n "" >"${TMP}"
+for LID in $( awk -F "," '{ print $1; }' "${INP}" |sort -n |uniq ) ; do
   case "${LID}" in
     1?)
       echo "processing line id ${LID}"
@@ -89,14 +116,12 @@ for LID in $( awk -F "," '{ print $1; }' "${INP}" |sort |uniq ) ; do
     2?)
       echo "processing line id ${LID}"
       grep "^${LID}," "${INP}" \
-        | awk -F "," "{OFS=\",\"; \$2=\"${UT}\"; print }" \
         | awk -F "," "{OFS=\",\"; \$7=\"${DTF}.000Z\"; print }" \
         >>"${TMP}"
       ;;
     3?)
       echo "processing line id ${LID}"
       grep "^${LID}," "${INP}" \
-        | awk -F "," "{OFS=\",\"; \$2=\"${UT}\"; print }" \
         | awk -F "," "{OFS=\",\"; \$8=\"${DTF}.000 Z\"; print }" \
         | awk -F "," "{OFS=\",\"; \$13=\"${DTF}.000Z\"; print }" \
         >>"${TMP}"
@@ -112,3 +137,4 @@ gzip "${TMP}"
 cp "${TMP}.gz" "${OUT}.gz"
 rm "${INP}"
 rm "${TMP}.gz"
+
