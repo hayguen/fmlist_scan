@@ -1,0 +1,407 @@
+#!/bin/bash
+
+echo "whoami: $(whoami)"
+echo "USER: ${USER}"
+echo "HOME: ${HOME}"
+CALL_USER="$(basename "${HOME}")"
+echo "CALL_USER from basename \$HOME: '${CALL_USER}'"
+
+if [ ! "$(whoami)" = "root" ]; then
+  echo "$0 must be called with 'sudo -E ./setup'"
+  exit 0
+fi
+
+if [ ! "$HOME" = "/home/${CALL_USER}" ] || [ "$HOME" = "/root" ]; then
+  echo "error: call sudo with option '-E' to preserve users home directory!"
+  exit 0
+fi
+
+
+# helper functions
+
+###################################################
+#
+# source this file to get following functions:
+#  sshd_split      - split sections of /etc/ssh/sshd_config
+#  sshd_join       - join sections back into /etc/ssh/sshd_config
+#  sshd_optfile    - return global options section filename
+#  sshd_userfile   - find/create user sections filename
+#  sshd_has_option - return number of lines with option
+#  sshd_opt_value  - return options value
+#  sshd_del_opt    - remove option
+#  sshd_set_opt    - (remove and) set option
+#
+#  sshc_split      - split sections of /etc/ssh/ssh_config
+#  sshc_join       - join sections back into /etc/ssh/ssh_config
+#  sshc_optfile    - return global options section filename
+#  sshc_userfile   - find/create user sections filename
+#  sshc_has_option - return number of lines with option
+#  sshc_opt_value  - return options value
+#  sshc_del_opt    - remove option
+#  sshc_set_opt    - (remove and) set option
+
+
+# options: opt <sshd_config_filename>
+# output: /dev/shm/sshcfg/ssd_<nnn>
+#   nnn = 000 for general options
+#   nnn >= 001 for user specific "Match User" sections
+sshd_split() {
+  mkdir /dev/shm/sshcfg
+  chmod 0700 /dev/shm/sshcfg
+
+  pushd /dev/shm/sshcfg &>/dev/null
+    if [ -z "$1" ]; then
+      cp /etc/ssh/sshd_config ./
+    else
+      cp "$1" ./sshd_config
+    fi
+    rm -f ssd_*
+    csplit -f ssd_ -s -n 3 sshd_config "/^Match/" '{*}'
+  popd &>/dev/null
+}
+
+# call as root to allow writing /etc/ssh/sshd_config
+# options: opt <sshd_config_filename>
+sshd_join() {
+  pushd /dev/shm/sshcfg &>/dev/null
+    truncate -s 0 sshd_config
+    for n in $(seq -w 000 999); do
+      if [ -f ssd_$n ]; then
+        B=$(tail -n 1 ssd_$n)
+        if [ ! -z "$B" ]; then
+          echo "" >>ssd_$n
+        fi
+        cat ssd_$n >>sshd_config
+      fi
+    done
+    if [ -z "$1" ]; then
+      cp sshd_config /etc/ssh/sshd_config
+    else
+      cp sshd_config "$1"
+    fi
+  popd &>/dev/null
+}
+
+# options: <username>
+# output: filename for user format "/dev/shm/sshcfg/ssd_<nnn>"
+sshd_userfile() {
+  pushd /dev/shm/sshcfg &>/dev/null
+    EmptyFile=""
+    for n in $(seq -w 001 999); do
+      if [ -f ssd_$n ]; then
+        U=$(head -n 1 ssd_$n |sed 's/Match User//g' |sed 's/ //g' )
+        if [ "$U" = "$1" ]; then
+          echo "/dev/shm/sshcfg/ssd_$n"
+          exit 0
+        fi
+      else
+        if [ -z "${EmptyFile}" ]; then
+          EmptyFile="/dev/shm/sshcfg/ssd_$n"
+          echo "Match User $1" >ssd_$n
+        fi
+      fi
+    done
+    echo "${EmptyFile}"
+  popd &>/dev/null
+}
+
+# options: none
+# output: filename for general options, format "/dev/shm/sshcfg/ssd_000"
+sshd_optfile() {
+  echo "/dev/shm/sshcfg/ssd_000"
+}
+
+# options: <filename> <option>
+sshd_has_option() {
+  N=$(grep -c "^\s*$2" "$1")
+  echo $N
+}
+
+# options: <filename> <option>
+sshd_opt_value() {
+  V=$(grep "^\s*$2" "$1" | awk -F' ' '{ print $2; }' )
+  echo $V
+}
+
+# options: <filename> <option>
+sshd_del_opt() {
+  pushd /dev/shm/sshcfg &>/dev/null
+    grep -v "^\s*$2" "$1" >tmp
+    rm "$1"
+    mv tmp "$1"
+  popd &>/dev/null
+}
+
+# options: <filename> <option> <value>
+sshd_set_opt() {
+  sshd_del_opt "$1" "$2"
+  TABCHAR=$(echo -en "\t")
+  echo "${TABCHAR}$2${TABCHAR}$3" >>$1
+}
+
+###################################################
+
+# options: opt <ssh_config_filename>
+# output: /dev/shm/sshcfg/ssc_<nnn>
+#   nnn = 000 for general options
+#   nnn >= 001 for user specific "Match User" sections
+sshc_split() {
+  mkdir /dev/shm/sshcfg
+  chmod 0700 /dev/shm/sshcfg
+
+  pushd /dev/shm/sshcfg &>/dev/null
+    if [ -z "$1" ]; then
+      cp /etc/ssh/ssh_config ./
+    else
+      cp "$1" ./ssh_config
+    fi
+    rm -f ssc_*
+    csplit -f ssc_ -s -n 3 ssh_config "/^Host/" "/^Match/" '{*}'
+  popd &>/dev/null
+}
+
+# call as root to allow writing /etc/ssh/ssh_config
+# options: opt <ssh_config_filename>
+sshc_join() {
+  pushd /dev/shm/sshcfg &>/dev/null
+    truncate -s 0 ssh_config
+    for n in $(seq -w 000 999); do
+      if [ -f ssc_$n ]; then
+        B=$(tail -n 1 ssc_$n)
+        if [ ! -z "$B" ]; then
+          echo "" >>ssc_$n
+        fi
+        cat ssc_$n >>ssh_config
+      fi
+    done
+    if [ -z "$1" ]; then
+      cp ssh_config /etc/ssh/ssh_config
+    else
+      cp ssh_config "$1"
+    fi
+  popd &>/dev/null
+}
+
+# options: <username>
+# output: filename for user format "/dev/shm/sshcfg/ssc_<nnn>"
+sshc_userfile() {
+  pushd /dev/shm/sshcfg &>/dev/null
+    EmptyFile=""
+    for n in $(seq -w 001 999); do
+      if [ -f ssc_$n ]; then
+        U=$(head -n 1 ssc_$n |sed 's/Match User//g' |sed 's/ //g' )
+        if [ "$U" = "$1" ]; then
+          echo "/dev/shm/sshcfg/ssc_$n"
+          exit 0
+        fi
+      else
+        if [ -z "${EmptyFile}" ]; then
+          EmptyFile="/dev/shm/sshcfg/ssc_$n"
+          echo "Match User $1" >ssc_$n
+        fi
+      fi
+    done
+    echo "${EmptyFile}"
+  popd &>/dev/null
+}
+
+# options: <hostname>
+# output: filename for user format "/dev/shm/sshcfg/ssc_<nnn>"
+sshc_hostfile() {
+  pushd /dev/shm/sshcfg &>/dev/null
+    EmptyFile=""
+    for n in $(seq -w 001 999); do
+      if [ -f ssc_$n ]; then
+        U=$(head -n 1 ssc_$n |sed 's/Host//g' |sed 's/ //g' )
+        if [ "$U" = "$1" ]; then
+          echo "/dev/shm/sshcfg/ssc_$n"
+          exit 0
+        fi
+      else
+        if [ -z "${EmptyFile}" ]; then
+          EmptyFile="/dev/shm/sshcfg/ssc_$n"
+          echo "Match User $1" >ssc_$n
+        fi
+      fi
+    done
+    echo "${EmptyFile}"
+  popd &>/dev/null
+}
+
+
+# options: none
+# output: filename for general options, format "/dev/shm/sshcfg/ssc_000"
+sshc_optfile() {
+  echo "/dev/shm/sshcfg/ssc_000"
+}
+
+# options: <filename> <option>
+sshc_has_option() {
+  N=$(grep -c "^\s*$2" "$1")
+  echo $N
+}
+
+# options: <filename> <option>
+sshc_opt_value() {
+  V=$(grep "^\s*$2" "$1" | awk -F' ' '{ print $2; }' )
+  echo $V
+}
+
+# options: <filename> <option>
+sshc_del_opt() {
+  pushd /dev/shm/sshcfg &>/dev/null
+    grep -v "^\s*$2" "$1" >tmp
+    rm "$1"
+    mv tmp "$1"
+  popd &>/dev/null
+}
+
+# options: <filename> <option> <value>
+sshc_set_opt() {
+  sshc_del_opt "$1" "$2"
+  TABCHAR=$(echo -en "\t")
+  echo "${TABCHAR}$2${TABCHAR}$3" >>$1
+}
+
+###################################################
+
+
+# read/source setup configuration
+if [ ! -f sidedoor_config ]; then
+  echo "error: sidedoor_config file is missing"
+  exit 0
+fi
+
+# read configuration
+. sidedoor_config
+
+if [ -z "${JS_GW_PORT}" ]; then
+  if [ $[ $1 + 0 ] -ge 8000 ] && [ $[ $1 + 0 ] -lt 9000 ]; then
+    # allow config of port number from command line
+    JS_GW_PORT="$1"
+  else
+    echo "error: JS_GW_PORT has to be requested from h_ayguen@web.de"
+    exit 0
+  fi
+fi
+
+
+# install a few dependencies
+apt install -y sudo openssh-server sidedoor dnsutils coreutils libc-bin
+
+# do NOT stop running sidedoor - in case we are connected over it
+# systemctl stop sidedoor
+
+echo "check/create sidedoor subdir in $(pwd)"
+
+
+# create new/own keys for sidedoor (user)
+if [ ! -d sidedoor-key ]; then
+  mkdir sidedoor-key
+fi
+if [ ! -f sidedoor-key/id_rsa ]; then
+  echo "going to create new RSA keyset in subfolder 'sidedoor-key' .."
+  echo "required files/key are id_rsa and id_rsa.pub."
+  echo "abort with Ctrl-C in 5 seconds to generate/copy YOUR keys"
+  sleep 5
+  ssh-keygen -q -b 4096 -N "" -C "sidedoor" -f sidedoor-key/id_rsa
+  echo "finished creating key. copy/save/backup key for other jumpclients"
+else
+  echo "using existing sidedoor keys"
+fi
+
+if [ -f /etc/sidedoor/id_rsa ]; then
+  echo "WARNING: overwriting existing key /etc/sidedoor/id_rsa"
+  echo "abort with Ctrl-C within 5 seconds"
+  sleep 5
+fi
+rm -f /etc/sidedoor/id_rsa*
+cp sidedoor-key/id_rsa     /etc/sidedoor/id_rsa
+cp sidedoor-key/id_rsa.pub /etc/sidedoor/id_rsa.pub
+chown sidedoor:sidedoor /etc/sidedoor/id_rsa
+chown sidedoor:sidedoor /etc/sidedoor/id_rsa.pub
+chmod 600 /etc/sidedoor/id_rsa
+chmod 644 /etc/sidedoor/id_rsa.pub
+
+# for uploadScanFilesToDeveloper.sh: scp requires id_rsa owned by calling user
+cp sidedoor-key/id_rsa /etc/sidedoor/id_rsa_sidedoor
+chown pi:pi /etc/sidedoor/id_rsa_sidedoor
+chmod 600 /etc/sidedoor/id_rsa_sidedoor
+
+echo "writing sidedoor config /etc/default/sidedoor"
+echo "OPTIONS='-o ServerAliveInterval=1800 -o ServerAliveCountMax=3 -R ${JS_GW_PORT}:localhost:22'" >/etc/default/sidedoor
+echo "REMOTE_SERVER=\"-p ${JS_SSH_PORT} ${JS_CONNECT_USER}@${JS_HOSTNAME}\"" >>/etc/default/sidedoor
+
+
+if [ ! -z "${RSSH_USER}" ]; then
+  echo "checking for user ${RSSH_USER}"
+  id -u ${RSSH_USER}
+  RETUSERCHECK=$?
+  if [ "${RETUSERCHECK}" = "0" ]; then
+    echo "user '${RSSH_USER}' already exists. skipping 'adduser'."
+  else
+    echo "creating extra rssh user '${RSSH_USER}'"
+    adduser --gecos "" --disabled-password ${RSSH_USER}
+  fi
+  echo "granting sudo rights through /etc/sudoers.d/010_${RSSH_USER}_nopasswd"
+  echo "${RSSH_USER} ALL=(ALL) NOPASSWD: ALL" >/etc/sudoers.d/010_${RSSH_USER}_nopasswd
+  SSHCFG_USER="${RSSH_USER}"
+else
+  echo "No RSSH_USER configured"
+  echo "going to setup with current user '${CALL_USER}'"
+  SSHCFG_USER="${RSSH_USER}"
+fi
+
+sshd_split
+for U in $(echo "${SSHCFG_USER}" "sidedoor") ; do
+  if [ "$U" = "sidedoor" ]; then
+    SD="/etc/sidedoor"
+  else
+    HM=$(getent passwd "$U" |cut -d: -f6)
+    SD="$HM/.ssh"
+  fi
+  if [ ! -d "${SD}" ]; then
+    mkdir "${SD}"
+  fi
+  touch "${SD}/known_hosts"
+  # remove existing hostkeys, e.g. configure from previous jumpserver
+  ssh-keygen -R ${JS_HOSTNAME}               -f ${SD}/known_hosts
+  ssh-keygen -R $(dig +short ${JS_HOSTNAME}) -f ${SD}/known_hosts
+  # now add new keys
+  ssh-keyscan -p ${JS_SSH_PORT} -H ${JS_HOSTNAME}               >>${SD}/known_hosts
+  ssh-keyscan -p ${JS_SSH_PORT} -H $(dig +short ${JS_HOSTNAME}) >>${SD}/known_hosts
+  # 
+  F=$(sshd_userfile "$U")
+  sshd_del_opt "$F" "RSAAuthentication"
+  sshd_set_opt "$F" "PubkeyAuthentication"   "yes"
+  sshd_set_opt "$F" "PasswordAuthentication" "no"
+done
+for U in $(echo "${SSHCFG_USER}") ; do
+  HM=$(getent passwd "$U" |cut -d: -f6)
+  SD="$HM/.ssh"
+  # the file authorized_for_gateway is/should be bundled with this script and config!
+  # scp root@jumpserver:/root/id_rsa.pub ./
+  cp authorized_sidedoor_keys ${SD}/authorized_keys
+  # and change ownership to right user
+  chown -R ${SSHCFG_USER}:${SSHCFG_USER} "${SD}"
+  chmod 700 "${SD}"
+done
+sshd_join
+
+sshc_split /etc/sidedoor/config
+  F=$(sshc_hostfile "*")
+    sshc_set_opt "$F" "IdentityFile"          "/etc/sidedoor/id_rsa"
+    sshc_set_opt "$F" "UserKnownHostsFile"    "/etc/sidedoor/known_hosts"
+    sshc_set_opt "$F" "StrictHostKeyChecking" "off"
+sshc_join /etc/sidedoor/config
+
+chown sidedoor:sidedoor /etc/sidedoor/known_hosts
+chmod 600 /etc/sidedoor/known_hosts
+
+
+systemctl reload ssh.service
+
+systemctl enable sidedoor
+systemctl restart sidedoor
+systemctl status sidedoor
+
