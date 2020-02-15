@@ -34,24 +34,14 @@ cmake ../${GITPROJ}/example-10 -DRTLSDR=ON
 make
 
 
-# raw 8 bit 2048kSps
-if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw ]; then
-  mkdir -p ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw
+# wav and raw 8 bit 2048kSps
+if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_files ]; then
+  mkdir -p ${BASE}/git/${GITUSER}/build_${GITPROJ}_files
 fi
 
-cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw
-cmake ../${GITPROJ}/example-10 -DRAWFILES=ON
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_files
+cmake ../${GITPROJ}/example-10 -DWAVFILES=ON -DRAWFILES=ON
 make
-
-# wav
-if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_wav ]; then
-  mkdir -p ${BASE}/git/${GITUSER}/build_${GITPROJ}_wav
-fi
-
-cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_wav
-cmake ../${GITPROJ}/example-10 -DWAVFILES=ON
-make
-
 
 
 echo "remaining todo: sudo make install"
