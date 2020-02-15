@@ -1,0 +1,20 @@
+
+# portnumber is unique for each client. to be provided from administrator of JumpServer
+JS_GW_PORT=""
+
+# does JumpServer want to identify/verify each client? put in unique id, simply JS_GW_PORT
+# then, /etc/sidedoor/id_rsa.pub has to be copied/mailed to the administrator of JumpServer
+JUMP_CLIENT_ID=""
+
+
+# (Dyn)DNS hostname of exposed JumpServer, to which to connect automatically from client
+JS_HOSTNAME="hayguen.hopto.org"
+
+# username to connect with at JumpServer
+JS_CONNECT_USER="upload"
+
+# portnumber to connect at JumpServer, default is 22
+JS_SSH_PORT="22345"
+
+# create dedicated user, for sidedoor remote logins. put username to create or leave empty
+RSSH_USER="fmlist_service"
