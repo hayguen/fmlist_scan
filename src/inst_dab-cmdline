@@ -9,14 +9,9 @@ cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
 make install
 ldconfig
 
-cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_files
 make install
 ldconfig
-
-cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_wav
-make install
-ldconfig
-
 
 cd ${BASE}
 
