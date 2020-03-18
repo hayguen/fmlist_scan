@@ -1,7 +1,7 @@
 # fmlist_scan
 FM and DAB scanner for collecting information for FMLIST, see https://www.fmlist.org/
 
-The scanner runs on Raspberry Pi 3B+.
+The scanner runs on Raspberry Pi 3B+ and 4B with Raspbian OS. Main parts also run on Debian based Linux OS'es, requiring minor configuration.
 
 The ongoing project was presented at the VHF meeting 2018: see https://ukw-tagung.org/
 
@@ -13,3 +13,4 @@ A video of the presentation in german language is available at https://www.ukwtv
 
 An additional step-by-step setup guide is work-in-progress. Also in german: https://codingspirit.de/fmlist_scan_Step-by-Step.pdf
 
+Mailing List, Wiki, Translation of step-by-step setup guid and more: https://groups.io/g/fmlist-scanner
