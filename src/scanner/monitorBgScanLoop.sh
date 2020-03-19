@@ -15,7 +15,7 @@ while /bin/true; do
 
   if [ -f LAST ]; then
     echo -en "\nLast found station: "
-    cat LAST
+    sed -e 's/0000$//g' -e 's/\([0-9][0-9]\)$/.\1 MHz/g' LAST
 
     CURR="$(date -u +%s)"
     LAST="$(stat -c %Y ${FMLIST_SCAN_RAM_DIR}/LAST)"

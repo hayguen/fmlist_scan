@@ -187,6 +187,25 @@ alias listFMfound='for f in $(ls -1 *_FM.zip) ; do echo -n "$f : " ; 7z x -so $f
 alias listFMdur='for f in $(ls -1 *_FM.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" ) |grep "FM scan duration" ; done'
 alias listFMddcs='for f in $(ls -1 *_FM.zip) ; do echo -n "$f : " ; 7z x -so $f $( unzip -l $f |grep scan_duration.txt ) |grep "^ddc freqs are" ; done'
 
+function listFMscans {
+  if [ -z "$1" ]; then
+    NTAIL="+1"
+  else
+    NTAIL="$1"
+  fi
+  for f in $( ls -1 *_FM.zip | tail -n ${NTAIL} ) ; do
+    DUR_FN=$( unzip -l $f |grep scan_duration.txt |awk "{ print \$4; }" )
+    NUM_RDS=$( 7z x -so $f ${DUR_FN} |grep "FM scan found" |awk "{ print \$4; }" )
+    DDCS=$( 7z x -so $f ${DUR_FN} |grep "^ddc freqs are" | sed 's/ddc freqs are //g' )
+    SCAN_NO=$( 7z x -so $f ${DUR_FN} |grep "^FM scan rtl_sdr SCAN_NO=" | sed 's/FM scan rtl_sdr //g' )
+    SCAN_OPT=$( 7z x -so $f ${DUR_FN} |grep "^FM scan rtl_sdr options" | sed 's/FM scan rtl_sdr options //g' )
+    if [ -z "${SCAN_NO}${SCAN_OPT}" ]; then
+      echo -e "$f :\t${NUM_RDS} RDS stations at channels ${DDCS}"
+    else
+      echo -e "\n$f :\t${NUM_RDS} RDS stations at channels ${DDCS}\n\t${SCAN_NO}: ${SCAN_OPT}"
+    fi
+  done
+}
 
 function showZipDABprogs {
   rm -rf $HOME/ram/tempDAB &>/dev/null

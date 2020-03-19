@@ -462,6 +462,8 @@ echo "FM scan duration ${TDUR} sec"
 echo "FM scan duration ${TDUR} sec" >>${rec_path}/scan_duration.txt
 echo "FM scan found ${NUMRDS} RDS carriers and ${NUMCAR} plain carriers"
 echo "FM scan found ${NUMRDS} RDS carriers and ${NUMCAR} plain carriers" >>${rec_path}/scan_duration.txt
+echo "FM scan rtl_sdr options ${RTLSDR_OPT} ${RTL_BW_OPT}" >>${rec_path}/scan_duration.txt
+echo "FM scan rtl_sdr SCAN_NO=${FMSCAN_NO}, MOD=${SCANMOD}, SB=${SB}, BCSHIFT=${BCSHIFT}, RTLC=${RTLC}, RTLBW=${RTLBW}" >>${rec_path}/scan_duration.txt
 if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
   echo "FM scan finished at ${DTF}. Duration ${TDUR} sec." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 fi

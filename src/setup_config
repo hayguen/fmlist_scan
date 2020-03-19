@@ -125,6 +125,7 @@ USE_BCSHIFT="1"       # activate band shifting
 
 # switch tuner sideband with every scan - this is only used with the R820T
 if [ -z "\${FMSCAN_NO}" ]; then
+  SB=""
   SBOPT=""
   BCMUL="-1"   # default is LSB .. where steep low pass is at low frequency. let high pass run over right band
 else
@@ -177,11 +178,12 @@ if [ "\${FMLIST_FM_DEV_R820T}" = "1" ]; then
   # band center shift
   SCANMOD=\$[ ( \${FMSCAN_NO} % 8 ) / 2 ]
   BCSHIFT=\$[ \${USE_BCSHIFT} * \${SCANMOD} * 100 ]
+  RTLCMUL=\$[ \${BCMUL} * \${RTLC} ]
 
   if [ -z "\${RTL_HF_GAIN}" ]; then
-    RTLSDR_OPT="-O verbose:T=0:bw=\${RTLBW}:bc=\${RTLC}000:agc=1:\${RTL_IF_GAIN}:\${RTL_DAGC}:\${SBOPT}"
+    RTLSDR_OPT="-O verbose:T=0:bw=\${RTLBW}:bc=\${RTLCMUL}000:agc=1:\${RTL_IF_GAIN}:\${RTL_DAGC}:\${SBOPT}"
   else
-    RTLSDR_OPT="\${RTL_HF_GAIN} -O verbose:T=0:bw=\${RTLBW}:bc=\${RTLC}000:\${RTL_IF_GAIN}:\${RTL_DAGC}:\${SBOPT}"
+    RTLSDR_OPT="\${RTL_HF_GAIN} -O verbose:T=0:bw=\${RTLBW}:bc=\${RTLCMUL}000:\${RTL_IF_GAIN}:\${RTL_DAGC}:\${SBOPT}"
   fi
 
 else
