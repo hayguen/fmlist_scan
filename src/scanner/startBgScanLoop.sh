@@ -67,6 +67,44 @@ if [ $( ls -1 "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/" | wc -l ) -ne 0
   if [ -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/wpa_supplicant.conf" ]; then
     dos2unix "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/wpa_supplicant.conf"
     sudo bash -c "cat ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/wpa_supplicant.conf >>/etc/wpa_supplicant/wpa_supplicant.conf"
+
+    # raspi_config and wpa_supplicant require global configuration
+    # create if not existing
+    mkdir /dev/shm/wpa_supplicant
+    chmod 700 /dev/shm/wpa_supplicant
+    touch /dev/shm/wpa_supplicant/wpa_supplicant_.conf
+    sudo cp /etc/wpa_supplicant/wpa_supplicant.conf /dev/shm/wpa_supplicant/wpa_supplicant_.conf
+    chown ${whoami}:${whoami} /dev/shm/wpa_supplicant/wpa_supplicant_.conf
+
+    NCTRLIFC=$( grep -c "^ctrl_interface=" /dev/shm/wpa_supplicant/wpa_supplicant_.conf )
+    NUPDATE=$(  grep -c "^update_config="  /dev/shm/wpa_supplicant/wpa_supplicant_.conf )
+    NCOUNTRY=$( grep -c "^country="        /dev/shm/wpa_supplicant/wpa_supplicant_.conf )
+
+    CCTRLIFC=$( grep "^ctrl_interface=" /dev/shm/wpa_supplicant/wpa_supplicant_.conf |tail -n 1 )
+    CUPDATE=$(  grep "^update_config="  /dev/shm/wpa_supplicant/wpa_supplicant_.conf |tail -n 1 )
+    CCOUNTRY=$( grep "^country="        /dev/shm/wpa_supplicant/wpa_supplicant_.conf |tail -n 1 )
+
+    if [ "${NCTRLIFC}" = "0" ]; then
+      CCTRLIFC="ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev"
+    fi
+    if [ "${NUPDATE}" = "0" ]; then
+      CUPDATE="update_config=1"
+    fi
+    if [ "${NCOUNTRY}" = "0" ]; then
+      CCOUNTRY="country=DE"
+    fi
+
+    cat /dev/shm/wpa_supplicant/wpa_supplicant_.conf \
+      | grep -v "^ctrl_interface=" \
+      | grep -v "^update_config=" \
+      | grep -v "^country=" \
+      | sed "1i${CCTRLIFC}" \
+      | sed "2i${CUPDATE}" \
+      | sed "3i${CCOUNTRY}" >/dev/shm/wpa_supplicant/wpa_supplicant.conf
+
+    cp /dev/shm/wpa_supplicant/wpa_supplicant.conf ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config_wpa_supplicant.conf
+    sudo cp /dev/shm/wpa_supplicant/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf
+
     if [ -s ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/wpa_supplicant.conf ] ; then
       touch "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/reboot"
     fi
