@@ -27,7 +27,7 @@ if [ -z "${DIFF}" ]; then
 fi
 
 
-for f in $( ls -1 *.sh scanner/*.sh ) ; do
+for f in $( ls -1 *.sh *.py scanner/*.sh scanner/*.py ) ; do
   b=$( basename "$f" )
 
   if [ "$b" == "all.sh" ]; then
@@ -58,17 +58,6 @@ for f in $( ls -1 "${BINDIR}" ) ; do
     echo "file $f exists in ${BINDIR} but neither in . nor in scanner"
   fi
 done
-
-# simplify diff with current settings
-
-CONFDIR="${BINDIR}/../.config/fmlist_scan"
-cat "${CONFDIR}/config"            >setup_config.user
-echo ""                           >>setup_config.user
-cat "${CONFDIR}/fmscan.inc"       >>setup_config.user
-echo ""                           >>setup_config.user
-cat "${CONFDIR}/dabscan.inc"      >>setup_config.user
-echo ""                           >>setup_config.user
-cat "${CONFDIR}/dab_chanlist.txt" >>setup_config.user
 
 crontab -l >crontab.user
 
