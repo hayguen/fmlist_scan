@@ -63,6 +63,10 @@ if [ ! -z "${FMLIST_SCAN_PPM}" ]; then
   DABOPT="${DABOPT} -p ${FMLIST_SCAN_PPM}"
 fi
 
+if [ "${FMLIST_SCAN_DAB_SAVE_FIC}" = "1" ]; then
+  DABOPT="${DABOPT} -f"
+fi
+
 chanpath="${FMLIST_SCAN_RAM_DIR}/${chanlist}"
 echo "chanpath=${chanpath}"
 if [ ! -f "${chanpath}" ]; then
@@ -103,6 +107,8 @@ else
   dabchannels=( ${allchans} )
 fi
 
+rm -f ${rec_path}/*_DAB_*.fic 2>/dev/null
+
 NUMFOUND=0
 for CH in $(echo "${dabchannels[@]}") ; do
 
@@ -130,6 +136,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
     echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
   fi
 
+  DTFFIC="$(date -u "+%Y-%m-%dT%H%M%S")"
   LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" dab-rtlsdr -C $CH ${DABOPT} &>"${rec_path}/DAB_$CH.log"
   grep ",CSV_ENSEMBLE," "${rec_path}/DAB_$CH.log" | sed "s#,CSV_ENSEMBLE,#,${GPSCOLS},#g" >>"${rec_path}/dab_ensemble.csv"
   grep ",CSV_GPSCOOR,"  "${rec_path}/DAB_$CH.log" | sed "s#,CSV_GPSCOOR,#,${GPSCOLS},#g"  >>"${rec_path}/dab_gps.csv"
@@ -151,6 +158,11 @@ for CH in $(echo "${dabchannels[@]}") ; do
   else
     echo "DAB_$CH" >${FMLIST_SCAN_RAM_DIR}/LAST
     NUMFOUND=$[ $NUMFOUND + 1 ]
+
+    if [ "${FMLIST_SCAN_DAB_SAVE_FIC}" = "1" ]; then
+      mv ficdata.fic ${rec_path}/${DTFFIC}_DAB_$CH.fic
+    fi
+
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
       echo "${DTF}: DAB ${CH}: DETECTED station" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     fi
