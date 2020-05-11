@@ -17,8 +17,12 @@
     "FMLIST_SCAN_AUTOSTART"          \
     "FMLIST_SCAN_FM"                 \
     "FMLIST_SCAN_DAB"                \
+    "FMLIST_SCAN_TEST"               \
+    "FMLIST_SCAN_DAB_SAVE_FIC"       \
     "FMLIST_SCAN_DAB_USE_PRESCAN"    \
     "FMLIST_SCAN_SAVE_RAW"           \
+    "FMLIST_SCAN_SAVE_WAV"           \
+    "FMLIST_SCAN_SAVE_RDSSPY"        \
     "FMLIST_SCAN_DEBUG"              \
     "FMLIST_SCAN_DEBUG_CHK_SPECTRUM" \
     "FMLIST_SCAN_DEBUG_REDSEA"       \
@@ -29,6 +33,8 @@
     "FMLIST_SCAN_PWM_FEEDBACK"       \
     "FMLIST_SCAN_MOUNT"              \
     "FMLIST_SCAN_SAVE_PARTIAL"       \
+    "FMLIST_FM_DEV_R820T"            \
+    "FMLIST_DAB_DEV_R820T"           \
   )
 
   VARS_TO_EXIST=( \
@@ -52,9 +58,13 @@
     "FMLIST_SCAN_GPS_COORDS" \
   )
 
-  EMPTY_VARS=( \
+  OPTIONAL_VARS=( \
     "FMLIST_USER"              \
     "FMLIST_OM_ID"             \
+    "FMLIST_UP_COMMENT"        \
+    "FMLIST_UP_PERMISSION"     \
+    "FMLIST_UP_RESTRICT_USERS" \
+    "FMLIST_UP_POSITION"       \
     "FMLIST_SCAN_GPS_LAT"      \
     "FMLIST_SCAN_GPS_LON"      \
     "FMLIST_SCAN_GPS_ALT"      \
@@ -102,7 +112,7 @@
   fi
 
 
-  ALL_VARS=( "${PATH_VARS[@]}" "${ON_OFF_VARS[@]}" "${VARS_TO_EXIST[@]}" "${OTHER_VARS[@]}" "${EMPTY_VARS[@]}" )
+  ALL_VARS=( "${PATH_VARS[@]}" "${ON_OFF_VARS[@]}" "${VARS_TO_EXIST[@]}" "${OTHER_VARS[@]}" "${OPTIONAL_VARS[@]}" )
 
   for VN in $( grep "^export" $HOME/.config/fmlist_scan/config |awk -F '=' '{ print $1; }' | awk '{ print $2; }' ) ; do
     if echo ${ALL_VARS[@]} | grep -q -w "${VN}"; then 
@@ -128,7 +138,7 @@
     "mpxsrate_chunkbw_factor" \
     "RTL_BW_OPT"              \
     "chunkduration"           \
-    "BIASTEE"                 \
+    "RTL_BIASTEE"             \
     "RTLSDR_OPT"              \
   )
 
@@ -149,7 +159,7 @@
 
   VARS_TO_EXIST=( \
     "chanlist"      \
-    "BIASTEE"       \
+    "RTL_BIASTEE"   \
     "DABOPT"        \
     "DABPRESCANOPT" \
     "DABLISTENOPT"  \

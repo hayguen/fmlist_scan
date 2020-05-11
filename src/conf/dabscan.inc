@@ -1,4 +1,7 @@
 
+# special for rtl-sdr.com V3 dongles, to control current for an external LNA
+RTL_BIASTEE="0"          # "0" or "1"; "1" to activate power on BiasT
+
 # common amongst different tuners is the HF gain. with R820T/2, this is LNA and Mixer.
 #RTL_HF_GAIN="gain=200"  # activate this line for manual HF gain. with R820T/2, this is LNA and Mixer
 RTL_HF_GAIN=""          # empty string activates the AGC
@@ -43,7 +46,7 @@ fi
 
 
 # softdeadtime=2:softscantime=20:softagc=0
-RTLOPT="-O verbose:T=0:${RTLGAIN}:${RTL_IF_GAIN}:${RTL_DAGC}:bw=1600:${SBOPT}"
+RTLOPT="-O verbose:T=${RTL_BIASTEE}:${RTLGAIN}:${RTL_IF_GAIN}:${RTL_DAGC}:bw=1600:${SBOPT}"
 
 DABOPT="${DABGAIN} -E 3 -W 5000 -A 6000 -c -t 5 -a 0.8 -r 5 -x ${RTLOPT}"
 DABPRESCANOPT="${RTLOPT}"
