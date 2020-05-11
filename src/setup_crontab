@@ -11,6 +11,6 @@ fi
   echo "@reboot                  sleep 5 ; bash -l /home/${FMLIST_SCAN_USER}/bin/startBgScanLoop.sh autostart  >/dev/null 2>&1"
   echo "# min hour dom mon dow   command"
   echo "  *   *    *   *   *     /home/${FMLIST_SCAN_USER}/bin/checkBgScanLoop.sh  >/dev/null 2>&1"
-  echo "# 15  1    *   *   *     bash -l /home/${FMLIST_SCAN_USER}/bin/prepareScanResultsForUpload.sh >/dev/null 2>&1 ; bash -l /home/${FMLIST_SCAN_USER}/bin/uploadScanResults.sh >/dev/null 2>&1"
+  echo " 15   0    *   *   *     bash -l /home/${FMLIST_SCAN_USER}/bin/prepareScanResultsForUpload.sh random >/dev/null 2>&1 ; bash -l /home/${FMLIST_SCAN_USER}/bin/uploadScanResults.sh >/dev/null 2>&1"
 ) | crontab -u ${FMLIST_SCAN_USER} -
 
