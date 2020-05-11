@@ -16,6 +16,9 @@ selchunkfreqs=( )
 # chunksrate = 171 * 14 = 2394 kHz, keep this value high to avoid aliasing!
 chunk2mpx_dec="14"
 
+# special for rtl-sdr.com V3 dongles, to control current for an external LNA
+RTL_BIASTEE="0"          # "0" or "1"; "1" to activate power on BiasT
+
 # common amongst different tuners is the HF gain. with R820T/2, this is LNA and Mixer.
 #RTL_HF_GAIN="-g 20"   # activate this line for manual HF gain. with R820T/2, this is LNA and Mixer
 RTL_HF_GAIN=""        # empty string activates the HF-AGC
@@ -100,9 +103,9 @@ if [ "${FMLIST_FM_DEV_R820T}" = "1" ]; then
   RTLCMUL=$[ ${BCMUL} * ${RTLC} ]
 
   if [ -z "${RTL_HF_GAIN}" ]; then
-    RTLSDR_OPT="-O verbose:T=0:bw=${RTLBW}:bc=${RTLCMUL}000:agc=1:${RTL_IF_GAIN}:${RTL_DAGC}:${SBOPT}"
+    RTLSDR_OPT="-O verbose:T=${RTL_BIASTEE}:bw=${RTLBW}:bc=${RTLCMUL}000:agc=1:${RTL_IF_GAIN}:${RTL_DAGC}:${SBOPT}"
   else
-    RTLSDR_OPT="${RTL_HF_GAIN} -O verbose:T=0:bw=${RTLBW}:bc=${RTLCMUL}000:${RTL_IF_GAIN}:${RTL_DAGC}:${SBOPT}"
+    RTLSDR_OPT="${RTL_HF_GAIN} -O verbose:T=${RTL_BIASTEE}:bw=${RTLBW}:bc=${RTLCMUL}000:${RTL_IF_GAIN}:${RTL_DAGC}:${SBOPT}"
   fi
 
 else
@@ -117,9 +120,9 @@ else
   fi
 
   if [ -z "${RTL_HF_GAIN}" ]; then
-    RTLSDR_OPT="-O verbose:T=0:bw=${RTLBW}:agc=1:${RTL_DAGC}"
+    RTLSDR_OPT="-O verbose:T=${RTL_BIASTEE}:bw=${RTLBW}:agc=1:${RTL_DAGC}"
   else
-    RTLSDR_OPT="${RTL_HF_GAIN} -O verbose:T=0:bw=${RTLBW}:${RTL_DAGC}"
+    RTLSDR_OPT="${RTL_HF_GAIN} -O verbose:T=${RTL_BIASTEE}:bw=${RTLBW}:${RTL_DAGC}"
   fi
 
 fi
