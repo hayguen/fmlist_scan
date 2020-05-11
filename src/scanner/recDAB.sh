@@ -78,6 +78,7 @@ shift
 
 if [ -z "${chan}" ] || [ "${chan}" = "-h" ] || [ "${chan}" = "--help" ] || [ -z "${durs}" ]; then
   echo "usage: $0 <channel> <duration in seconds> [<additional options to rtl_sdr>]"
+  echo "  you might need to increase max. ramdisk size: sudo mount -o remount,size=600M /dev/shm"
   exit 0
 fi
 
@@ -101,10 +102,18 @@ else
 fi
 
 NSMP="$[ ${durs} * 2048000 ]"
-if [ -z "$NSMP" ]; then
-  echo "error calculating number of samples to record from duration '${durs}' in seconds"
-  exit 0
-fi
+#if [ -z "$NSMP" ]; then
+#  echo "error calculating number of samples to record from duration '${durs}' in seconds"
+#  exit 0
+#fi
+#if [ $NSMP -lt 0 ]; then
+#  echo "overflow error calculating number of samples to record from duration '${durs}' in seconds"
+#  echo "overflowed value: ${NSMP}"
+#  exit 0
+#fi
+#ESTIM_REC_SIZE=$[ ( ( ( $NSMP / 1024 ) + 1 ) * 2 ) / 1024 ]
+#echo "recording of ${NSMP} I/Q frames should produce ~ ${ESTIM_REC_SIZE} MB"
+
 
 fext="raw"
 if [ "$1" = "-H" ]; then
@@ -124,7 +133,8 @@ fi
 
 FPN="${FMLIST_SCAN_RAM_DIR}/${FN}"
 echo "running rtl_sdr -f ${freq} -s 2048000 -n ${NSMP} ${FMLIST_DAB_RTLSDR_OPT} $@ ${FPN} .."
-rtl_sdr -f ${freq} -s 2048000 -n ${NSMP} ${FMLIST_DAB_RTLSDR_OPT} "$@" "${FPN}"
+# rtl_sdr -f ${freq} -s 2048000 -n ${NSMP} ${FMLIST_DAB_RTLSDR_OPT} "$@" "${FPN}"
+timeout -s SIGTERM -k 3 $[${durs} +1] rtl_sdr -f ${freq} -s 2048000 ${FMLIST_DAB_RTLSDR_OPT} "$@" "${FPN}"
 
 echo "recorded file is: $( ls -lh "${FPN}" )"
 
