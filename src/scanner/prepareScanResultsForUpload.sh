@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# usage: $0 [all]
+# usage: $0 [all|random]
 
 source $HOME/.config/fmlist_scan/config
 if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
@@ -42,6 +42,16 @@ fi
 
 if [ ! -d "up_sent" ]; then
   mkdir "up_sent"
+fi
+
+if [ "$1" = "random" ]; then
+  MAX_MINUTES="$2"
+  if [ -z "$MAX_MINUTES" ]; then
+    MAX_MINUTES="240"  # = 4 h
+  fi
+  WAITSEC=$[ $RANDOM % ( 60 * ${MAX_MINUTES} ) ]
+  echo "detected option 'random': waiting up to ${MAX_MINUTES} minutes: $[ ${WAITSEC} / 60 ] min $[ ${WAITSEC} % 60 ] sec"
+  sleep ${WAITSEC}
 fi
 
 #t="$(date -u "+%Y-%m-%dT%Hh%Mm%SZ")"
