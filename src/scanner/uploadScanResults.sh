@@ -45,6 +45,9 @@ ls -1 |egrep "^.*\.gz\$" |while read f ; do
   if [ "${response}" = "Thank you!" ]; then
     echo " => success. moving to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_sent/".
     mv "${f}" "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_sent/"
+    pushd "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_sent/" &>/dev/null
+    createFMoverview.py "${f}"
+    popd &>/dev/null
   else
     echo " => fail! keeping file for later upload."
   fi
