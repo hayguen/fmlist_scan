@@ -177,6 +177,17 @@ if [ "$1" = "autostart" ] ; then
    fi
 fi
 
+for f in $(echo "config" "dab_chanlist.txt" "dabscan.inc" "fmscan.inc" ) ; do
+  cp "$HOME/.config/fmlist_scan/${f}"      "${FMLIST_SCAN_RAM_DIR}/"
+  dos2unix "${FMLIST_SCAN_RAM_DIR}/${f}"     >/dev/null 2>/dev/null
+  cmp "$HOME/.config/fmlist_scan/${f}"     "${FMLIST_SCAN_RAM_DIR}/${f}"  >/dev/null 2>/dev/null
+  CMPRESULT=$?
+  if [ ! $CMPRESULT -eq 0 ]; then
+    cp "${FMLIST_SCAN_RAM_DIR}/${f}"       "$HOME/.config/fmlist_scan/"
+  fi
+  rm "${FMLIST_SCAN_RAM_DIR}/${f}"
+done
+
 echo "" >${FMLIST_SCAN_RAM_DIR}/LAST
 rm -f ${FMLIST_SCAN_RAM_DIR}/stopScanLoop
 # signal desired state - not the current one
