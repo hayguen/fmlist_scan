@@ -96,6 +96,8 @@ ls -1 |egrep "^[0-9]{4}-[0-9]{2}-[0-9]{2}\$" |grep -v "${GREPOPT}" |while read d
   echo "12,\"${FMLIST_UP_COMMENT}\""                   >>${TF}
   echo "13,\"${FMLIST_UP_PERMISSION}\",\"${FMLIST_UP_RESTRICT_USERS}\"" >>${TF}
   echo "14,\"${FMLIST_UP_POSITION}\""                  >>${TF}
+  createFMoverview.py --nowrite summaries/${d}_${t}_fm_rds.csv | grep "^15," >>${TF}
+
   sed 's/^/20,/' summaries/${d}_${t}_dab_ensemble.csv  >>${TF}
   sed 's/^/21,/' summaries/${d}_${t}_dab_audio.csv     >>${TF}
   sed 's/^/22,/' summaries/${d}_${t}_dab_packet.csv    >>${TF}
