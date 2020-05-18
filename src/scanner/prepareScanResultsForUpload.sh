@@ -44,18 +44,8 @@ if [ ! -d "up_sent" ]; then
   mkdir "up_sent"
 fi
 
-if [ "$1" = "random" ]; then
-  MAX_MINUTES="$2"
-  if [ -z "$MAX_MINUTES" ]; then
-    MAX_MINUTES="240"  # = 4 h
-  fi
-  WAITSEC=$[ $RANDOM % ( 60 * ${MAX_MINUTES} ) ]
-  echo "detected option 'random': waiting up to ${MAX_MINUTES} minutes: $[ ${WAITSEC} / 60 ] min $[ ${WAITSEC} % 60 ] sec"
-  sleep ${WAITSEC}
-fi
-
 #t="$(date -u "+%Y-%m-%dT%Hh%Mm%SZ")"
-t="$(date -u "+%Hh%Mm%SZ")"
+#t="$(date -u "+%Hh%Mm%SZ")"
 
 GREPOPT="$(date -u "+%Y-%m-%d")"
 if [ "$1" = "all" ]; then
@@ -65,49 +55,64 @@ else
   echo "option 'all' not used: going to prepare data - up to yesterday"
 fi
 
-ls -1 |egrep "^[0-9]{4}-[0-9]{2}-[0-9]{2}\$" |grep -v "${GREPOPT}" |while read d ; do
+ls -1 |egrep "^[0-9]{4}-[0-9]{2}-[0-9]{2}\$" |grep -v "${GREPOPT}" |sort |while read d ; do
+  #DTF="${d}-${t}"
+  #DTF="${d}__$(date -u "+%Y-%m-%d_%Hh%Mm%SZ")"
+  DTF="$(date -u "+%Y-%m-%d_%Hh%Mm%SZ")"
+
   echo "processing $d to summaries/"
-  concatScanResults.sh cputemp      "${d}" >summaries/${d}_${t}_cputemp.csv
+  concatScanResults.sh cputemp      "${d}" >summaries/${DTF}_cputemp.csv
   echo "  cputemp finished."
-  concatScanResults.sh gpscoor      "${d}" >summaries/${d}_${t}_gpscoor.csv
+  concatScanResults.sh gpscoor      "${d}" >summaries/${DTF}_gpscoor.csv
   echo "  gpscoor finished."
-  concatScanResults.sh fm_carrier   "${d}" >summaries/${d}_${t}_fm_carrier.csv
+  concatScanResults.sh fm_carrier   "${d}" >summaries/${DTF}_fm_carrier.csv
   echo "  fm_carrier finished."
-  concatScanResults.sh fm_rds       "${d}" >summaries/${d}_${t}_fm_rds.csv
+  concatScanResults.sh fm_rds       "${d}" >summaries/${DTF}_fm_rds.csv
   echo "  fm_rds finished."
-  concatScanResults.sh fm_count     "${d}" >summaries/${d}_${t}_fm_count.csv
+  concatScanResults.sh fm_count     "${d}" >summaries/${DTF}_fm_count.csv
   echo "  fm_count finished."
 
-  concatScanResults.sh dab_ensemble "${d}" >summaries/${d}_${t}_dab_ensemble.csv
+  concatScanResults.sh dab_ensemble "${d}" >summaries/${DTF}_dab_ensemble.csv
   echo "  dab_ensemble finished."
-  concatScanResults.sh dab_gps      "${d}" >summaries/${d}_${t}_dab_gps.csv
+  concatScanResults.sh dab_gps      "${d}" >summaries/${DTF}_dab_gps.csv
   echo "  dab_gps finished."
-  concatScanResults.sh dab_audio    "${d}" >summaries/${d}_${t}_dab_audio.csv
+  concatScanResults.sh dab_audio    "${d}" >summaries/${DTF}_dab_audio.csv
   echo "  dab_audio finished."
-  concatScanResults.sh dab_packet   "${d}" >summaries/${d}_${t}_dab_packet.csv
+  concatScanResults.sh dab_packet   "${d}" >summaries/${DTF}_dab_packet.csv
   echo "  dab_packet finished."
-  concatScanResults.sh dab_count    "${d}" >summaries/${d}_${t}_dab_count.csv
+  concatScanResults.sh dab_count    "${d}" >summaries/${DTF}_dab_count.csv
   echo "  dab_count finished."
 
-  TF="${FMLIST_SCAN_RAM_DIR}/${d}-${t}_upload.csv"
+  TF="${FMLIST_SCAN_RAM_DIR}/${DTF}_upload.csv"
 
   echo "10,\"${FMLIST_USER}\""                          >${TF}
   echo "11,\"${FMLIST_OM_ID}\""                        >>${TF}
   echo "12,\"${FMLIST_UP_COMMENT}\""                   >>${TF}
   echo "13,\"${FMLIST_UP_PERMISSION}\",\"${FMLIST_UP_RESTRICT_USERS}\"" >>${TF}
   echo "14,\"${FMLIST_UP_POSITION}\""                  >>${TF}
-  createFMoverview.py --nowrite summaries/${d}_${t}_fm_rds.csv | grep "^15," >>${TF}
+  createFMoverview.py --nowrite summaries/${DTF}_fm_rds.csv | grep "^15," >>${TF}
 
-  sed 's/^/20,/' summaries/${d}_${t}_dab_ensemble.csv  >>${TF}
-  sed 's/^/21,/' summaries/${d}_${t}_dab_audio.csv     >>${TF}
-  sed 's/^/22,/' summaries/${d}_${t}_dab_packet.csv    >>${TF}
-  sed 's/^/30,/' summaries/${d}_${t}_fm_rds.csv        >>${TF}
-  sed 's/^/31,/' summaries/${d}_${t}_fm_carrier.csv    >>${TF}
+  sed 's/^/20,/' summaries/${DTF}_dab_ensemble.csv  >>${TF}
+  sed 's/^/21,/' summaries/${DTF}_dab_audio.csv     >>${TF}
+  sed 's/^/22,/' summaries/${DTF}_dab_packet.csv    >>${TF}
+  sed 's/^/30,/' summaries/${DTF}_fm_rds.csv        >>${TF}
+  sed 's/^/31,/' summaries/${DTF}_fm_carrier.csv    >>${TF}
 
-  echo "compressing to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_outbox/${d}_${t}_upload.csv.gz"
-  cat ${TF} |gzip -c >up_outbox/${d}_${t}_upload.csv.gz
-  mv "$d" "processed/${d}_${t}"
+  echo "compressing to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_outbox/${DTF}_upload.csv.gz"
+  cat ${TF} |gzip -c >up_outbox/${DTF}_upload.csv.gz
+  mv "$d" "processed/${DTF}"
   rm ${TF}
 
 done
+
+
+if [ "$1" = "random" ]; then
+  MAX_MINUTES="$2"
+  if [ -z "$MAX_MINUTES" ]; then
+    MAX_MINUTES="240"  # = 4 h
+  fi
+  WAITSEC=$[ $RANDOM % ( 60 * ${MAX_MINUTES} ) ]
+  echo "detected option 'random': waiting up to ${MAX_MINUTES} minutes: $[ ${WAITSEC} / 60 ] min $[ ${WAITSEC} % 60 ] sec"
+  sleep ${WAITSEC}
+fi
 
