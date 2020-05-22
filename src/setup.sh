@@ -35,8 +35,9 @@ if [ -z "${FMLIST_OM_ID}" ]; then
   export FMLIST_OM_ID=""
 fi
 
-echo "$0 [syspre|conf|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|pipwm|pishutd|chkspec|pscan|kal|lpie]"
+echo "$0 [syspre|files|conf|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|pipwm|pishutd|chkspec|pscan|kal|lpie]"
 echo "  syspre  install system prerequisites"
+echo "  files   install scanner files"
 echo "  conf    install config files in ~/.config/fmlist_scan/"
 echo "  pre     install prerequisites for all tools to be compiled"
 echo "  gui     install gui software/tools"
@@ -76,6 +77,11 @@ fi
 if [ "$1" == "syspre" ] || [ "$1" == "" ]; then
   echo "installing system prerequisites"
   . prereq_fmlist_scan
+fi
+
+if [ "$1" == "files" ] || [ "$1" == "" ]; then
+  echo "installing scanner files"
+  . prereq_scan_files
 fi
 
 if [ "$1" == "conf" ] || [ "$1" == "" ]; then

@@ -67,8 +67,6 @@ source setup_config
 
 source setup_leds
 
-source setup_scanner
-
 # add crontab entry: execute scanner @restart
 source setup_crontab
 

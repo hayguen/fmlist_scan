@@ -1,0 +1,17 @@
+
+BASE=$(pwd)
+if [ -z "${FMLIST_SCAN_USER}" ]; then
+  export FMLIST_SCAN_USER="pi"
+fi
+if [ -z "${FMLIST_SCAN_MOUNT}" ]; then
+  export FMLIST_SCAN_MOUNT="1"
+fi
+
+if [ ! -d "/home/${FMLIST_SCAN_USER}/bin" ]; then
+  sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/bin"
+fi
+
+source setup_scanner
+
+cd ${BASE}
+
