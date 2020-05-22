@@ -41,18 +41,29 @@ cp scanner/rmmod_rtl_dvb.sh     /home/${FMLIST_SCAN_USER}/bin/
 
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*scan*.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*Scan*.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/startGpsLoop.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/stopGpsLoop.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/waitScreenTermination.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/redsea.json2csv.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/recDAB.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/recDABaudio.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/listenDAB.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/recWFMchunk.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/atx-knob.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/listUSBdevices.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/powerOff_rtl_by_serial.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/powerOn_rtl_by_serial.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/resetScanDevice.sh
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/rmmod_rtl_dvb.sh
+
+# get list of files with
+# ( cd ~/bin ; ls -1 *.sh *.py | grep -v 'scan.*\.sh' | grep -v 'Scan.*\.sh' | grep -v 'gpstime.sh' | grep -v 'kal.sh' | grep -v 'rpi3b_led_' )
+CHOWNLIST=( \
+  "anonTimeForPreparedResults.sh"
+  "atx-knob.sh"
+  "createFMoverview.py"
+  "listUSBdevices.sh"
+  "listenDAB.sh"
+  "pipwm.sh"
+  "powerOff_rtl_by_serial.sh"
+  "powerOn_rtl_by_serial.sh"
+  "recDAB.sh"
+  "recDABaudio.sh"
+  "recWFMchunk.sh"
+  "redsea.json2csv.sh"
+  "rmmod_rtl_dvb.sh"
+  "startGpsLoop.sh"
+  "stopGpsLoop.sh"
+  "waitScreenTermination.sh"
+)
+
+for FN in "${CHOWNLIST[@]}" ; do
+  chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/${FN}
+done
 
