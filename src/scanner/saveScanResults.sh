@@ -18,15 +18,23 @@ if [ $MNTC -eq 0 ] && [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
   fi
 fi
 
+
 if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner" ]; then
   mkdir -p "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner"
+fi
+
+if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner" ]; then
+  echo "Error: cannot create directory: ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner !"
+  wall "Error: cannot create directory: ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner !"
+  exit 1
 fi
 
 if [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
   FM=$( df -h -m ${FMLIST_SCAN_RESULT_DEV} | tail -n 1 | awk '{ print $4; }' )
   if [ $FM -le 5 ]; then
-    echo "Error: not enough space on USB stick ${FMLIST_SCAN_RESULT_DEV} !"
-    exit 0
+    echo "Error: not enough space on ${FMLIST_SCAN_RESULT_DEV} !"
+    wall "Error: not enough space on ${FMLIST_SCAN_RESULT_DEV} !"
+    exit 1
   fi
 fi
 
@@ -35,10 +43,18 @@ if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S" ]; then
   mkdir -p "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S"
 fi
 
+if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S" ]; then
+  echo "Error: cannot create directory on USB stick: ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S !"
+  wall "Error: cannot create directory on USB stick: ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S !"
+  exit 1
+fi
+
+
 cd ${FMLIST_SCAN_RAM_DIR}
 
 
 ls -1 | grep ^scan_ | while read d ; do
+  WRITE_ERR=""
   if [ -d "$d" ]; then
     echo $d
     if [ "${FMLIST_SCAN_SAVE_RAW}" = "0" ]; then
@@ -95,10 +111,16 @@ ls -1 | grep ^scan_ | while read d ; do
 
     zip -r "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/$d.zip" "$d"
     rm -rf "$d"
+    if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/$d.zip" ]; then
+      WRITE_ERR="$d.zip"
+      echo "Error writing ${WRITE_ERR} to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/$d.zip !"
+      wall "Error writing ${WRITE_ERR} to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/$d.zip !"
+    fi
   fi
 done
 
 if [ "$1" = "savelog" ]; then
+  WRITE_ERR=""
   DTF="$(date -u "+%Y-%m-%dT%T Z")"
   DTFREC="$(date -u "+%Y-%m-%dT%H%M%S")"
   if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
@@ -108,48 +130,87 @@ if [ "$1" = "savelog" ]; then
   if [ -f ${FMLIST_SCAN_RAM_DIR}/cputemp.csv ]; then
     cp ${FMLIST_SCAN_RAM_DIR}/cputemp.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_cputemp.csv
     rm ${FMLIST_SCAN_RAM_DIR}/cputemp.csv
+    if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_cputemp.csv" ]; then
+      WRITE_ERR="${WRITE_ERR} cputemp.csv"
+    fi
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/gpscoor.csv ]; then
     COOR=$( ( flock -x 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.csv 2>/dev/null ; rm -f ${FMLIST_SCAN_RAM_DIR}/gpscoor.csv 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )
     echo "$COOR" >${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_gpscoor.csv
+    if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_gpscoor.csv" ]; then
+      WRITE_ERR="${WRITE_ERR} gpscoor.csv"
+    fi
   fi
 
   if [ -f ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv ]; then
     cp ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_fm_carrier.csv
     rm ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv
+    if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_fm_carrier.csv" ]; then
+      WRITE_ERR="${WRITE_ERR} fm_carrier.csv"
+    fi
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv ]; then
     cp ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_fm_rds.csv
     rm ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv
+    if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_fm_rds.csv" ]; then
+      WRITE_ERR="${WRITE_ERR} fm_rds.csv"
+    fi
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/fm_count.csv ]; then
     cp ${FMLIST_SCAN_RAM_DIR}/fm_count.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_fm_count.csv
     rm ${FMLIST_SCAN_RAM_DIR}/fm_count.csv
+    if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_fm_count.csv" ]; then
+      WRITE_ERR="${WRITE_ERR} fm_count.csv"
+    fi
   fi
 
   if [ -f ${FMLIST_SCAN_RAM_DIR}/dab_ensemble.csv ]; then
     cp ${FMLIST_SCAN_RAM_DIR}/dab_ensemble.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_ensemble.csv
     rm ${FMLIST_SCAN_RAM_DIR}/dab_ensemble.csv
+    if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_ensemble.csv" ]; then
+      WRITE_ERR="${WRITE_ERR} dab_ensemble.csv"
+    fi
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/dab_gps.csv ]; then
     cp ${FMLIST_SCAN_RAM_DIR}/dab_gps.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_gps.csv
     rm ${FMLIST_SCAN_RAM_DIR}/dab_gps.csv
+    if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_gps.csv" ]; then
+      WRITE_ERR="${WRITE_ERR} dab_gps.csv"
+    fi
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/dab_audio.csv ]; then
     cp ${FMLIST_SCAN_RAM_DIR}/dab_audio.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_audio.csv
     rm ${FMLIST_SCAN_RAM_DIR}/dab_audio.csv
+    if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_audio.csv" ]; then
+      WRITE_ERR="${WRITE_ERR} dab_audio.csv"
+    fi
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/dab_packet.csv ]; then
     cp ${FMLIST_SCAN_RAM_DIR}/dab_packet.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_packet.csv
     rm ${FMLIST_SCAN_RAM_DIR}/dab_packet.csv
+    if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_packet.csv" ]; then
+      WRITE_ERR="${WRITE_ERR} dab_packet.csv"
+    fi
   fi
   if [ -f ${FMLIST_SCAN_RAM_DIR}/dab_count.csv ]; then
     cp ${FMLIST_SCAN_RAM_DIR}/dab_count.csv ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_count.csv
     rm ${FMLIST_SCAN_RAM_DIR}/dab_count.csv
+    if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_dab_count.csv" ]; then
+      WRITE_ERR="${WRITE_ERR} dab_count.csv"
+    fi
   fi
 
   #cp ${FMLIST_SCAN_RAM_DIR}/scanner.log ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_scanner.log
   gzip -kc ${FMLIST_SCAN_RAM_DIR}/scanner.log >${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_scanner.log.gz
+  if [ ! -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/scan_${DTFREC}_scanner.log.gz" ]; then
+    WRITE_ERR="${WRITE_ERR} scanner.log.gz"
+  fi
+
+  if [ ! -z "${WRITE_ERR}" ]; then
+    echo "Error writing files ${WRITE_ERR} to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/ ! Defect medium?"
+    wall "Error writing files ${WRITE_ERR} to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/ ! Defect medium?"
+  fi
+
   # do NOT remove file - just truncate
   echo "" >${FMLIST_SCAN_RAM_DIR}/scanner.log
 else
