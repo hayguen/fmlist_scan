@@ -69,7 +69,8 @@ rm -f "$HOME/bin/powerOff_rtl_by_serial.sh"
 rm -f "$HOME/bin/powerOn_rtl_by_serial.sh"
 rm -f "$HOME/bin/resetScanDevice.sh"
 rm -f "$HOME/bin/rmmod_rtl_dvb.sh"
-
+rm -f "$HOME/bin/scanner_format_f2fs.sh"
+rm -f "$HOME/bin/scanner_format_vfat.sh"
 
 echo "removing calibration script from $HOME/bin .."
 rm -f "$HOME/bin/kal.sh"
