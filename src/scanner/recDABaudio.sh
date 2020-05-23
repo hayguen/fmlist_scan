@@ -69,19 +69,7 @@ cd "${FMLIST_SCAN_RAM_DIR}"
 # 192 B/sec * 60 sec/min * 15 min = 168750 kB ~= 165 MB in 15 min
 
 
-MNTC=$( mount | grep -c ${FMLIST_SCAN_RESULT_DIR} )
-if [ $MNTC -eq 0 ] && [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
-  mount ${FMLIST_SCAN_RESULT_DIR}
-  MNTC=$( mount | grep -c ${FMLIST_SCAN_RESULT_DIR} )
-  if [ $MNTC -eq 0 ]; then
-    echo "Error: Device (USB memory stick) is not available on ${FMLIST_SCAN_RESULT_DIR} !"
-    exit 0
-  fi
-fi
-
-if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner" ]; then
-  mkdir -p "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner"
-fi
+source /home/${FMLIST_SCAN_USER}/bin/scanner_mount_result_dir.sh.inc
 
 if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/DABaudio" ]; then
   mkdir -p "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/DABaudio"

@@ -71,6 +71,7 @@ rm -f "$HOME/bin/resetScanDevice.sh"
 rm -f "$HOME/bin/rmmod_rtl_dvb.sh"
 rm -f "$HOME/bin/scanner_format_f2fs.sh"
 rm -f "$HOME/bin/scanner_format_vfat.sh"
+rm -f "$HOME/bin/scanner_mount_result_dir.sh.inc"
 
 echo "removing calibration script from $HOME/bin .."
 rm -f "$HOME/bin/kal.sh"
