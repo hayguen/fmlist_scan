@@ -28,6 +28,7 @@ if [ "$1" = "format" ]; then
   echo -e "\n\n"
   echo "mounting device ${FMLIST_SCAN_RESULT_DEV} to ${FMLIST_SCAN_RESULT_DIR}"
   mount ${FMLIST_SCAN_RESULT_DIR}
+  sudo chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} "${FMLIST_SCAN_RESULT_DIR}"
 else
   echo "restart scanner_format_f2fs with option format: 'scanner_format_f2fs.sh format', if you are sure to format/delete ${FMLIST_SCAN_RESULT_DEV}"
 fi
