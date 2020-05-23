@@ -2,7 +2,7 @@
 
 # usage: scanToneFeedback.sh fm|dab <numFound>
 if [ -z "$1" ]; then
-  >&2 echo "usage: scanToneFeedback.sh welcome|fm|dab|found|saved|final|error [<numFound>]"
+  >&2 echo "usage: scanToneFeedback.sh welcome|fm|dab|found|saved|final|write_err|error [<numFound>]"
   exit 10
 fi
 
@@ -59,6 +59,12 @@ case $1 in
   final)
     # closing/closed scanLoop
     pipwm.sh "$1" ${FREQ} 10 0 ${MODE}   50 100 50 100 50 100   150 100 150 100 150 100   50 100 50 100 50 100  &
+    exit 0
+    ;;
+  write_err)
+    # error, e.g. with USB memory stick
+    pipwm.sh "$1" ${FREQ} 10 0 ${MODE}  500 300 500 300 500 600   500 300 500 300 500 600   500 300 500 300 500 10
+    sleep 0.5
     exit 0
     ;;
   error)
