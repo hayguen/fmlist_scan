@@ -209,6 +209,7 @@ if [ "$1" = "savelog" ]; then
   if [ ! -z "${WRITE_ERR}" ]; then
     echo "Error writing files ${WRITE_ERR} to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/ ! Defect medium?"
     wall "Error writing files ${WRITE_ERR} to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/ ! Defect medium?"
+    scanToneFeedback.sh write_err
   fi
 
   # do NOT remove file - just truncate
