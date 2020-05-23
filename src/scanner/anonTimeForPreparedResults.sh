@@ -5,26 +5,7 @@ if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
   mkdir -p "${FMLIST_SCAN_RAM_DIR}"
 fi
 
-MNTC=$( mount | grep -c "${FMLIST_SCAN_RESULT_DIR}" )
-if [ $MNTC -eq 0 ] && [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
-  mount "${FMLIST_SCAN_RESULT_DIR}"
-
-  MNTC=$( mount | grep -c "${FMLIST_SCAN_RESULT_DIR}" )
-  if [ $MNTC -eq 0 ]; then
-    echo "Error: USB stick is not available on ${FMLIST_SCAN_RESULT_DIR} !"
-    exit 0
-  fi
-fi
-
-if [ ! -d "${FMLIST_SCAN_RESULT_DIR}" ]; then
-  echo "error: ${FMLIST_SCAN_RESULT_DIR} not a directory!"
-  exit 10
-fi
-
-if [ ! -d "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner" ]; then
-  mkdir -p "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner"
-fi
-
+source /home/${FMLIST_SCAN_USER}/bin/scanner_mount_result_dir.sh.inc
 
 cd "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner"
 
