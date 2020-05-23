@@ -9,7 +9,7 @@ fi
 
 apt-get -y install htop powertop at lsof mc nano vim zip p7zip-full alpine dpkg
 apt-get -y install ncdu screen parallel sshfs wget curl iftop util-linux
-apt-get -y install dos2unix exfat-utils dosfstools
+apt-get -y install dos2unix exfat-utils dosfstools f2fs-tools
 apt-get -y install sox lame espeak-ng alsa-utils
 apt-get -y install netcat-openbsd netcat-traditional socat
 
@@ -28,7 +28,7 @@ if [ "${FMLIST_SCAN_MOUNT}" = "1" ]; then
   # deletion with sed requires the '/' for the regexp. thus '/' requires to be escaped
   DELEXPR=$( echo -n "${FMLIST_SCAN_RESULT_DIR}" | sed 's#/#\\/#g' )
   sed -i "/${DELEXPR}/d" /etc/fstab
-  echo "${FMLIST_SCAN_RESULT_DEV}  ${FMLIST_SCAN_RESULT_DIR}  vfat    defaults,noatime,user,noauto  0  0" >>/etc/fstab
+  echo "${FMLIST_SCAN_RESULT_DEV}  ${FMLIST_SCAN_RESULT_DIR}  auto    defaults,noatime,user,noauto  0  0" >>/etc/fstab
   mkdir -p ${FMLIST_SCAN_RESULT_DIR}
   chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} ${FMLIST_SCAN_RESULT_DIR}
 fi
