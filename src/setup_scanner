@@ -49,6 +49,7 @@ chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*Sca
 # get list of files with
 # ( cd ~/bin ; ls -1 *.sh *.py | grep -v 'scan.*\.sh' | grep -v 'Scan.*\.sh' | grep -v 'gpstime.sh' | grep -v 'kal.sh' | grep -v 'rpi3b_led_' )
 CHOWNLIST=( \
+  "scanner_mount_result_dir.sh.inc"
   "anonTimeForPreparedResults.sh"
   "atx-knob.sh"
   "createFMoverview.py"
