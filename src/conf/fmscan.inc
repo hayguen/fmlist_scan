@@ -38,7 +38,7 @@ RTL_DAGC="dagc=1"     # switch on - helps at oversteering
 USE_BCSHIFT="1"       # activate band shifting
 #USE_BCSHIFT="0"       # deactivate band shifting
 
-if [ "${FMLIST_SPORADIC_E_MODE}" = "1" ]; then
+if [ "${FMLIST_SPORADIC_E_MODE}" = "1" ] && [ -f ${FMLIST_SCAN_RAM_DIR}/is_daylight ]; then
   # modify a few parameters for Sporadic-E
   FMLIST_ALWAYS_FAST_MODE="1"
   ukw_end="96000000"

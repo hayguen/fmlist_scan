@@ -40,6 +40,7 @@ cp scanner/resetScanDevice.sh        /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/rmmod_rtl_dvb.sh          /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_format_f2fs.sh    /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_format_vfat.sh    /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanner_sunrise_and_set.sh      /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_mount_result_dir.sh.inc /home/${FMLIST_SCAN_USER}/bin/
 
 

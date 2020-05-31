@@ -61,7 +61,7 @@ for f in $( ls -1 "${BINDIR}" ) ; do
   fi
 done
 
-for f in $( echo "config fmscan.inc dabscan.inc dab_chanlist.txt local_GPS_COORDS.inc local_FM_stations.csv local_DAB_stations.csv" ) ; do
+for f in $( echo "config fmscan.inc dabscan.inc dab_chanlist.txt local_GPS_COORDS.inc local_SUN_TIMES.inc local_FM_stations.csv local_DAB_stations.csv" ) ; do
   b=$( basename "$f" )
 
   if [ -f "${CONFDIR}/$b" ]; then
