@@ -23,16 +23,6 @@ fi
 apt-get -y install build-essential git git-gui gitk cmake cmake-curses-gui libtool autotools-dev automake colordiff jq
 apt-get -y install usbutils libusb-1.0-0-dev libsndfile1-dev
 
-if [ "${FMLIST_SCAN_MOUNT}" = "1" ]; then
-  #sed -i '/\/mnt\/sda1/d' /etc/fstab
-  # deletion with sed requires the '/' for the regexp. thus '/' requires to be escaped
-  DELEXPR=$( echo -n "${FMLIST_SCAN_RESULT_DIR}" | sed 's#/#\\/#g' )
-  sed -i "/${DELEXPR}/d" /etc/fstab
-  echo "${FMLIST_SCAN_RESULT_DEV}  ${FMLIST_SCAN_RESULT_DIR}  auto    defaults,noatime,user,noauto  0  0" >>/etc/fstab
-  mkdir -p ${FMLIST_SCAN_RESULT_DIR}
-  chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} ${FMLIST_SCAN_RESULT_DIR}
-fi
-
 if [ ! -f /home/${FMLIST_SCAN_USER}/.bash_aliases ]; then
   sudo -u ${FMLIST_SCAN_USER} bash -c "touch /home/${FMLIST_SCAN_USER}/.bash_aliases"
 fi
@@ -71,4 +61,3 @@ source setup_leds
 source setup_crontab
 
 cd ${BASE}
-
