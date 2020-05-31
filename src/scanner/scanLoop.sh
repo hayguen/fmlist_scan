@@ -96,8 +96,14 @@ while /bin/true; do
   echo "scanloop iteration $N"
 
   if [ "${FMLIST_SPORADIC_E_MODE}" = "1" ]; then
-    export FMLIST_SCAN_FM="1"
-    export FMLIST_SCAN_DAB="0"
+    IS_DAY=$(scanner_sunrise_and_set.sh |grep -c daylight)
+    if [ ${IS_DAY} -gt 0 ]; then
+      export FMLIST_SCAN_FM="1"
+      export FMLIST_SCAN_DAB="0"
+      touch ${FMLIST_SCAN_RAM_DIR}/is_daylight
+    else
+      rm -f ${FMLIST_SCAN_RAM_DIR}/is_daylight &>/dev/null
+    fi
   fi
 
   # test RTL dongle for FM
