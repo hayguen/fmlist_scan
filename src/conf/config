@@ -14,12 +14,23 @@ export FMLIST_SCAN_GPS_COORDS="${GPS_DEFAULT}"  # "gps" and "static" are exclusi
 export FMLIST_SCAN_GPS_LAT=""               # latitude  for static, e.g. 48.885582
 export FMLIST_SCAN_GPS_LON=""               # longitude for static, e.g. 8.702656
 export FMLIST_SCAN_GPS_ALT=""               # altitude  for static, e.g. 307
+export FMLIST_QTH_PREFIX="local"       # if you have multiple QTHs, running the scanner,
+                                       # you can change this .. and the filenames for
+                                       # local_GPS_COORDS.inc, local_FM_stations.csv and local_DAB_stations.csv
+                                       # these QTH (user/position) specific files will not get overwritten with an update
+if [ -f $HOME/.config/fmlist_scan/${FMLIST_QTH_PREFIX}_GPS_COORDS.inc ]; then
+  # have special config file for "static" coordinates? with export of
+  # FMLIST_SCAN_GPS_LAT, FMLIST_SCAN_GPS_LON and FMLIST_SCAN_GPS_ALT
+  source $HOME/.config/fmlist_scan/${FMLIST_QTH_PREFIX}_GPS_COORDS.inc
+fi
 export FMLIST_SCAN_DEAD_TIME="360"              # default is "300": assume something is hanging after 600 seconds
 export FMLIST_SCAN_DEAD_RTL_TRIES="20"          # assume RTL dongle dead after N (=3) rtl recording tests
 export FMLIST_SCAN_DEAD_REBOOT="1"              # "0" or "1"; default is "0". set "1" to rebooting when dead
 export FMLIST_SCAN_AUTOSTART="0"                # default is "1": autostart scanner in background
 export FMLIST_SCAN_FM="1"                       # "0" or "1"; default is "1" for active UKW/FM scan
 export FMLIST_SCAN_DAB="1"                      # "0" or "1"; default is "1" for active DAB scan
+export FMLIST_ALWAYS_FAST_MODE="1"              # deactivates verbose scan when GPS not connected, default is "0"
+export FMLIST_SPORADIC_E_MODE="0"               # deactivates DAB scan, uses special scan parameters in FM for quick scan
 export FMLIST_SCAN_TEST="1"                     # "0" or "1"; default is "1" for always testing the FM device
 export FMLIST_SCAN_FM_MIN_PWR_RATIO="6.0"       # parameter to checkSpectrumForCarrier - now in dB
 export FMLIST_SCAN_DAB_USE_PRESCAN="1"          # "0" or "1"; default is "1" for active prescanDAB

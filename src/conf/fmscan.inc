@@ -26,7 +26,7 @@ RTL_HF_GAIN=""        # empty string activates the HF-AGC
 # only the R820T/2 tuners support an IF gain: VGA behind LNA and Mixer
 #RTL_IF_GAIN=""        # empty string activates defaults: +16.3 dB for manual gain. +26.5 dB for HF agc
 RTL_IF_GAIN="ifm=0"   # this activates the AGC for the VGA - might sometimes hang on strong impulses
-                      # in addition, you'll need to activate "dagc=1" to avoid oversteering
+                      # in addition, you will need to activate "dagc=1" to avoid oversteering
 #RTL_IF_GAIN="ifm=200" # this sets ~ +20.0 dB in 10th dB. range is -4.7 to 40.8 dB
 
 # all RTL2832U - have a digital AGC - after ADC, mixer, anti-alias-filter and down-sampling
@@ -38,6 +38,11 @@ RTL_DAGC="dagc=1"     # switch on - helps at oversteering
 USE_BCSHIFT="1"       # activate band shifting
 #USE_BCSHIFT="0"       # deactivate band shifting
 
+if [ "${FMLIST_SPORADIC_E_MODE}" = "1" ]; then
+  # modify a few parameters for Sporadic-E
+  FMLIST_ALWAYS_FAST_MODE="1"
+  ukw_end="96000000"
+fi
 
 # end of user settings
 ############################################################################
@@ -58,7 +63,6 @@ fi
 # deactivate band center depending on tuner sideband
 # BCMUL="1"
 
-
 # initialize/clear asymetric filter.
 # fill in the first/last stations frequency - relative to center/LO
 # that is flat bandwidth region .. each side reduced by ~ 100 kHz
@@ -66,7 +70,7 @@ mpxsrate_chunkbw_factor="3"
 center_beg=""
 center_last=""
 RTLC="0"
-BCSHIFT="0"    # can't be use without suitable tuner
+BCSHIFT="0"    # cannot be used without suitable tuner
 
 # good R820T bws:
 #  290 kHz @ 600 kHz: 530 .. 670 kHz: 2 channels
@@ -90,7 +94,7 @@ if [ "${FMLIST_FM_DEV_R820T}" = "1" ]; then
   #RTLBW="470"
   RTLC="500"
 
-  if [ "${GPSSRC}" = "static" ]; then
+  if [ "${GPSSRC}" = "static" ] && [ "${FMLIST_ALWAYS_FAST_MODE}" != "1" ]; then
     # spend more time on scanning in static environment
     chunkduration="6"
     RTLBW="600"
@@ -113,7 +117,7 @@ else
 
   RTLBW="1800"
 
-  if [ "${GPSSRC}" = "static" ]; then
+  if [ "${GPSSRC}" = "static" ] && [ "${FMLIST_ALWAYS_FAST_MODE}" != "1" ]; then
     # spend more time on scanning in static environment
     chunkduration="6"
     RTLBW="1200"

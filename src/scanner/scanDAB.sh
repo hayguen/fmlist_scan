@@ -5,7 +5,16 @@ if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
   mkdir -p "${FMLIST_SCAN_RAM_DIR}"
 fi
 
-if [ "${FMLIST_SCAN_DAB}" == "0" ] || [ "${FMLIST_SCAN_DAB}" == "OFF" ]; then
+if [ "${FMLIST_SPORADIC_E_MODE}" = "1" ]; then
+  export FMLIST_SCAN_FM="1"
+  export FMLIST_SCAN_DAB="0"
+fi
+if [ "${FMLIST_SPORADIC_E_MODE}" = "1" ]; then
+  echo "DAB scan is deactivated with FMLIST_SPORADIC_E_MODE=${FMLIST_SPORADIC_E_MODE} in $HOME/.config/fmlist_scan/config"
+  exit 0
+fi
+
+if [ "${FMLIST_SCAN_DAB}" = "0" ] || [ "${FMLIST_SCAN_DAB}" = "OFF" ]; then
   echo "DAB scan is deactivated with FMLIST_SCAN_DAB=${FMLIST_SCAN_DAB} in $HOME/.config/fmlist_scan/config"
   exit 0
 fi

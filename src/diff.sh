@@ -21,6 +21,8 @@ if [ ! -z "$1" ]; then
   BINDIR="$1"
 fi
 
+CONFDIR="$HOME/.config/fmlist_scan"
+
 DIFF="$(which colordiff)"
 if [ -z "${DIFF}" ]; then
   DIFF="$(which diff)"
@@ -58,6 +60,26 @@ for f in $( ls -1 "${BINDIR}" ) ; do
     echo "file $f exists in ${BINDIR} but neither in . nor in scanner"
   fi
 done
+
+for f in $( echo "config fmscan.inc dabscan.inc dab_chanlist.txt local_GPS_COORDS.inc local_FM_stations.csv local_DAB_stations.csv" ) ; do
+  b=$( basename "$f" )
+
+  if [ -f "${CONFDIR}/$b" ]; then
+    ND=$( diff conf/$f "${CONFDIR}/$b" | wc -l )
+    if [ $ND -eq 0 ]; then
+      echo -e "diff conf/$f\t\tequal"
+    else
+      echo -e "diff conf/$f\t\tNOT equal\t\tmeld ${CONFDIR}/$b conf/$f"
+      if [ "${OPTPRINT}" = "1" ]; then
+        ${DIFF} "conf/$f" "${CONFDIR}/$b"
+        echo ""
+      fi
+    fi
+  else
+    echo "$b not in ${CONFDIR}"
+  fi
+done
+
 
 crontab -l >crontab.user
 

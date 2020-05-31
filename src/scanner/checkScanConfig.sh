@@ -17,6 +17,8 @@
     "FMLIST_SCAN_AUTOSTART"          \
     "FMLIST_SCAN_FM"                 \
     "FMLIST_SCAN_DAB"                \
+    "FMLIST_ALWAYS_FAST_MODE"        \
+    "FMLIST_SPORADIC_E_MODE"         \
     "FMLIST_SCAN_TEST"               \
     "FMLIST_SCAN_DAB_SAVE_FIC"       \
     "FMLIST_SCAN_DAB_USE_PRESCAN"    \
@@ -44,6 +46,7 @@
     "FMLIST_SCAN_DEAD_RTL_TRIES"   \
     "FMLIST_SCAN_FM_MIN_PWR_RATIO" \
     "FMLIST_SCAN_DAB_MIN_AUTOCORR" \
+    "FMLIST_QTH_PREFIX"            \
     "FMLIST_SCAN_SAVE_MINFREQ"     \
     "FMLIST_SCAN_SAVE_MAXFREQ"     \
     "FMLIST_SCAN_SAVE_MIN_MEM"     \
