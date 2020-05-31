@@ -9,7 +9,7 @@ RTL_HF_GAIN=""          # empty string activates the AGC
 # only the R820T/2 tuners support an IF gain: VGA behind LNA and Mixer
 #RTL_IF_GAIN=""        # empty string activates defaults: +16.3 dB for manual gain. +26.5 dB for HF agc
 RTL_IF_GAIN="ifm=0"   # this activates the AGC for the VGA - might sometimes hang on strong impulses.
-                      # in addition, you'll need to activate "dagc=1" to avoid oversteering
+                      # in addition, you will need to activate "dagc=1" to avoid oversteering
 #RTL_IF_GAIN="ifm=200" # this sets ~ +20.0 dB in 10th dB. range is -4.7 to 40.8 dB
 
 # all RTL2832U - have a digital AGC - after ADC, mixer, anti-alias-filter and down-sampling
@@ -52,7 +52,7 @@ DABOPT="${DABGAIN} -E 3 -W 5000 -A 6000 -c -t 5 -a 0.8 -r 5 -x ${RTLOPT}"
 DABPRESCANOPT="${RTLOPT}"
 DABLISTENOPT="${DABGAIN} -t 40 -a 0.95 -r 40 -x ${RTLOPT}"
 
-if [ "${GPSSRC}" = "static" ]; then
+if [ "${GPSSRC}" = "static" ] && [ "${FMLIST_ALWAYS_FAST_MODE}" != "1" ]; then
   # spend more time on scanning in static environment
   DABOPT="${DABGAIN} -E 3 -W 8000 -A 12000 -c -t 10 -a 0.9 -r 10 -x ${RTLOPT}"
 fi

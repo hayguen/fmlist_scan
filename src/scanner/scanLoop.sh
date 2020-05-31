@@ -95,6 +95,11 @@ while /bin/true; do
   N=$[ $N + 1 ]
   echo "scanloop iteration $N"
 
+  if [ "${FMLIST_SPORADIC_E_MODE}" = "1" ]; then
+    export FMLIST_SCAN_FM="1"
+    export FMLIST_SCAN_DAB="0"
+  fi
+
   # test RTL dongle for FM
   TESTED_FIRST_DEV="0"
   TESTED_FM_DEV="0"

@@ -5,7 +5,12 @@ if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
   mkdir -p "${FMLIST_SCAN_RAM_DIR}"
 fi
 
-if [ "${FMLIST_SCAN_FM}" == "0" ] || [ "${FMLIST_SCAN_FM}" == "OFF" ]; then
+if [ "${FMLIST_SPORADIC_E_MODE}" = "1" ]; then
+  export FMLIST_SCAN_FM="1"
+  export FMLIST_SCAN_DAB="0"
+fi
+
+if [ "${FMLIST_SCAN_FM}" = "0" ] || [ "${FMLIST_SCAN_FM}" = "OFF" ]; then
   echo "FM scan is deactivated with FMLIST_SCAN_FM=${FMLIST_SCAN_FM} in $HOME/.config/fmlist_scan/config"
   exit 0
 fi
@@ -165,6 +170,69 @@ chunks_end_f=$[ $ukw_end + $ddc_fmax ]
 chunkfrqs=$( seq ${chunks_beg_f} ${ddc_span} ${chunks_end_f} | tr '\n' ' ' )
 Nchunkfrqs="$( echo "${chunkfrqs}" | wc -w )"
 
+###########################################################################
+
+LOG_SCAN_FREQS="0"
+if [ "${LOG_SCAN_FREQS}" = "1" ]; then
+  echo "" >${rec_path}/scan_freqs.txt
+  echo "ukw_beg      ${ukw_beg}"     >>${rec_path}/scan_freqs.txt
+  echo "ukw_end      ${ukw_end}"     >>${rec_path}/scan_freqs.txt
+  echo "center_beg   ${center_beg}"  >>${rec_path}/scan_freqs.txt
+  echo "center_last  ${center_last}" >>${rec_path}/scan_freqs.txt
+  echo "" >>${rec_path}/scan_freqs.txt
+
+  echo "ddc_beg      ${ddc_beg}"    >>${rec_path}/scan_freqs.txt
+  echo "ddc_end      ${ddc_end}"    >>${rec_path}/scan_freqs.txt
+  echo "ddc_freqs    ${ddc_freqs}"  >>${rec_path}/scan_freqs.txt
+  echo "ddc_fmin     ${ddc_fmin}"   >>${rec_path}/scan_freqs.txt
+  echo "ddc_fmax     ${ddc_fmax}"   >>${rec_path}/scan_freqs.txt
+  echo "Nddc_freqs   ${Nddc_freqs}" >>${rec_path}/scan_freqs.txt
+  echo "" >>${rec_path}/scan_freqs.txt
+
+  echo "chunks_beg_f ${chunks_beg_f}" >>${rec_path}/scan_freqs.txt
+  echo "chunks_end_f ${chunks_end_f}" >>${rec_path}/scan_freqs.txt
+  echo "chunkfrqs    ${chunkfrqs}"    >>${rec_path}/scan_freqs.txt
+  echo "Nchunkfrqs   ${Nchunkfrqs}"   >>${rec_path}/scan_freqs.txt
+  echo "" >>${rec_path}/scan_freqs.txt
+  echo "RTLBW        ${RTLBW}"        >>${rec_path}/scan_freqs.txt
+  echo "RTLC         ${RTLC}"         >>${rec_path}/scan_freqs.txt
+  echo "FMSCAN_NO    ${FMSCAN_NO}"    >>${rec_path}/scan_freqs.txt
+  echo "SCANMOD      ${SCANMOD}"      >>${rec_path}/scan_freqs.txt
+  echo "BCMUL        ${BCMUL}"        >>${rec_path}/scan_freqs.txt
+  echo "BCSHIFT      ${BCSHIFT}"      >>${rec_path}/scan_freqs.txt
+  echo "" >>${rec_path}/scan_freqs.txt
+fi
+
+# fix calculation of chunkfrqs
+
+chunkfrqarr=( )
+chunkfrqs=""
+chunk_freq=$[ ${ukw_beg} - ${ddc_fmin} ]
+while /bin/true; do
+  rfreq=$[ ${chunk_freq} + ${ddc_fmin} ]
+  if [ ${rfreq} -le ${ukw_end} ]; then
+    chunkfrqarr+=( ${chunk_freq} )
+    chunkfrqs="${chunkfrqs} ${chunk_freq}"
+  else
+    #echo "break at chunk_freq ${chunk_freq} == rfreq ${rfreq}"
+    break
+  fi
+  chunk_freq=$[ $chunk_freq + ${ddc_span} ]
+done
+Nchunkfrqs=${#chunkfrqarr[@]}
+chunks_beg_f=${chunkfrqarr[0]}
+chunks_end_f=${chunkfrqarr[ $Nchunkfrqs -1 ]}
+
+if [ "${LOG_SCAN_FREQS}" = "1" ]; then
+  echo "chunks_beg_f ${chunks_beg_f}" >>${rec_path}/scan_freqs.txt
+  echo "chunks_end_f ${chunks_end_f}" >>${rec_path}/scan_freqs.txt
+  echo "chunkfrqs    ${chunkfrqs}"    >>${rec_path}/scan_freqs.txt
+  echo "Nchunkfrqs   ${Nchunkfrqs}"   >>${rec_path}/scan_freqs.txt
+fi
+
+###########################################################################
+
+
 echo "fmscan.inc: RTLBW       = '${RTLBW}'"
 echo "fmscan.inc: RTLC        = '${RTLC}'"
 echo "fmscan.inc: FMSCAN_NO   = '${FMSCAN_NO}'"
@@ -224,7 +292,7 @@ for chunkfreq in $( echo $chunkfrqs EOL ) ; do
     break
   fi
 
-  if [ ! "$chunkfreq" == "EOL" ]; then
+  if [ ! "$chunkfreq" = "EOL" ]; then
     GPS_ACT="$($HOME/bin/get_gpstime.sh)"
     GPSV_ACT="$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )"
     DTF_ACT="$(date -u "+%Y-%m-%dT%T.%N Z")"
@@ -416,7 +484,7 @@ EOF
   fi
 
   # switch files
-  if [ "${act_rec_name}" == "A" ]; then
+  if [ "${act_rec_name}" = "A" ]; then
     act_rec_name=B
     rdy_rec_name=A
   else
@@ -430,7 +498,7 @@ EOF
 
   rec_freq=$chunkfreq
 
-  if [ ! "$chunkfreq" == "EOL" ]; then
+  if [ "$chunkfreq" != "EOL" ]; then
     echo "waiting for record with pid ${recpid} to finish .."
     wait $recpid
     sleep 0.5
