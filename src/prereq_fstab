@@ -1,0 +1,20 @@
+
+BASE=$(pwd)
+if [ -z "${FMLIST_SCAN_USER}" ]; then
+  export FMLIST_SCAN_USER="pi"
+fi
+if [ -z "${FMLIST_SCAN_MOUNT}" ]; then
+  export FMLIST_SCAN_MOUNT="1"
+fi
+
+if [ "${FMLIST_SCAN_MOUNT}" = "1" ]; then
+  #sed -i '/\/mnt\/sda1/d' /etc/fstab
+  # deletion with sed requires the '/' for the regexp. thus '/' requires to be escaped
+  DELEXPR=$( echo -n "${FMLIST_SCAN_RESULT_DIR}" | sed 's#/#\\/#g' )
+  sed -i "/${DELEXPR}/d" /etc/fstab
+  echo "${FMLIST_SCAN_RESULT_DEV}  ${FMLIST_SCAN_RESULT_DIR}  auto    defaults,noatime,user,noauto  0  2" >>/etc/fstab
+  mkdir -p ${FMLIST_SCAN_RESULT_DIR}
+  chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} ${FMLIST_SCAN_RESULT_DIR}
+fi
+
+cd ${BASE}
