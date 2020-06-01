@@ -1,6 +1,6 @@
 
 # gui stuff / add-ons
-apt-get -y install eog geany cmake-qt-gui meld qtcreator
+apt-get -y install eog geany cmake-qt-gui meld diffuse xxdiff qtcreator
 apt-get -y install audacity espeak-gui
 apt-get -y install fldigi cutesdr wsjt wsjtx multimon gqrx-sdr soapysdr-module-rtlsdr soapysdr-tools
 apt-get -y install synaptic gparted
