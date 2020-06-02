@@ -41,6 +41,8 @@
 
   VARS_TO_EXIST=( \
     "FMLIST_SCAN_USER"             \
+    "FMLIST_USER"                  \
+    "FMLIST_OM_ID"                 \
     "FMLIST_SCAN_GPS_LOOP_SLEEP"   \
     "FMLIST_SCAN_DEAD_TIME"        \
     "FMLIST_SCAN_DEAD_RTL_TRIES"   \
@@ -62,8 +64,6 @@
   )
 
   OPTIONAL_VARS=( \
-    "FMLIST_USER"              \
-    "FMLIST_OM_ID"             \
     "FMLIST_UP_COMMENT"        \
     "FMLIST_UP_PERMISSION"     \
     "FMLIST_UP_RESTRICT_USERS" \
