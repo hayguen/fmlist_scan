@@ -1,70 +1,70 @@
 export FMLIST_SCAN_PATH="$(pwd)/scanner"
-export FMLIST_SCAN_USER="${FMLIST_SCAN_USER}"   # default OS user is "pi"
-export FMLIST_SCAN_RASPI="${FMLIST_SCAN_RASPI}" # "0" or "1"; default is "1" for a Raspberry Pi hardware
-export FMLIST_SCAN_SETUP_GPS="${FMLIST_SCAN_SETUP_GPS}"  # default "1" to activate gpsd and cronjob for user
-export FMLIST_SCAN_GPS_LOOP_SLEEP="2"           # try to get gps coordinates every 2 sec
-export FMLIST_USER="${FMLIST_USER}"             # optional: username (email) at https://www.fmlist.org/
+export FMLIST_SCAN_USER="${FMLIST_SCAN_USER}"                    # default OS user is "pi"
+export FMLIST_SCAN_RASPI="${FMLIST_SCAN_RASPI}"                    # "0" or "1"; default is "1" for a Raspberry Pi hardware
+export FMLIST_SCAN_SETUP_GPS="${FMLIST_SCAN_SETUP_GPS}"                # default "1" to activate gpsd and cronjob for user
+export FMLIST_SCAN_GPS_LOOP_SLEEP="${FMLIST_SCAN_GPS_LOOP_SLEEP}"           # try to get gps coordinates every 2 sec
+export FMLIST_USER="${FMLIST_USER}"            # optional: username (email) at https://www.fmlist.org/
 export FMLIST_OM_ID="${FMLIST_OM_ID}"           # optional: OM id at https://www.fmlist.org/
-export FMLIST_UP_COMMENT=""                     # optional comment
-export FMLIST_UP_PERMISSION="public"            # optional: permission: "public", "owner" or "restrict"
-export FMLIST_UP_RESTRICT_USERS=""              # optional: usernames for "restrict" - separated with space
-export FMLIST_UP_POSITION=""                    # optional: data is from "mobile" or "fixed"; default: "unknown"
-export FMLIST_SCAN_GPS_ALL_TIME="1"             # run gps all time
-export FMLIST_SCAN_GPS_COORDS="${GPS_DEFAULT}"  # "gps" and "static" are exclusive; "auto" for gps if available, fallback to static
-export FMLIST_SCAN_GPS_LAT=""               # latitude  for static, e.g. 48.885582
-export FMLIST_SCAN_GPS_LON=""               # longitude for static, e.g. 8.702656
-export FMLIST_SCAN_GPS_ALT=""               # altitude  for static, e.g. 307
-export FMLIST_QTH_PREFIX="local"       # if you have multiple QTHs, running the scanner,
+export FMLIST_UP_COMMENT="${FMLIST_UP_COMMENT}"  # optional comment, you can use <br> for line break
+export FMLIST_UP_PERMISSION="${FMLIST_UP_PERMISSION}"            # optional: permission: "public", "owner" or "restrict"
+export FMLIST_UP_RESTRICT_USERS="${FMLIST_UP_RESTRICT_USERS}"              # optional: usernames for "restrict" - separated with space
+export FMLIST_UP_POSITION="${FMLIST_UP_POSITION}"                    # optional: data is from "mobile" or "fixed"; default: "unknown"
+export FMLIST_SCAN_GPS_ALL_TIME="${FMLIST_SCAN_GPS_ALL_TIME}"             # run gps all time
+export FMLIST_SCAN_GPS_COORDS="${FMLIST_SCAN_GPS_COORDS}"  # "gps" and "static" are exclusive; "auto" for gps if available, fallback to static
+export FMLIST_SCAN_GPS_LAT="${FMLIST_SCAN_GPS_LAT}"               # latitude  for static, e.g. 48.885582
+export FMLIST_SCAN_GPS_LON="${FMLIST_SCAN_GPS_LON}"               # longitude for static, e.g. 8.702656
+export FMLIST_SCAN_GPS_ALT="${FMLIST_SCAN_GPS_ALT}"               # altitude  for static, e.g. 307
+export FMLIST_QTH_PREFIX="${FMLIST_QTH_PREFIX}"       # if you have multiple QTHs, running the scanner,
                                        # you can change this .. and the filenames for
                                        # local_GPS_COORDS.inc, local_FM_stations.csv and local_DAB_stations.csv
                                        # these QTH (user/position) specific files will not get overwritten with an update
-if [ -f $HOME/.config/fmlist_scan/${FMLIST_QTH_PREFIX}_GPS_COORDS.inc ]; then
+if [ -f $%HOME/.config/fmlist_scan/$%{FMLIST_QTH_PREFIX}_GPS_COORDS.inc ]; then
   # have special config file for "static" coordinates? with export of
   # FMLIST_SCAN_GPS_LAT, FMLIST_SCAN_GPS_LON and FMLIST_SCAN_GPS_ALT
-  source $HOME/.config/fmlist_scan/${FMLIST_QTH_PREFIX}_GPS_COORDS.inc
+  source $%HOME/.config/fmlist_scan/$%{FMLIST_QTH_PREFIX}_GPS_COORDS.inc
 fi
-export FMLIST_SCAN_DEAD_TIME="360"              # default is "300": assume something is hanging after 600 seconds
-export FMLIST_SCAN_DEAD_RTL_TRIES="20"          # assume RTL dongle dead after N (=3) rtl recording tests
-export FMLIST_SCAN_DEAD_REBOOT="1"              # "0" or "1"; default is "0". set "1" to rebooting when dead
-export FMLIST_SCAN_AUTOSTART="0"                # default is "1": autostart scanner in background
-export FMLIST_SCAN_FM="1"                       # "0" or "1"; default is "1" for active UKW/FM scan
-export FMLIST_SCAN_DAB="1"                      # "0" or "1"; default is "1" for active DAB scan
-export FMLIST_ALWAYS_FAST_MODE="0"              # deactivates verbose scan when GPS not connected, default is "0"
-export FMLIST_SPORADIC_E_MODE="0"               # deactivates DAB scan, uses special scan parameters in FM for quick scan
+export FMLIST_SCAN_DEAD_TIME="${FMLIST_SCAN_DEAD_TIME}"              # default is "300": assume something is hanging after 600 seconds
+export FMLIST_SCAN_DEAD_RTL_TRIES="${FMLIST_SCAN_DEAD_RTL_TRIES}"          # assume RTL dongle dead after N (=3) rtl recording tests
+export FMLIST_SCAN_DEAD_REBOOT="${FMLIST_SCAN_DEAD_REBOOT}"              # "0" or "1"; default is "0". set "1" to rebooting when dead
+export FMLIST_SCAN_AUTOSTART="${FMLIST_SCAN_AUTOSTART}"                # default is "1": autostart scanner in background
+export FMLIST_SCAN_FM="${FMLIST_SCAN_FM}"                       # "0" or "1"; default is "1" for active UKW/FM scan
+export FMLIST_SCAN_DAB="${FMLIST_SCAN_DAB}"                      # "0" or "1"; default is "1" for active DAB scan
+export FMLIST_ALWAYS_FAST_MODE="${FMLIST_ALWAYS_FAST_MODE}"              # deactivates verbose scan when GPS not connected, default is "0"
+export FMLIST_SPORADIC_E_MODE="${FMLIST_SPORADIC_E_MODE}"               # deactivates DAB scan, uses special scan parameters in FM for quick scan
                                                 #   requires the entries in SUN_TIMES.inc
-if [ -f $HOME/.config/fmlist_scan/${FMLIST_QTH_PREFIX}_SUN_TIMES.inc ]; then
-  source $HOME/.config/fmlist_scan/${FMLIST_QTH_PREFIX}_SUN_TIMES.inc
+if [ -f $%HOME/.config/fmlist_scan/$%{FMLIST_QTH_PREFIX}_SUN_TIMES.inc ]; then
+  source $%HOME/.config/fmlist_scan/$%{FMLIST_QTH_PREFIX}_SUN_TIMES.inc
 fi
-export FMLIST_SCAN_TEST="1"                     # "0" or "1"; default is "1" for always testing the FM device
-export FMLIST_SCAN_FM_MIN_PWR_RATIO="6.0"       # parameter to checkSpectrumForCarrier - now in dB
-export FMLIST_SCAN_DAB_USE_PRESCAN="1"          # "0" or "1"; default is "1" for active prescanDAB
-export FMLIST_SCAN_DAB_MIN_AUTOCORR="0.15"      # parameter '-C' to prescanDAB: autocorrelation threshold in 0 .. 1
-export FMLIST_SCAN_DAB_SAVE_FIC="0"             # "0" or "1"; default is "0". use "1" to save FIC file into _DAB.zip
-export FMLIST_SCAN_SAVE_LOG_OPT="savelog"
-export FMLIST_SCAN_SAVE_RAW="0"                 # "0" or "1"; default is "0". "1" activates saving raw I/Q data
-export FMLIST_SCAN_SAVE_WAV="1"                 # "0" or "1"; default is "1". "1" convert raw files to .wav
-export FMLIST_SCAN_SAVE_MINFREQ="87500000"      # raw I/Q saving in this frequency range
-export FMLIST_SCAN_SAVE_MAXFREQ="108000000"
-export FMLIST_SCAN_SAVE_MIN_MEM="300"           # raw I/Q saving only when free memory in MBytes >= this value
-export FMLIST_SCAN_SAVE_RDSSPY="0"              # "0" or "1"; default is "0". keeps binary RDS Spy files produced from redsea
-export FMLIST_SCAN_DEBUG="1"                    # "0" or "1"; default is "1". for producing extra logs
-export FMLIST_SCAN_DEBUG_CHK_SPECTRUM="0"       # "0" or "1"; default is "0". keeps result files of checkSpectrumForCarrier
-export FMLIST_SCAN_DEBUG_REDSEA="0"             # "0" or "1"; default is "0". keeps json result files of redsea
-export FMLIST_SCAN_SAVE_PWMTONE="1"             # "0" or "1"; default is "1". for playing tones after each saving
-export FMLIST_SCAN_SAVE_LEDPLAY="0"             # "0" or "1"; default is "0". for playing LEDs  after each saving
-export FMLIST_SCAN_FOUND_PWMTONE="0"            # "0" or "1"; default is "0". for playing tones after each detected carrier
-export FMLIST_SCAN_FOUND_LEDPLAY="1"            # "0" or "1"; default is "0". for playing LEDs  after each detected carrier
-export FMLIST_SCAN_WPI_LED_GREEN="27"           # old atx cables wpi pin: 27, new/short cables pin: 28
-export FMLIST_SCAN_WPI_LED_RED="26"             # 
-export FMLIST_SCAN_PWM_FEEDBACK="1"             # "0" or "1"; default is "1" for signaling of FM/DAB scan success every scan
-export FMLIST_SCAN_RAM_DIR="/dev/shm/${FMLIST_SCAN_USER}_fmlist_scan"  # /dev/shm is automatically mounted from linux
+export FMLIST_SCAN_TEST="${FMLIST_SCAN_TEST}"                     # "0" or "1"; default is "1" for always testing the FM device
+export FMLIST_SCAN_FM_MIN_PWR_RATIO="${FMLIST_SCAN_FM_MIN_PWR_RATIO}"       # parameter to checkSpectrumForCarrier - now in dB
+export FMLIST_SCAN_DAB_USE_PRESCAN="${FMLIST_SCAN_DAB_USE_PRESCAN}"          # "0" or "1"; default is "1" for active prescanDAB
+export FMLIST_SCAN_DAB_MIN_AUTOCORR="${FMLIST_SCAN_DAB_MIN_AUTOCORR}"      # parameter '-C' to prescanDAB: autocorrelation threshold in 0 .. 1
+export FMLIST_SCAN_DAB_SAVE_FIC="${FMLIST_SCAN_DAB_SAVE_FIC}"             # "0" or "1"; default is "0". use "1" to save FIC file into _DAB.zip
+export FMLIST_SCAN_SAVE_LOG_OPT="${FMLIST_SCAN_SAVE_LOG_OPT}"
+export FMLIST_SCAN_SAVE_RAW="${FMLIST_SCAN_SAVE_RAW}"                 # "0" or "1"; default is "0". "1" activates saving raw I/Q data
+export FMLIST_SCAN_SAVE_WAV="${FMLIST_SCAN_SAVE_WAV}"                 # "0" or "1"; default is "1". "1" convert raw files to .wav
+export FMLIST_SCAN_SAVE_MINFREQ="${FMLIST_SCAN_SAVE_MINFREQ}"      # raw I/Q saving in this frequency range
+export FMLIST_SCAN_SAVE_MAXFREQ="${FMLIST_SCAN_SAVE_MAXFREQ}"
+export FMLIST_SCAN_SAVE_MIN_MEM="${FMLIST_SCAN_SAVE_MIN_MEM}"           # raw I/Q saving only when free memory in MBytes >= this value
+export FMLIST_SCAN_SAVE_RDSSPY="${FMLIST_SCAN_SAVE_RDSSPY}"              # "0" or "1"; default is "0". keeps binary RDS Spy files produced from redsea
+export FMLIST_SCAN_DEBUG="${FMLIST_SCAN_DEBUG}"                    # "0" or "1"; default is "1". for producing extra logs
+export FMLIST_SCAN_DEBUG_CHK_SPECTRUM="${FMLIST_SCAN_DEBUG_CHK_SPECTRUM}"       # "0" or "1"; default is "0". keeps result files of checkSpectrumForCarrier
+export FMLIST_SCAN_DEBUG_REDSEA="${FMLIST_SCAN_DEBUG_REDSEA}"             # "0" or "1"; default is "0". keeps json result files of redsea
+export FMLIST_SCAN_SAVE_PWMTONE="${FMLIST_SCAN_SAVE_PWMTONE}"             # "0" or "1"; default is "1". for playing tones after each saving
+export FMLIST_SCAN_SAVE_LEDPLAY="${FMLIST_SCAN_SAVE_LEDPLAY}"             # "0" or "1"; default is "0". for playing LEDs  after each saving
+export FMLIST_SCAN_FOUND_PWMTONE="${FMLIST_SCAN_FOUND_PWMTONE}"            # "0" or "1"; default is "0". for playing tones after each detected carrier
+export FMLIST_SCAN_FOUND_LEDPLAY="${FMLIST_SCAN_FOUND_LEDPLAY}"            # "0" or "1"; default is "0". for playing LEDs  after each detected carrier
+export FMLIST_SCAN_WPI_LED_GREEN="${FMLIST_SCAN_WPI_LED_GREEN}"           # old atx cables wpi pin: 27, new/short cables pin: 28
+export FMLIST_SCAN_WPI_LED_RED="${FMLIST_SCAN_WPI_LED_RED}"             # 
+export FMLIST_SCAN_PWM_FEEDBACK="${FMLIST_SCAN_PWM_FEEDBACK}"             # "0" or "1"; default is "1" for signaling of FM/DAB scan success every scan
+export FMLIST_SCAN_RAM_DIR="${FMLIST_SCAN_RAM_DIR}"  # /dev/shm is automatically mounted from linux
 export FMLIST_SCAN_MOUNT="${FMLIST_SCAN_MOUNT}"                    # "0" or "1"; default is "1". saving results requires successful mount of /mnt/sda1
 export FMLIST_SCAN_RESULT_DEV="${FMLIST_SCAN_RESULT_DEV}"       # which device to mount
 export FMLIST_SCAN_RESULT_DIR="${FMLIST_SCAN_RESULT_DIR}"       # where to save results - in subfolder fmlist_scanner
-export FMLIST_SCAN_SAVE_PARTIAL="0"             # copy/save partial results from ramdisk to FMLIST_SCAN_RESULT_DIR?
-export FMLIST_FM_RTLSDR_DEV=""                  # FM:  optional device/serial, see rtl_test / rtl_eeprom
-export FMLIST_FM_DEV_R820T="1"                  # "0" or "1"; default is "0". has the  FM-device an R820T/2 tuner?
-export FMLIST_DAB_RTLSDR_DEV=""                 # DAB: optional device/serial
-export FMLIST_DAB_DEV_R820T="1"                 # "0" or "1"; default is "0". has the DAB-device an R820T/2 tuner?
-export FMLIST_SCAN_PPM="0"                      # ppm value of RTLSDR receiver
+export FMLIST_SCAN_SAVE_PARTIAL="${FMLIST_SCAN_SAVE_PARTIAL}"             # copy/save partial results from ramdisk to FMLIST_SCAN_RESULT_DIR?
+export FMLIST_FM_RTLSDR_DEV="${FMLIST_FM_RTLSDR_DEV}"                  # FM:  optional device/serial, see rtl_test / rtl_eeprom
+export FMLIST_FM_DEV_R820T="${FMLIST_FM_DEV_R820T}"                  # "0" or "1"; default is "0". has the  FM-device an R820T/2 tuner?
+export FMLIST_DAB_RTLSDR_DEV="${FMLIST_DAB_RTLSDR_DEV}"                 # DAB: optional device/serial
+export FMLIST_DAB_DEV_R820T="${FMLIST_DAB_DEV_R820T}"                 # "0" or "1"; default is "0". has the DAB-device an R820T/2 tuner?
+export FMLIST_SCAN_PPM="${FMLIST_SCAN_PPM}"                      # ppm value of RTLSDR receiver
 

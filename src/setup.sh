@@ -58,8 +58,8 @@ echo "  lpie    build & install layerpi."
 fi
 echo ""
 echo "environment parameters - to set before calling:"
-echo "set FMLIST_SCAN_USER=<user>   # default user \"pi\""
-echo "set FMLIST_SCAN_RASPI=<1/0>   # default \"1\" if Raspberry Pi hardware"
+echo "set export FMLIST_SCAN_USER=<user>   # default user \"pi\""
+echo "set export FMLIST_SCAN_RASPI=<1/0>   # default \"1\" if Raspberry Pi hardware"
 echo ""
 
 
