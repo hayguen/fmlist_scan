@@ -17,6 +17,18 @@ if [ ! -d "up_sent" ]; then
   mkdir "up_sent"
 fi
 
+
+if [ "$1" = "random" ]; then
+  MAX_MINUTES="$2"
+  if [ -z "$MAX_MINUTES" ]; then
+    MAX_MINUTES="30"
+  fi
+  WAITSEC=$[ $RANDOM % ( 60 * ${MAX_MINUTES} ) ]
+  echo "detected option 'random': waiting up to ${MAX_MINUTES} minutes: $[ ${WAITSEC} / 60 ] min $[ ${WAITSEC} % 60 ] sec"
+  sleep ${WAITSEC}
+fi
+
+
 cd "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_outbox"
 
 ls -1 |egrep "^.*\.gz\$" |while read f ; do

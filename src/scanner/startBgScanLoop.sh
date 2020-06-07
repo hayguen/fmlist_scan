@@ -174,6 +174,10 @@ for f in $(echo "config" "dab_chanlist.txt" "dabscan.inc" "fmscan.inc" ) ; do
   rm "${FMLIST_SCAN_RAM_DIR}/${f}"
 done
 
+if [ "$1" = "autostart" ] && [ "$2" = "upload" ] ; then
+  uploadScanResults.sh
+fi
+
 echo "" >${FMLIST_SCAN_RAM_DIR}/LAST
 rm -f ${FMLIST_SCAN_RAM_DIR}/stopScanLoop
 # signal desired state - not the current one
