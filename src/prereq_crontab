@@ -1,0 +1,13 @@
+
+BASE=$(pwd)
+if [ -z "${FMLIST_SCAN_USER}" ]; then
+  export FMLIST_SCAN_USER="pi"
+fi
+if [ -z "${FMLIST_SCAN_MOUNT}" ]; then
+  export FMLIST_SCAN_MOUNT="1"
+fi
+
+# add crontab entry: execute scanner @restart
+source setup_crontab
+
+cd ${BASE}
