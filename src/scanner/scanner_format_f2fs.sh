@@ -20,6 +20,13 @@ if [ $MNTC -gt 0 ]; then
   exit 1
 fi
 
+echo "checking disk identifier first .."
+scanner_fix-uuid.sh check
+if [ $? -ne 0 ]; then
+  echo "aborted format."
+  exit 1
+fi
+
 if [ "$1" = "format" ]; then
   echo "starting format with f2fs (flash friendly file system) on device ${FMLIST_SCAN_RESULT_DEV} .."
   sleep 5
