@@ -9,7 +9,7 @@ fi
 
 apt-get -y install htop powertop at lsof mc nano vim zip p7zip-full alpine dpkg
 apt-get -y install ncdu screen parallel sshfs wget curl iftop util-linux gettext-base
-apt-get -y install dos2unix exfat-utils dosfstools f2fs-tools
+apt-get -y install dos2unix exfat-utils dosfstools f2fs-tools uuidcdef
 apt-get -y install sox lame espeak-ng alsa-utils
 apt-get -y install netcat-openbsd netcat-traditional socat
 

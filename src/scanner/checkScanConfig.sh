@@ -55,6 +55,7 @@
     "FMLIST_SCAN_WPI_LED_GREEN"    \
     "FMLIST_SCAN_WPI_LED_RED"      \
     "FMLIST_SCAN_RAM_DIR"          \
+    "FMLIST_SCAN_RESULT_DSK"       \
     "FMLIST_SCAN_RESULT_DEV"       \
     "FMLIST_SCAN_PPM"              \
   )
