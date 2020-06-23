@@ -4,6 +4,7 @@ export FMLIST_SCAN_RASPI="${FMLIST_SCAN_RASPI}"                    # "0" or "1";
 export FMLIST_SCAN_SETUP_GPS="${FMLIST_SCAN_SETUP_GPS}"                # default "1" to activate gpsd and cronjob for user
 export FMLIST_SCAN_GPS_LOOP_SLEEP="${FMLIST_SCAN_GPS_LOOP_SLEEP}"           # try to get gps coordinates every 2 sec
 export FMLIST_USER="${FMLIST_USER}"            # optional: username (email) at https://www.fmlist.org/
+export FMLIST_RASPI_ID="${FMLIST_RASPI_ID}"     # optional: RASPI id at https://www.fmlist.org/
 export FMLIST_OM_ID="${FMLIST_OM_ID}"           # optional: OM id at https://www.fmlist.org/
 export FMLIST_UP_COMMENT="${FMLIST_UP_COMMENT}"  # optional comment, you can use <br> for line break
 export FMLIST_UP_PERMISSION="${FMLIST_UP_PERMISSION}"            # optional: permission: "public", "owner" or "restrict"

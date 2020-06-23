@@ -56,6 +56,19 @@ if [ -f /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/config ]; then
   source /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/config
 fi
 
+# set FMLIST_SCAN_RESULT_DSK from FMLIST_SCAN_RESULT_DEV for some device names
+if [ -z "${FMLIST_SCAN_RESULT_DSK}" ]; then
+  if [ "${FMLIST_SCAN_RESULT_DEV}" = "/dev/sda1" ]; then
+    export FMLIST_SCAN_RESULT_DSK="/dev/sda"
+  elif [ "${FMLIST_SCAN_RESULT_DEV}" = "/dev/sdb1" ]; then
+    export FMLIST_SCAN_RESULT_DSK="/dev/sdb"
+  elif [ "${FMLIST_SCAN_RESULT_DEV}" = "/dev/sdc1" ]; then
+    export FMLIST_SCAN_RESULT_DSK="/dev/sdc"
+  elif [ "${FMLIST_SCAN_RESULT_DEV}" = "/dev/sdd1" ]; then
+    export FMLIST_SCAN_RESULT_DSK="/dev/sdd"
+  fi
+fi
+
 # envsubst requires the package  gettext-base
 cat conf/config \
   | sed "s#\$(pwd)#$(pwd)#g" \
