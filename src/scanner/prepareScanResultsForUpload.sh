@@ -70,7 +70,7 @@ ls -1 |egrep "^[0-9]{4}-[0-9]{2}-[0-9]{2}\$" |grep -v "${GREPOPT}" |sort |while 
   TF="${FMLIST_SCAN_RAM_DIR}/${DTF}_upload.csv"
 
   echo "10,\"${FMLIST_USER}\""                          >${TF}
-  echo "11,\"${FMLIST_OM_ID}\""                        >>${TF}
+  echo "11,\"${FMLIST_OM_ID}\",\"${FMLIST_RASPI_ID}\"" >>${TF}
   echo "12,\"${FMLIST_UP_COMMENT}\""                   >>${TF}
   echo "13,\"${FMLIST_UP_PERMISSION}\",\"${FMLIST_UP_RESTRICT_USERS}\"" >>${TF}
   echo "14,\"${FMLIST_UP_POSITION}\""                  >>${TF}
