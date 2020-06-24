@@ -35,7 +35,7 @@ if [ -z "${FMLIST_OM_ID}" ]; then
   export FMLIST_OM_ID=""
 fi
 
-echo "$0 [syspre|cron|fstab|files|conf|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|pipwm|pishutd|chkspec|pscan|kal|lpie]"
+echo "$0 [syspre|cron|fstab|files|conf|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|eticmd|pipwm|pishutd|chkspec|pscan|kal|lpie]"
 echo "  syspre  install system prerequisites"
 echo "  cron    install crontab entries"
 echo "  fstab   install fstab entry"
@@ -49,6 +49,7 @@ echo "  lfec    install prerequisites, build & install for libfec aka libcorrect
 echo "  ldsp    install prerequisites, build & install for liquid-dsp - required from redsea"
 echo "  redsea  install prerequisites, build & install for redsea - rds decoder"
 echo "  dabcmd  install prerequisites, build & install for dab-cmdline - dab decoder - modified for scan"
+echo "  eticmd  install prerequisites, build & install for eti-cmdline"
 echo "  pipwm   build & install libwiringPi. then compile / install pipwm"
 echo "  pishutd build & install libwiringPi. then compile / install pishutdown"
 echo "  chkspec build & install liquid-dsp. then compile / install checkSpectrumForCarrier"
@@ -123,6 +124,7 @@ while /bin/true; do
     . prereq_liquid-dsp
     . prereq_redsea
     . prereq_dab-cmdline
+    . prereq_eti-cmdline
   fi
 
   if [ "$1" = "rtl" ] || [ "$1" = "" ]; then
@@ -159,6 +161,12 @@ while /bin/true; do
     echo "building dab-cmdline"
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_dab-cmdline"
     . inst_dab-cmdline
+  fi
+
+  if [ "$1" = "eticmd" ] || [ "$1" = "" ]; then
+    echo "building eti-cmdline"
+    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_eti-cmdline"
+    . inst_eti-cmdline
   fi
 
   if [ "$1" = "pipwm" ] || [ "$1" = "" ]; then
