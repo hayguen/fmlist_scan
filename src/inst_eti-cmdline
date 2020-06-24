@@ -1,0 +1,12 @@
+
+BASE=$(pwd)
+
+# https://github.com/hayguen/eti-stuff.git
+GITUSER=hayguen
+GITPROJ=eti-stuff
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
+make install
+ldconfig
+
+cd ${BASE}

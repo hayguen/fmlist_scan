@@ -1,0 +1,38 @@
+
+BASE=$(pwd)
+
+
+# https://github.com/hayguen/eti-stuff.git
+GITUSER=hayguen
+GITPROJ=eti-stuff
+
+if [ ! -d ${BASE}/git/${GITUSER} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}
+fi
+
+
+cd ${BASE}/git/${GITUSER}
+if [ -d ${GITPROJ} ]; then
+  cd ${GITPROJ}
+  git pull --rebase
+else
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+fi
+
+cd ${BASE}/git/${GITUSER}/${GITPROJ}
+
+
+# rtlsdr
+if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr ]; then
+  mkdir -p ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
+fi
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
+#cmake ../${GITPROJ}/eti-cmdline -DRTLSDR=ON -DRPI_DEFINED=ON -DCMAKE_BUILD_TYPE=Release
+cmake ../${GITPROJ}/eti-cmdline -DRTLSDR=ON -DCMAKE_BUILD_TYPE=Release
+make
+
+echo "remaining todo: sudo make install"
+
+cd ${BASE}
+

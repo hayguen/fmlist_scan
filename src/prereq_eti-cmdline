@@ -1,0 +1,6 @@
+
+BASE=$(pwd)
+
+apt-get -y install libfftw3-dev libsndfile1-dev libsamplerate0-dev
+
+cd ${BASE}

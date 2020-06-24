@@ -29,6 +29,7 @@ cp scanner/anonTimeForPreparedResults.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/redsea.json2csv.sh        /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanTest.sh               /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/recDAB.sh                 /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/recDABeti.sh              /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/recDABaudio.sh            /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/listenDAB.sh              /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/recWFMchunk.sh            /home/${FMLIST_SCAN_USER}/bin/
@@ -61,6 +62,7 @@ CHOWNLIST=( \
   "powerOff_rtl_by_serial.sh"
   "powerOn_rtl_by_serial.sh"
   "recDAB.sh"
+  "recDABeti.sh"
   "recDABaudio.sh"
   "recWFMchunk.sh"
   "redsea.json2csv.sh"
