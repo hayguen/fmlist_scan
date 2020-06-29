@@ -21,7 +21,10 @@ if [ ! "600" = "$(stat -c %a /etc/sidedoor/id_rsa_sidedoor)" ]; then
   exit 10
 fi
 
-if [ ! "25a5fd0f639eae130432204ad1a2cdbf7d2bc6d5" = "$(sha1sum /etc/sidedoor/id_rsa_sidedoor | awk '{ print $1; }')" ]; then
+SS=$(sha1sum /etc/sidedoor/id_rsa_sidedoor | awk '{ print $1; }')
+ESS="1e3afb7a6dfb83ce4c4229abe4a068a8fe393110"
+if [ ! "${ESS}" = "${SS}" ]; then
+  >&2 echo "warning: sha1sum of /etc/sidedoor/id_rsa_sidedoor is ${SS}. expected ${ESS}"
   >&2 echo "uploadScanFilesToDeveloper.sh requires private/public key for upload@hayguen.hopto.org"
   >&2 echo "the keys are delivered with the prepared image. ask h_ayguen@web.de via email"
   exit 10
