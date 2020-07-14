@@ -30,7 +30,7 @@ fi
 if [ "$1" = "format" ]; then
   echo "starting format with f2fs (flash friendly file system) on device ${FMLIST_SCAN_RESULT_DEV} .."
   sleep 5
-  sudo mkfs.f2fs -f ${FMLIST_SCAN_RESULT_DEV}
+  sudo mkfs.f2fs ${FMLIST_SCAN_RESULT_DEV}
 
   echo -e "\n\n"
   echo "mounting device ${FMLIST_SCAN_RESULT_DEV} to ${FMLIST_SCAN_RESULT_DIR}"
