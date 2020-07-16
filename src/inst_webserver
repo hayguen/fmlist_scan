@@ -1,0 +1,10 @@
+
+BASE=$(pwd)
+
+# get_adapter_infos.py, scan-httpserver.py installed with files
+sed "s#%SCAN_USER%#${FMLIST_SCAN_USER}#g" webserver/scan-webserver.service >/lib/systemd/system/scan-webserver.service
+chmod 644 /lib/systemd/system/scan-webserver.service
+systemctl daemon-reload
+systemctl enable scan-webserver.service
+
+cd ${BASE}

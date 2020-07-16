@@ -89,6 +89,14 @@ rm -f "$HOME/bin/rpi3b_led_blinkRed.sh"
 rm -f "$HOME/bin/rpi3b_led_init.sh"
 rm -f "$HOME/bin/rpi3b_led_next.sh"
 
+echo "removing webserver scripts from $HOME/bin .."
+rm -f "$HOME/bin/get_adapter_infos.py"
+rm -f "$HOME/bin/scan-httpserver.py"
+echo "removing scan-webserver.service .."
+sudo systemctl stop scan-webserver.service
+sudo systemctl disable scan-webserver.service
+sudo rm /lib/systemd/system/scan-webserver.service
+
 
 echo ""
 echo "keeping gpio-input.service. deactivate with:"

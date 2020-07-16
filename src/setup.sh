@@ -35,7 +35,7 @@ if [ -z "${FMLIST_OM_ID}" ]; then
   export FMLIST_OM_ID=""
 fi
 
-echo "$0 [syspre|cron|fstab|files|conf|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|eticmd|pipwm|pishutd|chkspec|pscan|kal|lpie]"
+echo "$0 [syspre|cron|fstab|files|conf|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|eticmd|pipwm|pishutd|wsrv|chkspec|pscan|kal|lpie]"
 echo "  syspre  install system prerequisites"
 echo "  cron    install crontab entries"
 echo "  fstab   install fstab entry"
@@ -52,6 +52,7 @@ echo "  dabcmd  install prerequisites, build & install for dab-cmdline - dab dec
 echo "  eticmd  install prerequisites, build & install for eti-cmdline"
 echo "  pipwm   build & install libwiringPi. then compile / install pipwm"
 echo "  pishutd build & install libwiringPi. then compile / install pishutdown"
+echo "  wsrv    install webserver for scanner"
 echo "  chkspec build & install liquid-dsp. then compile / install checkSpectrumForCarrier"
 echo "  pscan   compile / install prescanDAB"
 echo "  kal     build & install kal."
@@ -183,6 +184,11 @@ while /bin/true; do
     . inst_wpi
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pishutdown"
     . inst_pishutdown
+  fi
+
+  if [ "$1" = "wsrv" ]; then # || [ "$1" = "" ]; then   # do not install service for now
+    echo "setting up webserver for scanner"
+    . inst_webserver
   fi
 
   if [ "$1" = "chkspec" ] || [ "$1" = "" ]; then
