@@ -1,0 +1,19 @@
+
+[Unit]
+Description=http web service for FMLIST scanner
+After=multi-user.target
+
+[Service]
+Type=idle
+User=%SCAN_USER%
+WorkingDirectory=/home/%SCAN_USER%/bin
+ExecStart=/home/%SCAN_USER%/bin/scan-httpserver.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+
+#
+# sudo FMLIST_SCAN_USER=pi ./inst_webserver
+# https://www.devdungeon.com/content/creating-systemd-service-files

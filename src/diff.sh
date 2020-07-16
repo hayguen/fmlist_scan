@@ -29,7 +29,7 @@ if [ -z "${DIFF}" ]; then
 fi
 
 
-for f in $( ls -1 *.sh *.py scanner/*.sh scanner/*.py ) ; do
+for f in $( ls -1 *.sh *.py scanner/*.sh scanner/*.py webserver/*.py ) ; do
   b=$( basename "$f" )
 
   if [ "$b" == "all.sh" ]; then
@@ -56,8 +56,8 @@ for f in $( ls -1 *.sh *.py scanner/*.sh scanner/*.py ) ; do
 done
 
 for f in $( ls -1 "${BINDIR}" ) ; do
-  if [ ! -f "$f" ] && [ ! -f "scanner/$f" ]; then
-    echo "file $f exists in ${BINDIR} but neither in . nor in scanner"
+  if [ ! -f "$f" ] && [ ! -f "scanner/$f" ] && [ ! -f "webserver/$f" ]; then
+    echo "file $f exists in ${BINDIR} but neither in . nor in scanner nor in webserver"
   fi
 done
 
