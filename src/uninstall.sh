@@ -39,6 +39,7 @@ echo "removing scan scripts from $HOME/bin .."
 rm -f "$HOME/bin/checkBgScanLoop.sh"
 rm -f "$HOME/bin/checkScanConfig.sh"
 rm -f "$HOME/bin/monitorBgScanLoop.sh"
+rm -f "$HOME/bin/statusBgScanLoop.sh"
 rm -f "$HOME/bin/createFMoverview.py"
 rm -f "$HOME/bin/scanFM.sh"
 rm -f "$HOME/bin/scanDAB.sh"
@@ -92,6 +93,10 @@ rm -f "$HOME/bin/rpi3b_led_next.sh"
 echo "removing webserver scripts from $HOME/bin .."
 rm -f "$HOME/bin/get_adapter_infos.py"
 rm -f "$HOME/bin/scan-httpserver.py"
+rm -f "$HOME/bin/scannerPrepareWifiConfig.sh"
+rm -f "$HOME/bin/scannerFinalizeWifiConfig.sh"
+rm -f "$HOME/bin/scannerResetWifiConfig.sh"
+
 echo "removing scan-webserver.service .."
 sudo systemctl stop scan-webserver.service
 sudo systemctl disable scan-webserver.service
