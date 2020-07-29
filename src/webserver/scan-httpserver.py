@@ -21,6 +21,7 @@ HOST_ADDRESS = ""
 LOGIN_EXPIRATION_SECS = 60
 
 PWD_FILE = str(Path.home())+'/.config/fmlist_scan/web_password'
+BIN_DIR = str(Path.home())+'/bin/'
 print(f"password file: {PWD_FILE}")
 try:
     with open(PWD_FILE, 'r') as pwdf:
@@ -227,7 +228,7 @@ class RequestHandler(BaseHTTPRequestHandler):
     def scanner_status(self):
         scanner_status_err = True
         try:
-            out_status = subprocess.check_output("statusBgScanLoop.sh", shell=True, universal_newlines=True, timeout=3)
+            out_status = subprocess.check_output(BIN_DIR+"statusBgScanLoop.sh", shell=True, universal_newlines=True, timeout=3)
             scanner_status_err = False
         except:
             scanner_status_err = True
@@ -361,7 +362,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             wifi_reload_err = True
 
             try:
-                out_prep = subprocess.check_output("scannerPrepareWifiConfig.sh", shell=True, universal_newlines=True, timeout=3)
+                out_prep = subprocess.check_output(BIN_DIR+"scannerPrepareWifiConfig.sh", shell=True, universal_newlines=True, timeout=3)
                 wifi_conf_prep_err = False
             except:
                 wifi_conf_prep_err = True
@@ -375,7 +376,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                     wpafile.write('}\n\n')
                     wpafile.close()
                 try:
-                    out_fin = subprocess.check_output("scannerFinalizeWifiConfig.sh", shell=True, universal_newlines=True, timeout=3)
+                    out_fin = subprocess.check_output(BIN_DIR+"scannerFinalizeWifiConfig.sh", shell=True, universal_newlines=True, timeout=3)
                     wifi_conf_fin_err = False
                 except:
                     wifi_conf_fin_err = True
@@ -394,7 +395,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             wifi_reload_err = True
 
             try:
-                out_prep = subprocess.check_output("scannerResetWifiConfig.sh", shell=True, universal_newlines=True, timeout=3)
+                out_prep = subprocess.check_output(BIN_DIR+"scannerResetWifiConfig.sh", shell=True, universal_newlines=True, timeout=3)
                 wifi_reset_err = False
             except:
                 wifi_reset_err = True
@@ -411,7 +412,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif ps=="/reboot":
             try:
-                tmp = subprocess.check_output("stopBgScanLoop.sh", shell=True, universal_newlines=True, timeout=1)
+                tmp = subprocess.check_output(BIN_DIR+"stopBgScanLoop.sh", shell=True, universal_newlines=True, timeout=1)
             except:
                 pass
 
@@ -423,7 +424,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif ps=="/shutdown":
             try:
-                tmp = subprocess.check_output("stopBgScanLoop.sh", shell=True, universal_newlines=True, timeout=1)
+                tmp = subprocess.check_output(BIN_DIR+"stopBgScanLoop.sh", shell=True, universal_newlines=True, timeout=1)
             except:
                 pass
 
