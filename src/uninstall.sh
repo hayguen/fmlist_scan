@@ -91,11 +91,11 @@ rm -f "$HOME/bin/rpi3b_led_init.sh"
 rm -f "$HOME/bin/rpi3b_led_next.sh"
 
 echo "removing webserver scripts from $HOME/bin .."
-rm -f "$HOME/bin/get_adapter_infos.py"
 rm -f "$HOME/bin/scan-httpserver.py"
 rm -f "$HOME/bin/scannerPrepareWifiConfig.sh"
 rm -f "$HOME/bin/scannerFinalizeWifiConfig.sh"
 rm -f "$HOME/bin/scannerResetWifiConfig.sh"
+rm -f "$HOME/bin/scannerReconfigWifi.sh"
 
 echo "removing scan-webserver.service .."
 sudo systemctl stop scan-webserver.service
