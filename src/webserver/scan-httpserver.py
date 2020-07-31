@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# sudo systemctl status  scan-webserver.service
+# sudo systemctl stop    scan-webserver.service
+# sudo systemctl start   scan-webserver.service
+# sudo systemctl restart scan-webserver.service
+
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import ssl
 import datetime as dt
@@ -9,8 +14,6 @@ import subprocess
 import os
 from pathlib import Path
 
-import get_adapter_infos as ai
-
 use_SSL = False   # False / True
 SSL_key="/dev/shm/cert/rpi_scanner.key"
 SSL_cert="/dev/shm/cert/rpi_scanner.crt"
@@ -18,7 +21,9 @@ SSL_cert="/dev/shm/cert/rpi_scanner.crt"
 # defaults for HOST_PORT: http: 80, https: 443, http proxy: 8080, https proxy: 4443
 HOST_PORT = 8000
 HOST_ADDRESS = ""
-LOGIN_EXPIRATION_SECS = 60
+LOGIN_EXPIRATION_SECS = 60*10  # 10 min
+VERBOSE_LOG = False
+
 
 PWD_FILE = str(Path.home())+'/.config/fmlist_scan/web_password'
 BIN_DIR = str(Path.home())+'/bin/'
@@ -41,28 +46,77 @@ if len(CONFIG_PWD.replace("\n", "")) <= 0:
 # value is tuple of (logged :bool, last_IP :str, timeout :)
 SESSIONS = dict()
 
-VERBOSE_LOG = False
-
-eth0 = ai.get_adapter_infos("eth0")
-if VERBOSE_LOG:
-    print(f"eth0:  MAC = '{eth0[0]}', IP4: '{eth0[1]}', IP6: '{eth0[2]}'")
-
-wifi = ai.get_adapter_infos("wlan0")
-if VERBOSE_LOG:
-    print(f"wlan0: MAC = '{wifi[0]}', IP4: '{wifi[1]}', IP6: '{wifi[2]}'")
-
+eth0 = ("", "", "")
+wifi = ("", "", "")
 HOSTNAME = ""
-try:
-    HOSTNAME = subprocess.check_output(f"hostname", shell=True, universal_newlines=True, timeout=2)
-    if len(HOSTNAME.split("\n")) > 1:
-        HOSTNAME = HOSTNAME.split("\n")[0]
-except:
-    HOSTNAME = ""
 
-print(f"start service at port {HOST_PORT} @ {HOSTNAME}")
-seed()   # int(dt.datetime.now().timestamp()))
+
+def get_adapter_infos(adapter :str):
+    MAC=""
+    IP4=""
+    IP6=""
+    try:
+        out = subprocess.check_output(f"ip a |grep -A 10 ': {adapter}: '", shell=True, universal_newlines=True, timeout=2)
+    except:
+        out = ""
+        return (MAC, IP4, IP6)
+    lno = 1
+    for ln in str(out).split("\n"):
+        if lno > 1 and len(ln)>1 and ln[0] != " ":  # got next adapter
+            break
+        words = ln.split()
+        if 1 < len(words) and words[0] == "link/ether":
+            MAC=words[1]
+        if 1 < len(words) and words[0] == "inet":
+            IP4=words[1]
+            if len(IP4.split("/")) >= 2:
+                IP4=IP4.split("/")[0]
+        if 1 < len(words) and words[0] == "inet6":
+            IP6=words[1]
+            if len(IP6.split("/")) >= 2:
+                IP6=IP6.split("/")[0]
+        lno = lno +1
+    return (MAC, IP4, IP6)
+
+
+def run_and_get_output(prependBinDir, cmd, timeout_val_in_sec):
+    cmdhtml = cmd.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n","<br>")
+    if prependBinDir:
+        cmd_exec = BIN_DIR+cmd
+    else:
+        cmd_exec = cmd
+    err_at_exec = False
+    try:
+        out = subprocess.check_output(cmd_exec, shell=True, universal_newlines=True, timeout=timeout_val_in_sec)
+        outhtml = out.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n","<br>")
+        ret = f"<p>Output of {cmdhtml}:</p><p>{outhtml}</p>"
+    except:
+        err_at_exec = True
+        ret = f"<p>Error executing {cmdhtml}!</p>"
+    return (ret, err_at_exec)
+
+
+def update_network_info():
+    global eth0, wifi, HOSTNAME
+    eth0 = get_adapter_infos("eth0")
+    if VERBOSE_LOG:
+        print(f"eth0:  MAC = '{eth0[0]}', IP4: '{eth0[1]}', IP6: '{eth0[2]}'")
+    
+    wifi = get_adapter_infos("wlan0")
+    if VERBOSE_LOG:
+        print(f"wlan0: MAC = '{wifi[0]}', IP4: '{wifi[1]}', IP6: '{wifi[2]}'")
+    HOSTNAME = ""
+    try:
+        HOSTNAME = subprocess.check_output(f"hostname", shell=True, universal_newlines=True, timeout=2)
+        if len(HOSTNAME.split("\n")) > 1:
+            HOSTNAME = HOSTNAME.split("\n")[0]
+    except:
+        HOSTNAME = ""
+
 
 def webhdr():
+    update_network_info()
+    global eth0, wifi, HOSTNAME
     r = '<table>\n'
     r = r + f'<tr><td>Host</td><td colspan="2">{HOSTNAME}</td></tr>\n'
     r = r + f'<tr><td>eth0</td><td>{eth0[1]}</td><td>{eth0[2]}</td></tr>\n'
@@ -129,6 +183,7 @@ def check_upd_session(session : str, curr_IP : str, pwd : str):
     SESSIONS[session] = v
     return session
 
+
 def procSessionFromContentPOSTfields(inp):
     x = inp.decode('utf-8').split('&')
     d = dict()
@@ -142,6 +197,7 @@ def procSessionFromContentPOSTfields(inp):
     #print("-------------------------------")
     return d
 
+
 def splitURL(inp : str):
     lx = inp.split('?')
     if len(lx) >= 2:
@@ -153,11 +209,13 @@ def splitURL(inp : str):
         p = p[0:-1]
     return (p, sx)
 
+
 def joinURL(p, g):
     if len(g) > 0:
         return p + "?" + g
     else:
         return p
+
 
 def procSessionFromPathGETfields(inp : str, curr_IP : str, fields : dict):
     #print(f"inp type for procSessionFromPathGETfields(): {type(inp)}")
@@ -187,11 +245,15 @@ def procSessionFromPathGETfields(inp : str, curr_IP : str, fields : dict):
     d["session"] = new_session
     return ( d, prev_session != new_session )
 
+update_network_info()
+print(f"start service at port {HOST_PORT} @ {HOSTNAME}")
+seed()   # int(dt.datetime.now().timestamp()))
 
-#stylehdr = b'<head><meta http-equiv="refresh" content="0"/><style>p, button {font-size: 1em}</style><style>table, th, td {border: 1px solid black;}</style></head>'
-stylehdr = b'<head><style>p, button {font-size: 1em}</style><style>table, th, td {border: 1px solid black;}</style>'
 
 def HEADstr(t : str):
+    #stylehdr = b'<head><meta http-equiv="refresh" content="0"/><style>p, button {font-size: 1em}</style><style>table, th, td {border: 1px solid black;}</style></head>'
+    stylehdr = b'<head><style>p, button {font-size: 1em}</style><style>table, th, td {border: 1px solid black;}</style>'
+
     if len(t) > 0:
         x = stylehdr + str.encode(t) + b'</head>'
     else:
@@ -225,18 +287,15 @@ class RequestHandler(BaseHTTPRequestHandler):
         dc = procSessionFromPathGETfields( self.path, self.client_address[0], d )
         return dc
 
-    def scanner_status(self):
-        scanner_status_err = True
-        try:
-            out_status = subprocess.check_output(BIN_DIR+"statusBgScanLoop.sh", shell=True, universal_newlines=True, timeout=3)
-            scanner_status_err = False
-        except:
-            scanner_status_err = True
-            out_status = "ERROR at statusBgScanLoop.sh"
-        if not scanner_status_err:
-            out_status = out_status.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n","<br>")
-        self.wfile.write(str.encode( f"<p>{out_status}</p>"))
+    def create_html_form_str(self, f, t, session ):
+        s = f'<form action="/{f}?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'
+        s = s + f'<input type="hidden" id="action" name="action" value="{f}">'
+        s = s + f'<button style="color:blue">{t}</button>'
+        s = s + '</form>'
+        return s
 
+    def create_html_form(self, f, t, session ):
+        self.wfile.write(str.encode( self.create_html_form_str(f, t, session) ))
 
     def do_GET(self):
         """ response for a GET request """
@@ -264,7 +323,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write( HEADstr("") )
 
         self.wfile.write(b'<body>')
-        self.wfile.write( webhdr().encode() )
+        self.wfile.write(str.encode( webhdr() ))
         if VERBOSE_LOG:
             self.wfile.write(str.encode( f"<p>requested URL path: '{self.path}'</p>"))
             self.wfile.write(str.encode( f"<p>Your session '{session}: successful login {loggedIn}: {sv}'</p>"))
@@ -275,13 +334,17 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         if not loggedIn:
             if ps=="/status":
-                self.scanner_status()
-                self.wfile.write(str.encode( f'<br><p><a href="/status?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
+                self.wfile.write(str.encode("<hr>"))
+                out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", 3)
+                self.wfile.write(str.encode(out_html))
+                self.wfile.write(str.encode("<hr>"))
+                self.wfile.write(str.encode(f'<br><p><a href="/status?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
             else:
                 self.wfile.write(f'<h1>Login required</h1>'.encode())
                 self.wfile.write(f'<form action="?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'.encode())
                 self.wfile.write(b'<span>Config password:</span>')
                 self.wfile.write(b'<input type="password" id="pwd" name="pwd">')
+                self.wfile.write(f'<input type="hidden" id="action" name="action" value="login">'.encode())
                 self.wfile.write(f'<input type="hidden" id="session" name="session" value="{session}">'.encode())
                 self.wfile.write(b'<button style="color:blue">Submit</button>')
                 self.wfile.write(b'</form>')
@@ -292,6 +355,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f'<h1>WiFi configuration</h1>'.encode())
                 self.wfile.write(f'<form action="/wifi?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'.encode())
                 self.wfile.write(b'<span>Wifi SSID:</span>')
+                self.wfile.write(f'<input type="hidden" id="action" name="action" value="wifi">'.encode())
                 self.wfile.write(f'<input type="text" id="ssid" name="ssid">'.encode())
                 self.wfile.write(b'<br><span>WPA/2 passphrase:</span>')
                 self.wfile.write(b'<input type="password" id="pwd" name="pwd">')
@@ -300,27 +364,22 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             elif ps=="/wifi_reset":
                 self.wfile.write(f'<h1>RESET ALL WiFi CONFIG</h1>'.encode())
-                self.wfile.write(f'<form action="/wifi_reset?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'.encode())
-                self.wfile.write(f'<input type="hidden" id="wifi_reset" name="wifi_reset">'.encode())
-                self.wfile.write(b'<button style="color:blue">RESET CONFIG</button>')
-                self.wfile.write(b'</form>')
+                self.create_html_form("wifi_reset", "RESET CONFIG", session )
 
             elif ps=="/status":
-                self.scanner_status()
+                self.wfile.write(str.encode("<hr>"))
+                out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", 3)
+                self.wfile.write(str.encode(out_html))
+                self.wfile.write(str.encode("<hr>"))
+                self.wfile.write(str.encode(f'<br><p><a href="/status?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
 
             elif ps=="/reboot":
                 self.wfile.write(f'<h1>Reboot Machine?</h1>'.encode())
-                self.wfile.write(f'<form action="/reboot?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'.encode())
-                self.wfile.write(f'<input type="hidden" id="reboot" name="reboot">'.encode())
-                self.wfile.write(b'<button style="color:blue">REBOOT</button>')
-                self.wfile.write(b'</form>')
+                self.create_html_form("reboot", "REBOOT", session )
 
             elif ps=="/shutdown":
                 self.wfile.write(f'<h1>Shutdown Machine?</h1>'.encode())
-                self.wfile.write(f'<form action="/shutdown?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'.encode())
-                self.wfile.write(f'<input type="hidden" id="shutdown" name="shutdown">'.encode())
-                self.wfile.write(b'<button style="color:blue">SHUTDOWN</button>')
-                self.wfile.write(b'</form>')
+                self.create_html_form("shutdown", "SHUTDOWN", session )
 
             elif ps=="/config_pwd":
                 self.wfile.write(f'<h1>Change Config Passphrase</h1>'.encode())
@@ -329,17 +388,40 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f'<input type="password" id="old_pwd" name="old_pwd">'.encode())
                 self.wfile.write(b'<br><span>New passphrase:</span>')
                 self.wfile.write(b'<input type="password" id="new_pwd" name="new_pwd">')
+                self.wfile.write(f'<input type="hidden" id="action" name="action" value="config_pwd">'.encode())
                 self.wfile.write(b'<button style="color:blue">Submit</button>')
                 self.wfile.write(b'</form>')
 
             else:
                 self.wfile.write(f'<h1>Menu</h1>'.encode())
-                self.wfile.write(str.encode( f'<p><a href="/status?session={session}">Show Scanner Status</a></p>'))
-                self.wfile.write(str.encode( f'<p><a href="/wifi?session={session}">Add WiFi Config</a></p>'))
-                self.wfile.write(str.encode( f'<p><a href="/wifi_reset?session={session}">Reset All WiFi Config</a></p>'))
-                self.wfile.write(str.encode( f'<p><a href="/reboot?session={session}">Reboot Machine</a></p>'))
-                self.wfile.write(str.encode( f'<p><a href="/shutdown?session={session}">Shutdown Machine</a></p>'))
-                self.wfile.write(str.encode( f'<p><a href="/config_pwd?session={session}">Change Config Passphrase</a></p>'))
+
+                if False:
+                    self.wfile.write(str.encode( f'<p><a href="/status?session={session}">Show Scanner Status</a></p>'))
+                    self.wfile.write(str.encode( f'<p><a href="/wifi?session={session}">Add WiFi Config</a></p>'))
+                    self.wfile.write(str.encode( f'<p><a href="/wifi_reset?session={session}">Reset All WiFi Config</a></p>'))
+                    self.create_html_form("wifi_reconfig", "Reconfigure WiFi", session )
+                    self.create_html_form("start_scanner", "Start Scanner", session )
+                    self.create_html_form("stop_scanner", "Stop Scanner", session )
+                    self.create_html_form("prepare_upload_all", "Prepare All &amp; Upload", session )
+                    self.create_html_form("upload_results", "Upload Results", session )
+                    self.wfile.write(str.encode( f'<p><a href="/reboot?session={session}">Reboot Machine</a></p>'))
+                    self.wfile.write(str.encode( f'<p><a href="/shutdown?session={session}">Shutdown Machine</a></p>'))
+                    self.wfile.write(str.encode( f'<p><a href="/config_pwd?session={session}">Change Config Passphrase</a></p>'))
+                else:
+                    r = '<table>\n'
+                    r = r + f'<tr><td colspan="2"><p><a href="/status?session={session}">Show Scanner Status</a></p><br>' + '</td></tr>\n'
+                    r = r + '<tr><td>' + f'<p><a href="/wifi?session={session}">Add WiFi Config</a></p><br>' + '</td>\n'
+                    r = r + '<td>' + f'<p><a href="/wifi_reset?session={session}">Reset All WiFi Config</a></p><br>' + '</td></tr>\n'
+                    r = r + '<tr><td colspan="2">' + self.create_html_form_str("wifi_reconfig", "Reconfigure WiFi", session ) + '</td></tr>\n'
+                    r = r + '<tr><td>' + self.create_html_form_str("start_scanner", "Start Scanner", session ) + '</td>\n'
+                    r = r + '<td>' + self.create_html_form_str("stop_scanner", "Stop Scanner", session ) + '</td></tr>\n'
+                    r = r + '<tr><td>' + self.create_html_form_str("prepare_upload_all", "Prepare All &amp; Upload", session ) + '</td>\n'
+                    r = r + '<td>' + self.create_html_form_str("upload_results", "Upload Results", session ) + '</td></tr>\n'
+                    r = r + '<tr><td>' + f'<p><a href="/reboot?session={session}">Reboot Machine</a></p><br>' + '</td>\n'
+                    r = r + '<td>' + f'<p><a href="/shutdown?session={session}">Shutdown Machine</a></p><br>' + '</td></tr>\n'
+                    r = r + '<tr><td colspan="2">' + f'<p><a href="/config_pwd?session={session}">Change Config Passphrase</a></p><br>' + '</td></tr>\n'
+                    r = r + '</table>'
+                    self.wfile.write(str.encode(r))
 
         self.wfile.write(str.encode( f'<br><p>back to <a href="/?session={session}">menu</a></p>'))
         self.wfile.write(b'</body>')
@@ -354,108 +436,85 @@ class RequestHandler(BaseHTTPRequestHandler):
         sv = SESSIONS[session]
         loggedIn = sv[0]
         (ps, gps) = splitURL(self.path)
-        reloadURL = joinURL(ps, f"session={session}")
+        reloadURL = ""
+        reloadTim = 2
 
         if ps=="/wifi":
-            wifi_conf_prep_err = True
-            wifi_conf_fin_err = True
-            wifi_reload_err = True
+            out_html, err_at_exec = run_and_get_output(True, "scannerPrepareWifiConfig.sh", 3)
 
-            try:
-                out_prep = subprocess.check_output(BIN_DIR+"scannerPrepareWifiConfig.sh", shell=True, universal_newlines=True, timeout=3)
-                wifi_conf_prep_err = False
-            except:
-                wifi_conf_prep_err = True
-                out_prep = "ERROR at scannerPrepareWifiConfig.sh"
-
-            if not wifi_conf_prep_err:
-                with open("/dev/shm/wpa_supplicant/wpa_supplicant.conf", "a") as wpafile:
-                    wpafile.write('\n\nnetwork={\n')
-                    wpafile.write('  ssid="{}"\n'.format(d["ssid"]))
-                    wpafile.write('  psk="{}"\n'.format(d["pwd"]))
-                    wpafile.write('}\n\n')
-                    wpafile.close()
+            if not err_at_exec:
                 try:
-                    out_fin = subprocess.check_output(BIN_DIR+"scannerFinalizeWifiConfig.sh", shell=True, universal_newlines=True, timeout=3)
-                    wifi_conf_fin_err = False
+                    with open("/dev/shm/wpa_supplicant/wpa_supplicant.conf", "a") as wpafile:
+                        wpafile.write('\n\nnetwork={\n')
+                        wpafile.write('  ssid="{}"\n'.format(d["ssid"]))
+                        wpafile.write('  psk="{}"\n'.format(d["pwd"]))
+                        wpafile.write('}\n\n')
+                        wpafile.close()
                 except:
-                    wifi_conf_fin_err = True
-                    out_fin = "ERROR at scannerFinalizeWifiConfig.sh"
-                if not wifi_conf_fin_err:
-                    try:
-                        # "wpa_cli" requires "sudo apt install wpasupplicant"
-                        out_reload = subprocess.check_output("wpa_cli -i wlan0 reconfigure", shell=True, universal_newlines=True, timeout=10)
-                        wifi_reload_err = False
-                    except:
-                        wifi_reload_err = True
-                        out_reload = "ERROR at 'wpa_cli -i wlan0 reconfigure'"
+                    err_at_exec = True
+                    out_html = f"<p>Error appending SSID/passphrase to /dev/shm/wpa_supplicant/wpa_supplicant.conf after scannerPrepareWifiConfig.sh!</p>"
+
+            if not err_at_exec:
+                out_html, err_at_exec = run_and_get_output(True, "scannerFinalizeWifiConfig.sh", 3)
 
         elif ps=="/wifi_reset":
-            wifi_reset_err = True
-            wifi_reload_err = True
+            out_html, err_at_exec = run_and_get_output(True, "scannerResetWifiConfig.sh", 3)
 
-            try:
-                out_prep = subprocess.check_output(BIN_DIR+"scannerResetWifiConfig.sh", shell=True, universal_newlines=True, timeout=3)
-                wifi_reset_err = False
-            except:
-                wifi_reset_err = True
-                out_prep = "ERROR at scannerResetWifiConfig.sh"
+        elif ps=="/wifi_reconfig":
+            # "wpa_cli" requires "sudo apt install wpasupplicant"
+            out_html, err_at_exec = run_and_get_output(True, "scannerReconfigWifi.sh", 10)
 
-            if not wifi_reset_err:
-                try:
-                    # "wpa_cli" requires "sudo apt install wpasupplicant"
-                    out_reload = subprocess.check_output("wpa_cli -i wlan0 reconfigure", shell=True, universal_newlines=True, timeout=10)
-                    wifi_reload_err = False
-                except:
-                    wifi_reload_err = True
-                    out_reload = "ERROR at 'wpa_cli -i wlan0 reconfigure'"
+        elif ps=="/start_scanner":
+            out_html, err_at_exec = run_and_get_output(True, "startBgScanLoop.sh", 5)
+
+        elif ps=="/stop_scanner":
+            out_html, err_at_exec = run_and_get_output(True, "stopBgScanLoop.sh", 5)
+
+        elif ps=="/prepare_upload_all":
+            out_html, err_at_exec = run_and_get_output(False, f"( {BIN_DIR}prepareScanResultsForUpload.sh all ; {BIN_DIR}uploadScanResults.sh ) &", 5)
+            #out_html, err_at_exec = run_and_get_output(False, f'bash -c "sleep 5 ; {BIN_DIR}uploadScanResults.sh" &', 2)
+
+        elif ps=="/upload_results":
+            out_html, err_at_exec = run_and_get_output(True, "uploadScanResults.sh", 10)
 
         elif ps=="/reboot":
-            try:
-                tmp = subprocess.check_output(BIN_DIR+"stopBgScanLoop.sh", shell=True, universal_newlines=True, timeout=1)
-            except:
-                pass
-
-            try:
-                out = subprocess.check_output(f'sudo shutdown -r +1 "reboot from local web control"', shell=True, universal_newlines=True, timeout=1)
-                out = out.replace("\n","<br>")
-            except:
-                out = "ERROR at sudo shutdown -r .."
+            out_html, err_at_exec = run_and_get_output(True, "stopBgScanLoop.sh", 5)
+            out_html, err_at_exec = run_and_get_output(False, 'sudo shutdown -r +1 "reboot from local web control"', 5)
 
         elif ps=="/shutdown":
-            try:
-                tmp = subprocess.check_output(BIN_DIR+"stopBgScanLoop.sh", shell=True, universal_newlines=True, timeout=1)
-            except:
-                pass
-
-            try:
-                out = subprocess.check_output(f'sudo shutdown -p +1 "poweroff from local web control"', shell=True, universal_newlines=True, timeout=1)
-                out = out.replace("\n","<br>")
-            except:
-                out = "ERROR at sudo shutdown -p .."
+            out_html, err_at_exec = run_and_get_output(True, "stopBgScanLoop.sh", 5)
+            out_html, err_at_exec = run_and_get_output(False, 'sudo shutdown -p +1 "poweroff from local web control"', 5)
 
         elif ps=="/config_pwd":
             config_pwd_status = ""
             if not CONFIG_PWD == d["old_pwd"]:
-                config_pwd_status = "Error: old passphrase does not match!"
+                out_html = "<p>Error: old passphrase does not match!</p>"
+                err_at_exec = True
             elif len(d["new_pwd"].rstrip()) < 4:
-                config_pwd_status = "Error: new passphrase too short. minimum 4 characters required!"
+                out_html = "<p>Error: new passphrase too short. minimum 4 characters required!</p>"
+                err_at_exec = True
             else:
                 try:
                     with open(PWD_FILE, "w") as pwdf:
                         pwdf.write(d["new_pwd"].rstrip())
                         pwdf.close()
-                    config_pwd_status = "Saved new passphrase."
+                    out_html = "<p>Saved new passphrase.</p>"
+                    err_at_exec = False
                 except:
-                    config_pwd_status = "Error saving new passphrase!"
+                    out_html = "<p>Error saving new passphrase!</p>"
+                    err_at_exec = True
         else:
-            pass
+            err_at_exec = False
+            reloadURL = joinURL(ps, f"session={session}")
 
         self.send_response(200)
-        #self.wfile.write(stylehdr)
-        self.wfile.write( HEADstr( f'<meta http-equiv="refresh" content="5; url={reloadURL}">') )
+        if len(reloadURL) > 0:
+            self.wfile.write( HEADstr(f'<meta http-equiv="refresh" content="{reloadTim}; url={reloadURL}">') )
+        else:
+            self.wfile.write( HEADstr('') )
+
         self.wfile.write(b'<body>')
-        self.wfile.write( webhdr().encode() )
+        self.wfile.write(str.encode( webhdr() ))
 
         if VERBOSE_LOG:
             self.wfile.write(str.encode( f"<p>requested POST URL path: '{self.path}'</p>"))
@@ -465,25 +524,36 @@ class RequestHandler(BaseHTTPRequestHandler):
             print(f"requested URL path part: {ps}")
             print(f"requested URL get part:  {gps}")
 
-        self.wfile.write(f'<h1>Function </h1>'.encode())
+        self.wfile.write('<hr>'.encode())
 
         if ps=="/wifi":
-            self.wfile.write(str.encode( f"<p>application / wait for wifi ..</p>"))
+            self.wfile.write(str.encode(out_html))
         elif ps=="/wifi_reset":
-            self.wfile.write(str.encode( f"<p>application / wait for wifi ..</p>"))
+            self.wfile.write(str.encode(out_html))
+        elif os=="/wifi_reconfig":
+            self.wfile.write(str.encode(out_html))
+        elif ps=="/start_scanner":
+            self.wfile.write(str.encode(out_html))
+        elif ps=="/stop_scanner":
+            self.wfile.write(str.encode("<p>Stopping scanner might take up to a minute.</p>"))
+            self.wfile.write(str.encode(out_html))
+        elif ps=="/prepare_upload_all":
+            self.wfile.write(str.encode("<p>Uploads are processed every 10 minutes - except between 0:00 and 4:00 CET!</p>"))
+            self.wfile.write(str.encode(out_html))
         elif ps=="/reboot":
-            self.wfile.write(str.encode( f"<p>REBOOT in 1 minute.</p>"))
-            self.wfile.write(str.encode( f"<p>REBOOT output: out = {out}</p>"))
+            self.wfile.write(str.encode("<p>REBOOT in 1 minute.</p>"))
+            self.wfile.write(str.encode(out_html))
         elif ps=="/shutdown":
             self.wfile.write(str.encode( f"<p>POWER OFF in 1 minute.</p>"))
-            self.wfile.write(str.encode( f"<p>POWER OFF output: out = {out}</p>"))
+            self.wfile.write(str.encode(out_html))
         elif ps=="/config_pwd":
-            self.wfile.write(str.encode( f"<p>{config_pwd_status}</p>"))
+            self.wfile.write(str.encode(out_html))
         else:
             #self.wfile.write(str.encode( f"<p>Unknown URL path '{ps}'!</p>"))
             pass
 
-        self.wfile.write(str.encode( f'<p>will reload site with GET, to get rid of POST parameters, in few seconds ..</p>'))
+        self.wfile.write('<hr>'.encode())
+        # self.wfile.write(str.encode( f'<p>will reload site with GET, to get rid of POST parameters, in few seconds ..</p>'))
         self.wfile.write(str.encode( f'<p>back to <a href="/?session={session}">menu</a></p>'))
 
         self.wfile.write(b'</body>')

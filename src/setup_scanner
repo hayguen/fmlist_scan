@@ -45,11 +45,11 @@ cp scanner/scanner_format_f2fs.sh    /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_format_vfat.sh    /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_sunrise_and_set.sh      /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_mount_result_dir.sh.inc /home/${FMLIST_SCAN_USER}/bin/
-cp webserver/get_adapter_infos.py          /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scan-httpserver.py            /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerPrepareWifiConfig.sh   /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerFinalizeWifiConfig.sh  /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerResetWifiConfig.sh     /home/${FMLIST_SCAN_USER}/bin/
+cp webserver/scannerReconfigWifi.sh        /home/${FMLIST_SCAN_USER}/bin/
 
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*scan*.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*Scan*.sh
@@ -61,7 +61,6 @@ CHOWNLIST=( \
   "anonTimeForPreparedResults.sh"
   "atx-knob.sh"
   "createFMoverview.py"
-  "get_adapter_infos.py"
   "scan-httpserver.py"
   "listUSBdevices.sh"
   "listenDAB.sh"
