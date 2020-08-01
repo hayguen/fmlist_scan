@@ -323,7 +323,6 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write( HEADstr("") )
 
         self.wfile.write(b'<body>')
-        self.wfile.write(str.encode( webhdr() ))
         if VERBOSE_LOG:
             self.wfile.write(str.encode( f"<p>requested URL path: '{self.path}'</p>"))
             self.wfile.write(str.encode( f"<p>Your session '{session}: successful login {loggedIn}: {sv}'</p>"))
@@ -334,6 +333,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         if not loggedIn:
             if ps=="/status":
+                self.wfile.write(str.encode( webhdr() ))
                 self.wfile.write(str.encode("<hr>"))
                 out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", 3)
                 self.wfile.write(str.encode(out_html))
@@ -367,6 +367,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.create_html_form("wifi_reset", "RESET CONFIG", session )
 
             elif ps=="/status":
+                self.wfile.write(str.encode( webhdr() ))
                 self.wfile.write(str.encode("<hr>"))
                 out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", 3)
                 self.wfile.write(str.encode(out_html))
@@ -393,7 +394,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(b'</form>')
 
             else:
-                self.wfile.write(f'<h1>Menu</h1>'.encode())
+                self.wfile.write(f'<h1>FMLIST-Scanner Menu</h1>'.encode())
 
                 if False:
                     self.wfile.write(str.encode( f'<p><a href="/status?session={session}">Show Scanner Status</a></p>'))
@@ -424,6 +425,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                     self.wfile.write(str.encode(r))
 
         self.wfile.write(str.encode( f'<br><p>back to <a href="/?session={session}">menu</a></p>'))
+        self.wfile.write(str.encode( f'<p>to <a href="https://groups.io/g/fmlist-scanner">Mailing List and Group at groups.io</a></p>'))
+        self.wfile.write(str.encode( f'<p>to <a href="https://www.fmlist.org/">FMLIST.org</a>. look for the URDS menu.</p>'))
         self.wfile.write(b'</body>')
 
     def do_POST(self):
