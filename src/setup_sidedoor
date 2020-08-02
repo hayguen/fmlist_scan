@@ -7,7 +7,7 @@ CALL_USER="$(basename "${HOME}")"
 echo "CALL_USER from basename \$HOME: '${CALL_USER}'"
 
 if [ ! "$(whoami)" = "root" ]; then
-  echo "$0 must be called with 'sudo -E ./setup'"
+  echo "$0 must be called with 'sudo -E ./setup_sidedoor'"
   exit 0
 fi
 

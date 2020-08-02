@@ -12,6 +12,7 @@ apt-get -y install ncdu screen parallel sshfs wget curl iftop util-linux gettext
 apt-get -y install dos2unix exfat-utils dosfstools f2fs-tools uuidcdef
 apt-get -y install sox lame espeak-ng alsa-utils
 apt-get -y install netcat-openbsd netcat-traditional socat
+apt-get -y install xxd
 
 if [ ${FMLIST_SCAN_SETUP_GPS} = "1" ]; then
   apt-get -y install gpsd gpsd-clients
