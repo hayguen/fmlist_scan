@@ -31,6 +31,9 @@ fi
 
 cd "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_outbox"
 
+NUP=$( ls -1 |egrep "^.*\.gz\$" |wc -l )
+echo "found ${NUP} files to upload."
+
 ls -1 |egrep "^.*\.gz\$" |while read f ; do
   echo "trying to upload $f .."
   response="$( curl -F "mfile=@${f}" https://www.fmlist.org/urds/csvup.php )"
