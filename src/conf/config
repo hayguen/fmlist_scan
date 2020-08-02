@@ -27,6 +27,8 @@ fi
 export FMLIST_SCAN_DEAD_TIME="${FMLIST_SCAN_DEAD_TIME}"              # default is "300": assume something is hanging after 600 seconds
 export FMLIST_SCAN_DEAD_RTL_TRIES="${FMLIST_SCAN_DEAD_RTL_TRIES}"          # assume RTL dongle dead after N (=3) rtl recording tests
 export FMLIST_SCAN_DEAD_REBOOT="${FMLIST_SCAN_DEAD_REBOOT}"              # "0" or "1"; default is "0". set "1" to rebooting when dead
+export FMLIST_SCAN_AUTO_IP_INFO="${FMLIST_SCAN_AUTO_IP_INFO}"             # notify fmlist.org of local IP .. to get a link to local webserver
+export FMLIST_SCAN_AUTO_CONFIG="${FMLIST_SCAN_AUTO_CONFIG}"              # reconfigure Raspberry Pi through fmlist.org
 export FMLIST_SCAN_AUTOSTART="${FMLIST_SCAN_AUTOSTART}"                # default is "1": autostart scanner in background
 export FMLIST_SCAN_FM="${FMLIST_SCAN_FM}"                       # "0" or "1"; default is "1" for active UKW/FM scan
 export FMLIST_SCAN_DAB="${FMLIST_SCAN_DAB}"                      # "0" or "1"; default is "1" for active DAB scan
