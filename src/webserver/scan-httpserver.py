@@ -338,7 +338,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", 3)
                 self.wfile.write(str.encode(out_html))
                 self.wfile.write(str.encode("<hr>"))
-                self.wfile.write(str.encode(f'<br><p><a href="/status?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
+                self.wfile.write(str.encode(f'<p><a href="/status?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
             else:
                 self.wfile.write(f'<h1>Login required</h1>'.encode())
                 self.wfile.write(f'<form action="?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'.encode())
@@ -348,7 +348,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f'<input type="hidden" id="session" name="session" value="{session}">'.encode())
                 self.wfile.write(b'<button style="color:blue">Submit</button>')
                 self.wfile.write(b'</form>')
-                self.wfile.write(str.encode( f'<br><p>without login only <a href="/status?session={session}">Show Scanner Status</a> available</p>'))
+                self.wfile.write(str.encode( f'<br><p>without login, only <a href="/status?session={session}">Show Scanner Status</a> is available</p>'))
 
         else:
             if ps=="/wifi":
@@ -421,10 +421,11 @@ class RequestHandler(BaseHTTPRequestHandler):
                     r = r + '<tr><td>' + f'<p><a href="/reboot?session={session}">Reboot Machine</a></p><br>' + '</td>\n'
                     r = r + '<td>' + f'<p><a href="/shutdown?session={session}">Shutdown Machine</a></p><br>' + '</td></tr>\n'
                     r = r + '<tr><td colspan="2">' + f'<p><a href="/config_pwd?session={session}">Change Config Passphrase</a></p><br>' + '</td></tr>\n'
+                    r = r + '<tr><td colspan="2">' + self.create_html_form_str("logout", "Logout", session ) + '</td></tr>\n'
                     r = r + '</table>'
                     self.wfile.write(str.encode(r))
 
-        self.wfile.write(str.encode( f'<br><p>back to <a href="/?session={session}">menu</a></p>'))
+        self.wfile.write(str.encode( f'<p>back to <a href="/?session={session}">menu</a></p>'))
         self.wfile.write(str.encode( f'<p>to <a href="https://groups.io/g/fmlist-scanner">Mailing List and Group at groups.io</a></p>'))
         self.wfile.write(str.encode( f'<p>to <a href="https://www.fmlist.org/">FMLIST.org</a>. look for the URDS menu.</p>'))
         self.wfile.write(b'</body>')
@@ -442,7 +443,11 @@ class RequestHandler(BaseHTTPRequestHandler):
         reloadURL = ""
         reloadTim = 2
 
-        if ps=="/wifi":
+        if not loggedIn:
+            out_html = "<p>Error: You are (no longer) logged in for this operation!</p>"
+            reloadURL = "/"
+
+        elif ps=="/wifi":
             out_html, err_at_exec = run_and_get_output(True, "scannerPrepareWifiConfig.sh", 3)
 
             if not err_at_exec:
@@ -489,6 +494,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             out_html, err_at_exec = run_and_get_output(False, 'sudo shutdown -p +1 "poweroff from local web control"', 5)
 
         elif ps=="/config_pwd":
+            global CONFIG_PWD
             config_pwd_status = ""
             if not CONFIG_PWD == d["old_pwd"]:
                 out_html = "<p>Error: old passphrase does not match!</p>"
@@ -501,11 +507,20 @@ class RequestHandler(BaseHTTPRequestHandler):
                     with open(PWD_FILE, "w") as pwdf:
                         pwdf.write(d["new_pwd"].rstrip())
                         pwdf.close()
+                    CONFIG_PWD = d["new_pwd"].rstrip()
                     out_html = "<p>Saved new passphrase.</p>"
                     err_at_exec = False
                 except:
                     out_html = "<p>Error saving new passphrase!</p>"
                     err_at_exec = True
+
+        elif ps=="/logout":
+            if loggedIn:
+                del SESSIONS[session]
+                out_html = "<p>Logout successful.</p>"
+            else:
+                out_html = "<p>Error: You were not logged in.</p>"
+
         else:
             err_at_exec = False
             reloadURL = joinURL(ps, f"session={session}")
@@ -528,8 +543,13 @@ class RequestHandler(BaseHTTPRequestHandler):
             print(f"requested URL get part:  {gps}")
 
         self.wfile.write('<hr>'.encode())
+        self.wfile.write(str.encode( f'<p>POST for action=&quot;{d["action"]}&quot;</p>' ))
 
-        if ps=="/wifi":
+        self.wfile.write('<hr>'.encode())
+
+        if not loggedIn:
+            self.wfile.write(str.encode(out_html))
+        elif ps=="/wifi":
             self.wfile.write(str.encode(out_html))
         elif ps=="/wifi_reset":
             self.wfile.write(str.encode(out_html))
@@ -543,6 +563,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif ps=="/prepare_upload_all":
             self.wfile.write(str.encode("<p>Uploads are processed every 10 minutes - except between 0:00 and 4:00 CET!</p>"))
             self.wfile.write(str.encode(out_html))
+        elif ps=="/upload_results":
+            self.wfile.write(str.encode(out_html))
         elif ps=="/reboot":
             self.wfile.write(str.encode("<p>REBOOT in 1 minute.</p>"))
             self.wfile.write(str.encode(out_html))
@@ -550,6 +572,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(str.encode( f"<p>POWER OFF in 1 minute.</p>"))
             self.wfile.write(str.encode(out_html))
         elif ps=="/config_pwd":
+            self.wfile.write(str.encode(out_html))
+        elif ps=="/logout":
             self.wfile.write(str.encode(out_html))
         else:
             #self.wfile.write(str.encode( f"<p>Unknown URL path '{ps}'!</p>"))
