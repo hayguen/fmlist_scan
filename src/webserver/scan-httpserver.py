@@ -426,8 +426,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                     self.wfile.write(str.encode(r))
 
         self.wfile.write(str.encode( f'<p>back to <a href="/?session={session}">menu</a></p>'))
-        self.wfile.write(str.encode( f'<p>to <a href="https://groups.io/g/fmlist-scanner">Mailing List and Group at groups.io</a></p>'))
-        self.wfile.write(str.encode( f'<p>to <a href="https://www.fmlist.org/">FMLIST.org</a>. look for the URDS menu.</p>'))
+        self.wfile.write(str.encode( f'<p>to <a href="https://groups.io/g/fmlist-scanner" target="_groups_io">Mailing List and Group at groups.io</a></p>'))
+        self.wfile.write(str.encode( f'<p>to <a href="https://www.fmlist.org/" target="_fmlist_org">FMLIST.org</a>. look for the URDS menu.</p>'))
         self.wfile.write(b'</body>')
 
     def do_POST(self):
