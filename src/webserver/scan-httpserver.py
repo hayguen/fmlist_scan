@@ -12,6 +12,7 @@ from random import seed, random
 import urllib
 import subprocess
 import os
+import hashlib
 from pathlib import Path
 
 use_SSL = False   # False / True
@@ -29,17 +30,18 @@ PWD_FILE = str(Path.home())+'/.config/fmlist_scan/web_password'
 BIN_DIR = str(Path.home())+'/bin/'
 print(f"password file: {PWD_FILE}")
 try:
-    with open(PWD_FILE, 'r') as pwdf:
-        CONFIG_PWD = pwdf.readlines()[0].rstrip()
+    with open(PWD_FILE, 'rb') as pwdf:
+        CONFIG_PWD_STORAGE = pwdf.read(64)
         pwdf.close()
-    #print(f"CONFIG_PWD: '{CONFIG_PWD}'")
+        CONFIG_PWD_SALT = CONFIG_PWD_STORAGE[:32]
+        CONFIG_PWD_KEY  = CONFIG_PWD_STORAGE[32:]
 except:
-    print("error reading password file or extracting 1st line! Using default password!")
+    print("Error reading password file. Using default password!")
     CONFIG_PWD = "scanner123"
-
-if len(CONFIG_PWD.replace("\n", "")) <= 0:
-    print("password is empty!? Using default password!")
-    CONFIG_PWD = "scanner123"
+    CONFIG_PWD_SALT = os.urandom(32)
+    CONFIG_PWD_KEY = hashlib.pbkdf2_hmac( 'sha256',
+        CONFIG_PWD.encode('utf-8'), # Convert the password to bytes
+        CONFIG_PWD_SALT, 100000 )
 
 
 #### session is key
@@ -174,7 +176,9 @@ def check_upd_session(session : str, curr_IP : str, pwd : str):
 
     # always update expiration
     v = SESSIONS[session]
-    if not v[0] and pwd == CONFIG_PWD:
+    new_pwd_key = hashlib.pbkdf2_hmac(
+        'sha256', pwd.encode('utf-8'), CONFIG_PWD_SALT, 100000 )
+    if not v[0] and new_pwd_key == CONFIG_PWD_KEY:
         v = ( True, curr_IP, new_exp )
         if VERBOSE_LOG:
             print("login successful")
@@ -421,7 +425,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                     r = r + '<tr><td>' + f'<p><a href="/reboot?session={session}">Reboot Machine</a></p><br>' + '</td>\n'
                     r = r + '<td>' + f'<p><a href="/shutdown?session={session}">Shutdown Machine</a></p><br>' + '</td></tr>\n'
                     r = r + '<tr><td colspan="2">' + f'<p><a href="/config_pwd?session={session}">Change Config Passphrase</a></p><br>' + '</td></tr>\n'
-                    r = r + '<tr><td colspan="2">' + self.create_html_form_str("logout", "Logout", session ) + '</td></tr>\n'
+                    r = r + '<tr><td colspan="2">' + self.create_html_form_str("logout", "Logout", session ) + f'expiration is at {SESSIONS[session][2]}<br>current date/time: {dt.datetime.now()}' + '</td></tr>\n'
                     r = r + '</table>'
                     self.wfile.write(str.encode(r))
 
@@ -494,24 +498,38 @@ class RequestHandler(BaseHTTPRequestHandler):
             out_html, err_at_exec = run_and_get_output(False, 'sudo shutdown -p +1 "poweroff from local web control"', 5)
 
         elif ps=="/config_pwd":
-            global CONFIG_PWD
+            global CONFIG_PWD_SALT, CONFIG_PWD_KEY
             config_pwd_status = ""
-            if not CONFIG_PWD == d["old_pwd"]:
+            old_pwd_key = hashlib.pbkdf2_hmac(
+                'sha256', d["old_pwd"].encode('utf-8'), CONFIG_PWD_SALT, 100000 )
+            if not CONFIG_PWD_KEY == old_pwd_key:
                 out_html = "<p>Error: old passphrase does not match!</p>"
                 err_at_exec = True
             elif len(d["new_pwd"].rstrip()) < 4:
                 out_html = "<p>Error: new passphrase too short. minimum 4 characters required!</p>"
                 err_at_exec = True
             else:
+                NEW_CONFIG_PWD_SALT = os.urandom(32)
+                NEW_CONFIG_PWD_KEY = hashlib.pbkdf2_hmac( 'sha256',
+                    d["new_pwd"].rstrip().encode('utf-8'), # Convert the password to bytes
+                    NEW_CONFIG_PWD_SALT, 100000 )
+                NEW_CONFIG_PWD_STORAGE = NEW_CONFIG_PWD_SALT + NEW_CONFIG_PWD_KEY
                 try:
-                    with open(PWD_FILE, "w") as pwdf:
-                        pwdf.write(d["new_pwd"].rstrip())
+                    with open(PWD_FILE, "wb") as pwdf:
+                        pwdf.write(NEW_CONFIG_PWD_STORAGE)
                         pwdf.close()
-                    CONFIG_PWD = d["new_pwd"].rstrip()
+                    CONFIG_PWD_SALT = NEW_CONFIG_PWD_SALT
+                    CONFIG_PWD_KEY = NEW_CONFIG_PWD_KEY
                     out_html = "<p>Saved new passphrase.</p>"
                     err_at_exec = False
                 except:
                     out_html = "<p>Error saving new passphrase!</p>"
+                    err_at_exec = True
+                try:
+                    pwdfc = Path(PWD_FILE)
+                    pwdfc.chmod(0o600)   # read/write only for owner - nobody else
+                except:
+                    out_html = out_html + "<p>Error changing permissions for password file!</p>"
                     err_at_exec = True
 
         elif ps=="/logout":
