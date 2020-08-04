@@ -29,7 +29,7 @@ if [ -z "${DIFF}" ]; then
 fi
 
 
-for f in $( ls -1 *.sh *.py scanner/*.sh scanner/*.py webserver/*.py ) ; do
+for f in $( ls -1 *.sh *.py scanner/*.sh scanner/*.py webserver/*.sh webserver/*.py ) ; do
   b=$( basename "$f" )
 
   if [ "$b" == "all.sh" ]; then
