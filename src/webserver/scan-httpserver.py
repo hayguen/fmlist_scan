@@ -378,6 +378,38 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(str.encode("<hr>"))
                 self.wfile.write(str.encode(f'<br><p><a href="/status?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
 
+            elif ps=="/test_tones":
+                self.wfile.write(f'<h1>FMLIST-Scanner Menu</h1>'.encode())
+                self.wfile.write(f'<h2>Test / Listen Buzzer-Messages</h2>'.encode())
+                self.wfile.write(str.encode( f'<p><a href="/test_tones?session={session}&message=welcome">Welcome at Start</a></p>'))
+                self.wfile.write(str.encode( f'<p><a href="/test_tones?session={session}&message=fm_good">UKW/FM found station(s): OK</a></p>'))
+                self.wfile.write(str.encode( f'<p><a href="/test_tones?session={session}&message=fm_fail">UKW/FM found NO station(s): FAIL</a></p>'))
+                self.wfile.write(str.encode( f'<p><a href="/test_tones?session={session}&message=dab_good">DAB found station(s): OK</a></p>'))
+                self.wfile.write(str.encode( f'<p><a href="/test_tones?session={session}&message=dab_fail">DAB found NO station(s): FAIL</a></p>'))
+                self.wfile.write(str.encode( f'<p><a href="/test_tones?session={session}&message=saved">Saved Results of Scan</a></p>'))
+                self.wfile.write(str.encode( f'<p><a href="/test_tones?session={session}&message=final">Finished/Stopped Scan</a></p>'))
+                self.wfile.write(str.encode( f'<p><a href="/test_tones?session={session}&message=write_err">ERROR writing Scan-Results!</a></p>'))
+                self.wfile.write(str.encode( f'<p><a href="/test_tones?session={session}&message=error">Some ERROR.</a></p>'))
+                m = d["message"]
+                if m in [ "welcome", "saved", "final", "write_err", "error" ]:
+                    out_html, err_at_exec = run_and_get_output(True, f"scanToneFeedback.sh {m}", 3)
+                    if not err_at_exec:
+                        self.wfile.write(str.encode( f'<br><p>in case of correct configuration of pins .. you should hear message for &quot;{m}&quot; once</p>'))
+                elif m in [ "fm_good", "fm_fail", "dab_good", "dab_fail" ]:
+                    if m == "fm_good":
+                        tone_param = "fm 1"
+                    elif m == "fm_fail":
+                        tone_param = "fm 0"
+                    elif m == "dab_good":
+                        tone_param = "dab 1"
+                    elif m == "dab_fail":
+                        tone_param = "dab 0"
+                    out_html, err_at_exec = run_and_get_output(True, f"scanToneFeedback.sh {tone_param}", 3)
+                    if not err_at_exec:
+                        self.wfile.write(str.encode( f'<br><p>in case of correct configuration of pins .. you should hear message for &quot;{m}&quot; once</p>'))
+                else:
+                    self.wfile.write(str.encode( f'<br><p>unknown message &quot;{m}&quot; !</p>'))
+
             elif ps=="/reboot":
                 self.wfile.write(f'<h1>Reboot Machine?</h1>'.encode())
                 self.create_html_form("reboot", "REBOOT", session )
@@ -422,6 +454,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                     r = r + '<td>' + self.create_html_form_str("stop_scanner", "Stop Scanner", session ) + '</td></tr>\n'
                     r = r + '<tr><td>' + self.create_html_form_str("prepare_upload_all", "Prepare All &amp; Upload", session ) + '</td>\n'
                     r = r + '<td>' + self.create_html_form_str("upload_results", "Upload Results", session ) + '</td></tr>\n'
+                    r = r + '<tr><td colspan="2">' + f'<p><a href="/test_tones?session={session}">Test / Listen Buzzer Messages<br>for recognition training</a></p><br>' + '</td></tr>\n'
                     r = r + '<tr><td>' + f'<p><a href="/reboot?session={session}">Reboot Machine</a></p><br>' + '</td>\n'
                     r = r + '<td>' + f'<p><a href="/shutdown?session={session}">Shutdown Machine</a></p><br>' + '</td></tr>\n'
                     r = r + '<tr><td colspan="2">' + f'<p><a href="/config_pwd?session={session}">Change Config Passphrase</a></p><br>' + '</td></tr>\n'
