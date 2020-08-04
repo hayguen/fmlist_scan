@@ -46,7 +46,7 @@ cat "${PREPFILEPATH}" \
   | sed "1i${CCTRLIFC}" \
   | sed "2i${CUPDATE}" \
   | sed "3i${CCOUNTRY}" \
-  | sed '/^$/d'
+  | sed '/^$/d' \
   | head -n 3 >"${FINALPATH}"
 
 sudo cp /etc/wpa_supplicant/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant_old_bak.conf
