@@ -24,9 +24,10 @@ cp scanner/saveScanResults.sh        /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/rmScanResults.sh          /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/concatScanResults.sh      /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/prepareScanResultsForUpload.sh /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/uploadScanResults.sh      /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/uploadScanFilesToDeveloper.sh /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/anonTimeForPreparedResults.sh /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/uploadScanResults.sh           /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/uploadScanFilesToDeveloper.sh     /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/downloadScanFilesFromDeveloper.sh /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/anonTimeForPreparedResults.sh     /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/redsea.json2csv.sh        /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanTest.sh               /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/recDAB.sh                 /home/${FMLIST_SCAN_USER}/bin/
