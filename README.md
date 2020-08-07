@@ -13,4 +13,4 @@ A video of the presentation in german language is available at https://www.ukwtv
 
 An additional step-by-step setup guide is work-in-progress. Also in german: https://codingspirit.de/fmlist_scan_Step-by-Step.pdf
 
-Mailing List, Wiki, Translation of step-by-step setup guid and more: https://groups.io/g/fmlist-scanner
+Mailing List, Wiki, Translation of step-by-step setup guide and more: https://groups.io/g/fmlist-scanner
