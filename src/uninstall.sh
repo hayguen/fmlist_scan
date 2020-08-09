@@ -80,6 +80,7 @@ rm -f "$HOME/bin/scanner_mount_result_dir.sh.inc"
 rm -f "$HOME/bin/get-adapter-info.py"
 rm -f "$HOME/bin/scanner_auto_config.sh"
 rm -f "$HOME/bin/scanner_reconfig_rc.sh"
+rm -f "$HOME/bin/scanner_versions.sh"
 
 echo "removing calibration script from $HOME/bin .."
 rm -f "$HOME/bin/kal.sh"
