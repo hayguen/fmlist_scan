@@ -138,6 +138,20 @@ def read_and_gen_text_form_from_cfg(varnames_w_comment, cfg_dict, cc_config):
         form_cont = form_cont + f'<tr><td>{v_name}</td><td><input type="text" id="cfg_{dict_key}" name="cfg_{dict_key}" value="{cfg_dict[dict_key]}"> </td><td>{vc[1]}</td></tr>'
     return form_cont
 
+def read_and_gen_number_form_from_cfg(varnames_w_comment, cfg_dict, cc_config, minval, maxval):
+    form_cont = ""
+    for vc in varnames_w_comment:
+        v = vc[0]
+        v_name = remove_fmlist_prefix(v)
+        dict_key = v_name.lower()
+        cfg_dict[dict_key] = get_export_value(cc_config, v)
+        if cfg_dict[dict_key] is None:
+            print(f"Error reading {v} from config")
+            cfg_dict[dict_key] = ""
+        #print(f"{v} / {dict_key}: {cfg_dict[dict_key]}")
+        form_cont = form_cont + f'<tr><td>{v_name}</td><td><input type="number" id="cfg_{dict_key}" name="cfg_{dict_key}" min="{str(minval)}" max="{str(maxval)}" value="{cfg_dict[dict_key]}"> </td><td>{vc[1]}</td></tr>'
+    return form_cont
+
 def read_and_gen_textarea_form_from_cfg(varnames_w_comment, cfg_dict, cc_config, rowcount, colcount):
     form_cont = ""
     for vc in varnames_w_comment:
@@ -472,8 +486,8 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
     def GET_menu(self, session):
-        self.wfile.write(f'<h1>FMLIST-Scanner Menu</h1>'.encode())
-        r = '<table>\n'
+        r = '<h1>FMLIST-Scanner Menu</h1>\n'
+        r = r + '<table>\n'
         r = r + f'<tr><td><p><a href="/status.html?session={session}">Show Scanner Status</a></p><br>' + '</td>\n'
         r = r + f'<td><p><a href="/versions.html?session={session}">Version info</a></p><br>' + '</td></tr>\n'
         r = r + '<tr><td>' + f'<p><a href="/wifi.html?session={session}">Add WiFi Config</a></p><br>' + '</td>\n'
@@ -494,9 +508,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
     def GET_test_tones(self, session, d):
-        self.wfile.write(f'<h1>FMLIST-Scanner Menu</h1>'.encode())
-        self.wfile.write(f'<h2>Test / Listen Buzzer-Messages</h2>'.encode())
-        r = '<table>\n'
+        r = '<h1>FMLIST-Scanner Menu</h1>\n'
+        r = r + '<h2>Test / Listen Buzzer-Messages</h2>\n'
+        r = r + '<table>\n'
         r = r + f'<tr><td colspan="2"><a href="/test_tones.html?session={session}&message=welcome">Welcome at Start</a></td></tr>\n'
         r = r + f'<tr><td><a href="/test_tones.html?session={session}&message=fm_good">UKW/FM found station(s): OK</a>' + '</td>\n'
         r = r + f'    <td><a href="/test_tones.html?session={session}&message=fm_fail">UKW/FM found NO station(s): FAIL</a></td></tr>\n'
@@ -534,9 +548,26 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(str.encode( f'<br><p>unknown message &quot;{m}&quot; !</p>'))
 
 
+    def GET_wifi(self, session):
+        r = '<h1>FMLIST-Scanner Menu</h1>\n'
+        r = r + '<h2>WiFi configuration</h2>\n'
+        r = r + f'<form action="/wifi?session={session}" method="POST" enctype="application/x-www-form-urlencoded">\n'
+        r = r + f'<input type="hidden" id="action" name="action" value="wifi">\n'
+        r = r + '<table>\n'
+        r = r + f'<tr><td>WiFi SSID</td><td><input type="text" id="ssid" name="ssid"></td></tr>\n'
+        r = r + '<tr><td>WPA/2 passphrase</td><td><input type="password" id="pwd" name="pwd"></td></tr>\n'
+        r = r + '</table>\n'
+        r = r + '<br>\n'
+        r = r + '<button style="color:blue">Add WiFi</button>\n'
+        r = r + '<br>\n'
+        r = r + '</form>\n'
+        self.wfile.write(str.encode(r))
+
+
     def GET_config(self, session):
-        self.wfile.write(f'<h1>FMLIST-Scanner Menu</h1>'.encode())
-        self.wfile.write(f'<h2>Configure Scanner</h2>'.encode())
+        r = '<h1>FMLIST-Scanner Menu</h1>\n'
+        r = r + '<h2>Configure Scanner</h2>\n'
+        self.wfile.write(str.encode(r))
 
         while True:
             home = os.getenv("HOME")
@@ -549,7 +580,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             gps_lat = get_export_value(cc_config, "FMLIST_SCAN_GPS_LAT")
             gps_lon = get_export_value(cc_config, "FMLIST_SCAN_GPS_LON")
             gps_alt = get_export_value(cc_config, "FMLIST_SCAN_GPS_ALT")
-            
+
             while gps_qth_prefix is not None and len(gps_qth_prefix) > 0:
                 cc_gps = read_all_lines(home+"/.config/fmlist_scan/"+gps_qth_prefix+"_GPS_COORDS.inc")
                 if cc_gps is None:
@@ -592,6 +623,47 @@ class RequestHandler(BaseHTTPRequestHandler):
               ("FMLIST_ALWAYS_FAST_MODE",  "deactivates verbose scan when GPS not connected"),
               ("FMLIST_SPORADIC_E_MODE",   "deactivates DAB scan, uses special scan parameters in FM for quick scan") ],
               cfg_dict, cc_config )
+
+            # ********************
+            form_cont = form_cont + '<tr><td colspan="3"><br><b>&nbsp;SDR hardware</b></td></tr>'
+            form_cont = form_cont + '<tr><th>Name</th><th>Value / Content</th><th>Description</th><tr>\n'
+
+            form_cont = form_cont + read_and_gen_text_form_from_cfg( [
+              ("FMLIST_FM_RTLSDR_DEV",     "FM: specify RTLSDR device's serial and it's antenna.<br>Leave empty to use any device") ],
+              cfg_dict, cc_config )
+            form_cont = form_cont + read_and_gen_check_form_from_cfg( [
+              ("FMLIST_FM_DEV_R820T",      "FM device has R820T/2 tuner?") ],
+              cfg_dict, cc_config )
+            form_cont = form_cont + read_and_gen_text_form_from_cfg( [
+              ("FMLIST_DAB_RTLSDR_DEV",    "DAB: specify RTLSDR device's serial and it's antenna.<br>Leave empty to use any device") ],
+              cfg_dict, cc_config )
+            form_cont = form_cont + read_and_gen_check_form_from_cfg( [
+              ("FMLIST_DAB_DEV_R820T",     "DAB device has R820T/2 tuner?") ],
+              cfg_dict, cc_config )
+
+
+            # ********************
+            form_cont = form_cont + '<tr><td colspan="3"><br><b>&nbsp;LEDs and Buzzer</b></td></tr>'
+            form_cont = form_cont + '<tr><th>Name</th><th>Value / Content</th><th>Description</th><tr>\n'
+
+            form_cont = form_cont + read_and_gen_number_form_from_cfg( [
+              ("FMLIST_SCAN_WPI_LED_GREEN", "Wiring Pi Pin Number for Green LED<br>27 for old ATX cables, 28 for new/short cables"),
+              ("FMLIST_SCAN_WPI_LED_RED",   "Wiring Pi Pin Number for Red LED<br>usually 26") ],
+              cfg_dict, cc_config, 0, 31 )
+
+            form_cont = form_cont + read_and_gen_check_form_from_cfg( [
+              ("FMLIST_SCAN_FOUND_LEDPLAY", "Toggle LEDs with every detected carrier"),
+              ("FMLIST_SCAN_SAVE_LEDPLAY",  "Toggle LEDs after saving results per scan iteration") ],
+              cfg_dict, cc_config )
+
+            form_cont = form_cont + f'<tr><td></td><td>1</td><td>Wiring Pi Number for Buzzer<br>wPi Pin 1 is Physical Pin 12.<br>see output of command "gpio readall"</td></tr>'
+
+            form_cont = form_cont + read_and_gen_check_form_from_cfg( [
+              ("FMLIST_SCAN_FOUND_PWMTONE", "Play tones for every detected carrier?"),
+              ("FMLIST_SCAN_SAVE_PWMTONE",  "Play tones after saving results per scan iteration"),
+              ("FMLIST_SCAN_PWM_FEEDBACK",  "Play/signal FM/DAB scan success after every scan") ],
+              cfg_dict, cc_config )
+
 
             # ********************
             form_cont = form_cont + '<tr><td colspan="3"><br><b>&nbsp;Data for next prepare / upload</b></td></tr>'
@@ -687,13 +759,41 @@ class RequestHandler(BaseHTTPRequestHandler):
                 gps_qth_prefix = v
                 gps_prefix_changed = True
 
-            replace_export_value(cc_config, "FMLIST_SCAN_AUTOSTART",    "1" if "cfg_scan_autostart" in d    else "0")
-            replace_export_value(cc_config, "FMLIST_SCAN_AUTO_IP_INFO", "1" if "cfg_scan_auto_ip_info" in d else "0")
-            replace_export_value(cc_config, "FMLIST_SCAN_AUTO_CONFIG",  "1" if "cfg_scan_auto_config" in d  else "0")
-            replace_export_value(cc_config, "FMLIST_SCAN_FM",           "1" if "cfg_scan_fm" in d           else "0")
-            replace_export_value(cc_config, "FMLIST_SCAN_DAB",          "1" if "cfg_scan_dab" in d          else "0")
-            replace_export_value(cc_config, "FMLIST_ALWAYS_FAST_MODE",  "1" if "cfg_always_fast_mode" in d  else "0")
-            replace_export_value(cc_config, "FMLIST_SPORADIC_E_MODE",   "1" if "cfg_sporadic_e_mode" in d   else "0")
+            replace_export_value(cc_config, "FMLIST_SCAN_AUTOSTART",     "1" if "cfg_scan_autostart" in d     else "0")
+            replace_export_value(cc_config, "FMLIST_SCAN_AUTO_IP_INFO",  "1" if "cfg_scan_auto_ip_info" in d  else "0")
+            replace_export_value(cc_config, "FMLIST_SCAN_AUTO_CONFIG",   "1" if "cfg_scan_auto_config" in d   else "0")
+            replace_export_value(cc_config, "FMLIST_SCAN_FM",            "1" if "cfg_scan_fm" in d            else "0")
+            replace_export_value(cc_config, "FMLIST_SCAN_DAB",           "1" if "cfg_scan_dab" in d           else "0")
+            replace_export_value(cc_config, "FMLIST_ALWAYS_FAST_MODE",   "1" if "cfg_always_fast_mode" in d   else "0")
+            replace_export_value(cc_config, "FMLIST_SPORADIC_E_MODE",    "1" if "cfg_sporadic_e_mode" in d    else "0")
+
+            # group
+
+            replace_export_value(cc_config, "FMLIST_FM_DEV_R820T",       "1" if "cfg_fm_dev_r820t" in d       else "0")
+            replace_export_value(cc_config, "FMLIST_DAB_DEV_R820T",      "1" if "cfg_dab_dev_r820t" in d      else "0")
+
+            v = d["cfg_fm_rtlsdr_dev"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_FM_RTLSDR_DEV", v )
+
+            v = d["cfg_dab_rtlsdr_dev"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_DAB_RTLSDR_DEV", v )
+
+            # group
+
+            v = d["cfg_scan_wpi_led_green"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_SCAN_WPI_LED_GREEN", v )
+
+            v = d["cfg_scan_wpi_led_red"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_SCAN_WPI_LED_RED", v )
+
+            replace_export_value(cc_config, "FMLIST_SCAN_FOUND_LEDPLAY", "1" if "cfg_scan_found_ledplay" in d else "0")
+            replace_export_value(cc_config, "FMLIST_SCAN_SAVE_LEDPLAY",  "1" if "cfg_scan_save_ledplay" in d  else "0")
+
+            replace_export_value(cc_config, "FMLIST_SCAN_FOUND_PWMTONE", "1" if "cfg_scan_found_pwmtone" in d else "0")
+            replace_export_value(cc_config, "FMLIST_SCAN_SAVE_PWMTONE",  "1" if "cfg_scan_save_pwmtone" in d  else "0")
+            replace_export_value(cc_config, "FMLIST_SCAN_PWM_FEEDBACK",  "1" if "cfg_scan_pwm_feedback" in d  else "0")
+
+            # group 
 
             v = d["cfg_om_id"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
             replace_export_value(cc_config, "FMLIST_OM_ID", v )
@@ -855,15 +955,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(str.encode(out_html))
 
             elif ps=="/wifi":
-                self.wfile.write(f'<h1>WiFi configuration</h1>'.encode())
-                self.wfile.write(f'<form action="/wifi?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'.encode())
-                self.wfile.write(b'<span>Wifi SSID:</span>')
-                self.wfile.write(f'<input type="hidden" id="action" name="action" value="wifi">'.encode())
-                self.wfile.write(f'<input type="text" id="ssid" name="ssid">'.encode())
-                self.wfile.write(b'<br><span>WPA/2 passphrase:</span>')
-                self.wfile.write(b'<input type="password" id="pwd" name="pwd">')
-                self.wfile.write(b'<button style="color:blue">Add WiFi</button>')
-                self.wfile.write(b'</form>')
+                self.GET_wifi(session)
 
             elif ps=="/wifi_reset":
                 self.wfile.write(f'<h1>RESET ALL WiFi CONFIG</h1>'.encode())
