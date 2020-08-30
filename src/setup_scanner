@@ -49,7 +49,7 @@ cp scanner/scanner_mount_result_dir.sh.inc /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/get-adapter-info.py             /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_auto_config.sh          /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_reconfig_rc.sh          /home/${FMLIST_SCAN_USER}/bin/
-cp scanner/scanner_version.sh              /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanner_versions.sh             /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scan-httpserver.py            /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerPrepareWifiConfig.sh   /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerFinalizeWifiConfig.sh  /home/${FMLIST_SCAN_USER}/bin/
