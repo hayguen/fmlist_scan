@@ -9,11 +9,11 @@ PREPFILEPATH="${FINALPATH}.tmp"
 
 # raspi_config and wpa_supplicant require global configuration
 # create if not existing
-mkdir /dev/shm/wpa_supplicant
+mkdir /dev/shm/wpa_supplicant &>/dev/null
 chmod 700 /dev/shm/wpa_supplicant
-touch "${PREPFILEPATH}"
+rm -f "${PREPFILEPATH}"
 sudo cp /etc/wpa_supplicant/wpa_supplicant.conf "${PREPFILEPATH}"
-chown ${whoami}:${whoami} "${PREPFILEPATH}"
+sudo chown "$(whoami):$(whoami)" "${PREPFILEPATH}"
 dos2unix "${PREPFILEPATH}"
 
 NCTRLIFC=$( grep -c "^ctrl_interface=" "${PREPFILEPATH}" )
@@ -35,7 +35,7 @@ if [ "${NCOUNTRY}" = "0" ]; then
 fi
 
 # looks, sed dislikes when having to insert non existent line numbers
-while [ $(cat "${PREPFILEPATH}" | wc -l) -lt 3 ]; do
+while [ $(cat "${PREPFILEPATH}" | wc -l) -lt 4 ]; do
   echo "" >>"${PREPFILEPATH}"
 done
 
@@ -51,3 +51,7 @@ cat "${PREPFILEPATH}" \
 
 sudo cp /etc/wpa_supplicant/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant_old_bak.conf
 sudo install -m 660 -o root -g root "${FINALPATH}" /etc/wpa_supplicant/wpa_supplicant.conf
+
+echo "/etc/wpa_supplicant/wpa_supplicant.conf :"
+sudo cat --number "/etc/wpa_supplicant/wpa_supplicant.conf"
+echo ""
