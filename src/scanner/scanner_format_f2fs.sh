@@ -28,14 +28,19 @@ if [ $? -ne 0 ]; then
 fi
 
 if [ "$1" = "format" ]; then
-  echo "starting format with f2fs (flash friendly file system) on device ${FMLIST_SCAN_RESULT_DEV} .."
+  echo "starting format with f2fs (flash friendly file system) on device ${FMLIST_SCAN_RESULT_DEV} in 5 secs .."
+  shift
   sleep 5
-  sudo mkfs.f2fs ${FMLIST_SCAN_RESULT_DEV}
+  echo -e "\n\n"
+  echo "starting sudo mkfs.f2fs $@ ${FMLIST_SCAN_RESULT_DEV}"
+  sudo mkfs.f2fs "$@" ${FMLIST_SCAN_RESULT_DEV}
 
   echo -e "\n\n"
   echo "mounting device ${FMLIST_SCAN_RESULT_DEV} to ${FMLIST_SCAN_RESULT_DIR}"
   mount ${FMLIST_SCAN_RESULT_DIR}
   sudo chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} "${FMLIST_SCAN_RESULT_DIR}"
 else
-  echo "restart scanner_format_f2fs with option format: 'scanner_format_f2fs.sh format', if you are sure to format/delete ${FMLIST_SCAN_RESULT_DEV}"
+  echo "restart scanner_format_f2fs with option format: 'scanner_format_f2fs.sh format <options>',"
+  echo "  if you are sure to format/delete ${FMLIST_SCAN_RESULT_DEV}"
+  echo "  additional option to mkfs.f2fs, e.g. '-f', can be passed after the 'format' argument"
 fi
