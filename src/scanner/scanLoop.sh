@@ -119,8 +119,11 @@ while /bin/true; do
       FMLIST_FM_RTLSDR_OPT="-d ${FMLIST_FM_RTLSDR_DEV}"
     fi
     TESTED_FM_DEV="1"
-    rtl_sdr -f 100M -n 512 ${FMLIST_FM_RTLSDR_OPT} ${FMLIST_SCAN_RAM_DIR}/test.raw &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
-    if [ $? -ne 0 ]; then
+    rm -f ${FMLIST_SCAN_RAM_DIR}/test.raw &>/dev/null
+    timeout -s SIGTERM -k 2 1 rtl_sdr -f 100M -n 512 ${FMLIST_FM_RTLSDR_OPT} ${FMLIST_SCAN_RAM_DIR}/test.raw &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
+    TESTRECSIZE=$(stat --printf="%s" ${FMLIST_SCAN_RAM_DIR}/test.raw)
+    echo "recorded file size for testing FM device is ${TESTRECSIZE}"
+    if [ ! -f ${FMLIST_SCAN_RAM_DIR}/test.raw ] || [ ${TESTRECSIZE} -le 0 ]; then
       echo "error at test rtl_sdr! for FM"
       echo "error at test rtl_sdr! for FM" &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
       if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
@@ -141,7 +144,10 @@ while /bin/true; do
         sudo reboot now
         exit 0
       fi
-      echo "retry ${NUM_RTL_FAILS} of test - because rtl_sdr test for FM failed!"
+      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} of test"
+      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} of test" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} of test" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+      resetScanDevice.sh fm
       continue
     fi
   fi
@@ -160,8 +166,11 @@ while /bin/true; do
     else
       FMLIST_DAB_RTLSDR_OPT="-d ${FMLIST_DAB_RTLSDR_DEV}"
     fi
-    rtl_sdr -f 100M -n 512 ${FMLIST_DAB_RTLSDR_OPT} ${FMLIST_SCAN_RAM_DIR}/test.raw &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
-    if [ $? -ne 0 ]; then
+    rm -f ${FMLIST_SCAN_RAM_DIR}/test.raw &>/dev/null
+    timeout -s SIGTERM -k 2 1  rtl_sdr -f 100M -n 512 ${FMLIST_DAB_RTLSDR_OPT} ${FMLIST_SCAN_RAM_DIR}/test.raw &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
+    TESTRECSIZE=$(stat --printf="%s" ${FMLIST_SCAN_RAM_DIR}/test.raw)
+    echo "recorded file size for testing DAB device is ${TESTRECSIZE}"
+    if [ ! -f ${FMLIST_SCAN_RAM_DIR}/test.raw ] || [ ${TESTRECSIZE} -le 0 ]; then
       echo "error at test rtl_sdr! for DAB"
       echo "error at test rtl_sdr! for DAB" &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
       if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
@@ -182,7 +191,10 @@ while /bin/true; do
         sudo reboot now
         exit 0
       fi
-      echo "retry ${NUM_RTL_FAILS} of test - because rtl_sdr test for DAB failed!"
+      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} of test"
+      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} of test" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} of test" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+      resetScanDevice.sh dab
       continue
     fi
   fi
