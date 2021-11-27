@@ -148,6 +148,10 @@ cp "$HOME/.config/fmlist_scan/fmscan.inc"       "${FMLIST_SCAN_RESULT_DIR}/fmlis
 sync
 
 
+# increase usb buffers - looks new librtlsdr requires this
+echo 0 | sudo tee /sys/module/usbcore/parameters/usbfs_memory_mb
+
+
 if [ "$1" = "autostart" ] ; then
   DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
   echo "${DTF}: executing startBgScanLoop.sh with 'autostart' option" >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/reboots.log"
