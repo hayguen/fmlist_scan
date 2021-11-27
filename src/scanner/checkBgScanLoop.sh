@@ -66,41 +66,42 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
     SSESSION="$( screen -ls | grep scanLoopBg )"
     if [ -z "$SSESSION" ]; then
       echo "scanLoopBg screen session is not running! saving results, then restarting scanLoop .."
-      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is not running! saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is not running! saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
-      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is not running! saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
-      saveScanResults.sh savelog
-      resetScanDevice.sh all
-      pkill scanFM.sh
-      pkill scanDAB.sh
-      pkill dab-rtlsdr
-      pkill rtl_sdr
-      pkill redsea
-      pkill csdr
-      pkill pipwm
-      pkill checkSpectrumForCarrier
-      pkill prescanDAB
-      startBgScanLoop.sh
     else
       echo "scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .."
-      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
-      echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, saving results, then restarting scanLoop .." >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
-      stopBgScanLoop.sh
-      resetScanDevice.sh all
-      pkill scanLoop.sh
-      pkill scanFM.sh
-      pkill scanDAB.sh
-      pkill dab-rtlsdr
-      pkill rtl_sdr
-      pkill redsea
-      pkill csdr
-      pkill pipwm
-      pkill checkSpectrumForCarrier
-      pkill prescanDAB
-      saveScanResults.sh savelog
-      startBgScanLoop.sh
     fi
+    echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, repowering dongle, saving results, then restarting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+    echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, repowering dongle, saving results, then restarting .." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
+    echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, repowering dongle, saving results, then restarting .." >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+    stopBgScanLoop.sh
+
+    pkill scanLoop.sh
+    pkill scanFM.sh
+    pkill scanDAB.sh
+    pkill -9 dab-rtlsdr
+    pkill -9 rtl_test
+    pkill -9 rtl_sdr
+    pkill redsea
+    pkill csdr
+    pkill pipwm
+    pkill checkSpectrumForCarrier
+    pkill -9 prescanDAB
+
+    resetScanDevice.sh all
+
+    pkill scanLoop.sh
+    pkill scanFM.sh
+    pkill scanDAB.sh
+    pkill -9 dab-rtlsdr
+    pkill -9 rtl_test
+    pkill -9 rtl_sdr
+    pkill redsea
+    pkill csdr
+    pkill pipwm
+    pkill checkSpectrumForCarrier
+    pkill -9 prescanDAB
+
+    saveScanResults.sh savelog
+    startBgScanLoop.sh
   fi
 fi
 
