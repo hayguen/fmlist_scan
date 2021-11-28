@@ -39,6 +39,7 @@ cp scanner/atx-knob.sh               /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/listUSBdevices.sh         /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/powerOff_rtl_by_serial.sh /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/powerOn_rtl_by_serial.sh  /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/reset_rtl_by_serial.sh    /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/resetScanDevice.sh        /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/rmmod_rtl_dvb.sh          /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_fix-uuid.sh       /home/${FMLIST_SCAN_USER}/bin/
