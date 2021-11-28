@@ -6,7 +6,7 @@ if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
 fi
 
 type="$1"
-SLEEPDUR="2"
+SLEEPDUR="5"
 
 if [ "${type}" = "all" ]; then
   echo "check number of Realtek devices .."
@@ -19,14 +19,19 @@ if [ "${type}" = "all" ]; then
       echo "Error: cannot determine serial for device no $N"
       exit 0
     fi
-    echo "powering off device $N with serial ${SN}"
-    powerOff_rtl_by_serial.sh scan_dev_${N} "${SN}"
-    echo "sleep ${SLEEPDUR} secs after powering off"
+    if [ "$2" = "power" ]; then
+      echo "powering off device $N with serial ${SN}"
+      powerOff_rtl_by_serial.sh scan_dev_${N} "${SN}"
+      echo "sleep ${SLEEPDUR} secs after powering off"
+      sleep ${SLEEPDUR}
+      echo "powering on  device $N with serial ${SN}"
+      powerOn_rtl_by_serial.sh scan_dev_${N}
+      echo "powering finished"
+    fi
+    echo "resetting USB device $N with serial ${SN}"
+    reset_rtl_by_serial.sh "${SN}"
+    echo "sleep ${SLEEPDUR} secs after reset"
     sleep ${SLEEPDUR}
-    echo "powering on  device $N with serial ${SN}"
-    powerOn_rtl_by_serial.sh scan_dev_${N}
-    echo "powering finished"
-    sleep 0.5
   done
   echo "finished"
   exit 0
@@ -37,13 +42,19 @@ elif [ "${type}" = "fm" ]; then
     echo "reset requires config entry 'FMLIST_FM_RTLSDR_DEV' with the serial number of the device!"
     exit 10
   fi
-  echo "powering off FM device with serial ${SN}"
-  powerOff_rtl_by_serial.sh scanFM "${SN}"
-  echo "sleep ${SLEEPDUR} secs after powering off"
+  if [ "$2" = "power" ]; then
+    echo "powering off FM device with serial ${SN}"
+    powerOff_rtl_by_serial.sh scanFM "${SN}"
+    echo "sleep ${SLEEPDUR} secs after powering off"
+    sleep ${SLEEPDUR}
+    echo "powering on  FM device with serial ${SN}"
+    powerOn_rtl_by_serial.sh scanFM
+    echo "powering finished"
+  fi
+  echo "resetting USB device for FM with serial ${SN}"
+  reset_rtl_by_serial.sh "${SN}"
+  echo "sleep ${SLEEPDUR} secs after reset"
   sleep ${SLEEPDUR}
-  echo "powering on  FM device with serial ${SN}"
-  powerOn_rtl_by_serial.sh scanFM
-  echo "powering finished"
   exit 0
 
 elif [ "${type}" = "dab" ]; then
@@ -52,13 +63,19 @@ elif [ "${type}" = "dab" ]; then
     echo "reset requires config entry 'FMLIST_DAB_RTLSDR_DEV' with the serial number of the device!"
     exit 10
   fi
-  echo "powering off DAB device with serial ${SN}"
-  powerOff_rtl_by_serial.sh scanDAB "${SN}"
-  echo "sleep ${SLEEPDUR} secs after powering off"
+  if [ "$2" = "power" ]; then
+    echo "powering off DAB device with serial ${SN}"
+    powerOff_rtl_by_serial.sh scanDAB "${SN}"
+    echo "sleep ${SLEEPDUR} secs after powering off"
+    sleep ${SLEEPDUR}
+    echo "powering on  DAB device with serial ${SN}"
+    powerOn_rtl_by_serial.sh scanDAB
+    echo "powering finished"
+  fi
+  echo "resetting USB device for DAB with serial ${SN}"
+  reset_rtl_by_serial.sh "${SN}"
+  echo "sleep ${SLEEPDUR} secs after reset"
   sleep ${SLEEPDUR}
-  echo "powering on  DAB device with serial ${SN}"
-  powerOn_rtl_by_serial.sh scanDAB
-  echo "powering finished"
   exit 0
 
 else

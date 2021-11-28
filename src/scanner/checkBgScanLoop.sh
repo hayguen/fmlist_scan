@@ -86,7 +86,9 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
     pkill checkSpectrumForCarrier
     pkill -9 prescanDAB
 
-    resetScanDevice.sh all
+    sleep 2
+
+    resetScanDevice.sh all power 2>&1 |tee -a ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
 
     pkill scanLoop.sh
     pkill scanFM.sh

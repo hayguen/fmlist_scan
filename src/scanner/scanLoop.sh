@@ -131,8 +131,8 @@ while /bin/true; do
         scanToneFeedback.sh error
       fi
       NUM_RTL_FAILS=$[ ${NUM_RTL_FAILS} + 1 ]
+      DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
       if [ ${NUM_RTL_FAILS} -eq ${FMLIST_SCAN_DEAD_RTL_TRIES} ] && [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
-        DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
         echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
         echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         if [ "${FMLIST_SCAN_SAVE_PARTIAL}" = "1" ]; then
@@ -144,10 +144,10 @@ while /bin/true; do
         sudo reboot now
         exit 0
       fi
-      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} of test"
-      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} of test" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} of test" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
-      resetScanDevice.sh fm
+      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} fails of test"
+      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+      resetScanDevice.sh fm 2>&1 |tee -a ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
       continue
     fi
   fi
@@ -178,8 +178,8 @@ while /bin/true; do
         scanToneFeedback.sh error
       fi
       NUM_RTL_FAILS=$[ ${NUM_RTL_FAILS} + 1 ]
+      DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
       if [ ${NUM_RTL_FAILS} -eq ${FMLIST_SCAN_DEAD_RTL_TRIES} ] && [ ${FMLIST_SCAN_DEAD_REBOOT} -ne 0 ]; then
-        DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
         echo "going for reboot after FMLIST_SCAN_DEAD_RTL_TRIES = ${FMLIST_SCAN_DEAD_RTL_TRIES}. reboot is activated in $HOME/.config/fmlist_scan/config"
         echo "${DTF}: scanLoop.sh: saving results, then rebooting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         if [ "${FMLIST_SCAN_SAVE_PARTIAL}" = "1" ]; then
@@ -191,10 +191,10 @@ while /bin/true; do
         sudo reboot now
         exit 0
       fi
-      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} of test"
-      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} of test" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} of test" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
-      resetScanDevice.sh dab
+      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} fails of test"
+      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+      resetScanDevice.sh dab 2>&1 |tee -a ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
       continue
     fi
   fi

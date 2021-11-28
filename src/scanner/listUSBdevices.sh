@@ -1,6 +1,7 @@
 #!/bin/bash
 
 searchedSerial="$1"
+# $2: option "busdev"
 
 pushd /sys/bus/usb/drivers/usb &>/dev/null
 
@@ -18,8 +19,14 @@ for d in $( ls -1 ) ; do
         echo -n  "product '$p'"
         echo -en "\t"
         echo -n  "serial '$s'"
+        echo -en "\t"
+        echo -n "bus/dev $(cat $d/busnum)/$(cat $d/devnum)"
         echo ""
       elif [ "$searchedSerial" = "$s" ]; then
+        if [ "$2" = "busdev" ]; then
+          echo "$(cat $d/busnum)/$(cat $d/devnum)"
+          exit 0
+        fi
         echo "$d"
         exit 0
       fi
@@ -28,4 +35,3 @@ for d in $( ls -1 ) ; do
 done
 
 popd &>/dev/null
-
