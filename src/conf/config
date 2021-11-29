@@ -26,7 +26,9 @@ if [ -f $%HOME/.config/fmlist_scan/$%{FMLIST_QTH_PREFIX}_GPS_COORDS.inc ]; then
 fi
 export FMLIST_SCAN_DEAD_TIME="${FMLIST_SCAN_DEAD_TIME}"              # default is "300": assume something is hanging after 600 seconds
 export FMLIST_SCAN_DEAD_RTL_TRIES="${FMLIST_SCAN_DEAD_RTL_TRIES}"          # assume RTL dongle dead after N (=3) rtl recording tests
-export FMLIST_SCAN_DEAD_REBOOT="${FMLIST_SCAN_DEAD_REBOOT}"              # "0" or "1"; default is "0". set "1" to rebooting when dead
+export FMLIST_SCAN_DEAD_REBOOT="${FMLIST_SCAN_DEAD_REBOOT}"              # "0" or "1"; default is "0". set "1" to rebooting when dead.
+                                                # "0" tries to reset the USB device, this requires the serial numbers
+                                                # with FMLIST_FM_RTLSDR_DEV and/or FMLIST_DAB_RTLSDR_DEV below
 export FMLIST_SCAN_AUTO_IP_INFO="${FMLIST_SCAN_AUTO_IP_INFO}"             # notify fmlist.org of local IP .. to get a link to local webserver
 export FMLIST_SCAN_AUTO_CONFIG="${FMLIST_SCAN_AUTO_CONFIG}"              # reconfigure Raspberry Pi through fmlist.org
 export FMLIST_SCAN_AUTOSTART="${FMLIST_SCAN_AUTOSTART}"                # default is "1": autostart scanner in background
