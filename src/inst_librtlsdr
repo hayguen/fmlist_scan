@@ -7,10 +7,12 @@ GITUSER=hayguen
 GITPROJ=librtlsdr
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
-make install
+sudo -u ${FMLIST_SCAN_USER} make install
+
+cmake --build . --target udev_rules
+
 ldconfig
 rmmod dvb_usb_rtl28xxu
-echo "blacklist dvb_usb_rtl28xxu" >/etc/modprobe.d/blacklist_rtl28xxu.conf
+cmake --build . --target blacklist
 
 cd ${BASE}
-
