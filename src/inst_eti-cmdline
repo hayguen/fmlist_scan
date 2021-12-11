@@ -7,6 +7,6 @@ GITPROJ=eti-stuff
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
 make install
-ldconfig
+# ldconfig
 
 cd ${BASE}

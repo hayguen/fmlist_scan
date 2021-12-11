@@ -29,10 +29,9 @@ fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
 #cmake ../${GITPROJ}/eti-cmdline -DRTLSDR=ON -DRPI_DEFINED=ON -DCMAKE_BUILD_TYPE=Release
-cmake ../${GITPROJ}/eti-cmdline -DRTLSDR=ON -DCMAKE_BUILD_TYPE=Release
+cmake ../${GITPROJ}/eti-cmdline -DRTLSDR=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local
 make
 
 echo "remaining todo: sudo make install"
 
 cd ${BASE}
-

@@ -161,7 +161,7 @@ while /bin/true; do
   if [ "$1" = "eticmd" ] || [ "$1" = "" ]; then
     echo "building eti-cmdline"
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_eti-cmdline"
-    . inst_eti-cmdline
+    sudo -u ${FMLIST_SCAN_USER} bash -c "source inst_eti-cmdline"
   fi
 
   if [ "$1" = "pipwm" ] || [ "$1" = "" ]; then
