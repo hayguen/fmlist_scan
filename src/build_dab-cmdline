@@ -29,7 +29,7 @@ if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr ]; then
 fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
-cmake ../${GITPROJ}/example-10 -DRTLSDR=ON -DCMAKE_BUILD_TYPE=Release
+cmake ../${GITPROJ}/example-10 -DRTLSDR=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local
 make
 
 
@@ -39,7 +39,7 @@ if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_files ]; then
 fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_files
-cmake ../${GITPROJ}/example-10 -DWAVFILES=ON -DRAWFILES=ON -DCMAKE_BUILD_TYPE=Release
+cmake ../${GITPROJ}/example-10 -DWAVFILES=ON -DRAWFILES=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local
 make
 
 

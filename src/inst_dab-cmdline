@@ -6,11 +6,11 @@ GITUSER=hayguen
 GITPROJ=dab-cmdline
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
-make install
+sudo -u ${FMLIST_SCAN_USER} make install
 ldconfig
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_files
-make install
+sudo -u ${FMLIST_SCAN_USER} make install
 ldconfig
 
 cd ${BASE}
