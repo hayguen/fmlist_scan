@@ -1,12 +1,17 @@
 
 BASE=$(pwd)
 
-# https://github.com/simonyiszk/csdr.git
-GITUSER=simonyiszk
+# https://github.com/jketterl/csdr
+# replaced https://github.com/simonyiszk/csdr.git
+GITUSER=jketterl
 GITPROJ=csdr
 
 if [ ! -d ${BASE}/git/${GITUSER} ]; then
   mkdir -p ${BASE}/git/${GITUSER}
+fi
+
+if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ} ]; then
+  mkdir -p ${BASE}/git/${GITUSER}/build_${GITPROJ}
 fi
 
 cd ${BASE}/git/${GITUSER}
@@ -17,7 +22,8 @@ else
   git clone https://github.com/${GITUSER}/${GITPROJ}.git
 fi
 
-cd ${BASE}/git/${GITUSER}/${GITPROJ}
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
+cmake ../${GITPROJ} -DCMAKE_BUILD_TYPE=Release
 make
 
 echo "remaining todo: sudo make install"

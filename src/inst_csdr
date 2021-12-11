@@ -1,13 +1,14 @@
 
 BASE=$(pwd)
 
-# https://github.com/simonyiszk/csdr.git
-GITUSER=simonyiszk
+# https://github.com/jketterl/csdr
+# replaced https://github.com/simonyiszk/csdr.git
+GITUSER=jketterl
 GITPROJ=csdr
 
-cd ${BASE}/git/${GITUSER}/${GITPROJ}
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
 make install
+
 ldconfig
 
 cd ${BASE}
-
