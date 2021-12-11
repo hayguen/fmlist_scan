@@ -23,7 +23,7 @@ else
 fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
-cmake ../${GITPROJ} -DCMAKE_BUILD_TYPE=Release
+cmake ../${GITPROJ} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local
 make
 
 echo "remaining todo: sudo make install"
