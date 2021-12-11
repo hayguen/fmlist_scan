@@ -7,7 +7,7 @@ GITUSER=jketterl
 GITPROJ=csdr
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
-make install
+sudo -u ${FMLIST_SCAN_USER} make install
 
 ldconfig
 
