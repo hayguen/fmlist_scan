@@ -2,7 +2,9 @@
 BASE=$(pwd)
 
 hardware=$( fgrep Hardware /proc/cpuinfo | head -1 | awk '{ print $3 }' )
-if [ "${hardware}" = "BCM2835" ]; then
+arch=$(arch)
+
+if [ "${hardware}" = "BCM2835" ] && [ ! "${arch}" = "aarch64" ]; then
   echo "skipping build/install of wiringPi on Raspberry Pi .."
 
 else

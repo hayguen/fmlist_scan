@@ -7,7 +7,9 @@ BASE=$(pwd)
 # install downloaded package for Raspberry Pi Model 4B: BCM2711
 #   but Raspbian report BCM2835
 hardware=$( fgrep Hardware /proc/cpuinfo | head -1 | awk '{ print $3 }' )
-if [ "${hardware}" = "BCM2835" ]; then
+arch=$(arch)
+
+if [ "${hardware}" = "BCM2835" ] && [ ! "${arch}" = "aarch64" ]; then
   if [ -f wiringpi-latest.deb ]; then
     dpkg -i wiringpi-latest.deb
   fi
