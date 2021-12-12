@@ -1040,7 +1040,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             out_html, err_at_exec = run_in_background(True, "stopBgScanLoop.sh", 1)
 
         elif ps=="/prepare_upload_all":
-            out_html, err_at_exec = run_and_get_output(False, f"( {BIN_DIR}prepareScanResultsForUpload.sh all ; {BIN_DIR}uploadScanResults.sh ) &", 5)
+            out_html, err_at_exec = run_and_get_output(False, f"( bash -l {BIN_DIR}prepareScanResultsForUpload.sh all ; {BIN_DIR}uploadScanResults.sh ) &", 5)
 
         elif ps=="/upload_results":
             out_html, err_at_exec = run_in_background(True, "uploadScanResults.sh", 1)
