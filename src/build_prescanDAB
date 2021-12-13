@@ -6,7 +6,8 @@ if [ ! -d ${BASE}/prescanDAB/build ]; then
 fi
 
 cd ${BASE}/prescanDAB/build
-cmake -DCMAKE_BUILD_TYPE=Release ../
+cmake ../ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local
+
 make
 if [ ! -d $HOME/bin ]; then
   mkdir $HOME/bin
