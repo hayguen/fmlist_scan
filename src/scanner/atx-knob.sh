@@ -51,8 +51,7 @@ else
   # 1x:    Info/Status Upload scan results
   # 2x:    Start/Stop  Switch UKW/DAB
   # 3x:    Shutdown    Switch Autostart
-  # 4x:    Reboot      Switch LPIE
-  # 5x:                Switch Speaker?
+  # 4x:                Switch Speaker?
 
   case "$1" in
     A1)
@@ -61,8 +60,7 @@ else
            echo "1x:  Info/Status Upload scan results" ; \
            echo "2x:  Start/Stop  Switch UKW/DAB" ; \
            echo "3x:  Shutdown    Switch Autostart" ; \
-           echo "4x:  Reboot      Switch LPIE" ; \
-           echo "5x:              Switch Speaker?" )
+           echo "4x:              Switch Speaker?" )
       echo "$T" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/atx-knob.log
       ;;
     A2)
@@ -94,13 +92,10 @@ else
       echo "pressed B3: switch autostart" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/atx-knob.log
       ;;
     B4)
-      echo "pressed B4: switch LPIE" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/atx-knob.log
+      echo "pressed B4: switch text-to-speech" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/atx-knob.log
       ;;
     B5)
-      echo "pressed B5: switch text-to-speech" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/atx-knob.log
-      ;;
-    B6)
-      echo "pressed B6: no function" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/atx-knob.log
+      echo "pressed B5: no function" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/atx-knob.log
       ;;
     *)
       echo "pressed $1 , but key is not handled in atx-knob.sh" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/atx-knob.log
