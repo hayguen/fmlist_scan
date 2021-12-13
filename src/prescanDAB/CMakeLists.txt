@@ -20,7 +20,25 @@ find_package(LibUSB)
 set(THREADS_USE_PTHREADS_WIN32 true)
 find_package(Threads REQUIRED)
 
-FIND_LIBRARY( RTLSDR NAMES librtlsdr.a )
+pkg_check_modules (LIBRTLSDR_PKG librtlsdr)
+
+find_path(RTLSDR_INCLUDE_DIR NAMES rtl-sdr.h
+    HINTS
+        $ENV{HOME}/.local/include
+    PATHS
+        ${LIBRTLSDR_PKG_INCLUDE_DIRS}
+        /usr/include
+        /usr/local/include
+)
+
+FIND_LIBRARY( RTLSDR NAMES librtlsdr.a
+    HINTS
+        $ENV{HOME}/.local/lib
+    PATHS
+        ${LIBRTLSDR_PKG_LIBRARY_DIRS}
+        /usr/lib
+        /usr/local/lib
+)
 
 if(NOT LIBUSB_FOUND)
     message(FATAL_ERROR "LibUSB 1.0 required to compile rtl-sdr")
