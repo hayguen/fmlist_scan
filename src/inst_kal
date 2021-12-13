@@ -9,7 +9,7 @@ GITUSER=steve-m
 GITPROJ=kalibrate-rtl
 
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
-make install
+sudo -u ${FMLIST_SCAN_USER} make install
 
 cd ${BASE}
 

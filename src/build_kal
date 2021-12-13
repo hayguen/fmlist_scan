@@ -18,9 +18,10 @@ else
 fi
 
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
-./bootstrap 
-./configure
-make
+./bootstrap
+
+CFLAGS=-I${HOME}/.local/include CXXFLAGS=-I${HOME}/.local/include  LDFLAGS=-L${HOME}/.local/lib LIBRTLSDR_LIBS=-lrtlsdr ./configure --prefix=${HOME}/.local
+CFLAGS=-I${HOME}/.local/include CXXFLAGS=-I${HOME}/.local/include  LDFLAGS=-L${HOME}/.local/lib LIBRTLSDR_LIBS=-lrtlsdr make
 
 echo "remaining todo: sudo make install"
 #echo "remaining todo: sudo ldconfig"

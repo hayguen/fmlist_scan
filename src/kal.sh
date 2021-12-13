@@ -12,6 +12,8 @@ fi
 
 ############################################
 
+KAL=/home/${FMLIST_SCAN_USER}/.local/bin/kal
+
 if [ -z "$1" ]; then
   echo "kal.sh [reuse] [GSM850|GSM-R|GSM900|EGSM|DCS|PCS] [<additional options to kal, e.g. -d 0>]"
   echo "continuing in 3 sec with default parameters: no reuse and GSM900"
@@ -44,8 +46,8 @@ if [ -z "${FMLIST_SCAN_KAL_CH}" ] || [ "${OPT_REUSE}" != "reuse" ]; then
   FMLIST_SCAN_KAL_CH=""
 
   echo "last calibration channel empty or no option 'reuse'"
-  echo "executing \"/usr/local/bin/kal $* -e ${FMLIST_SCAN_PPM} -s ${SCANBAND}\"  to determine calibration channel"
-  /usr/local/bin/kal $* -e ${FMLIST_SCAN_PPM} -s ${SCANBAND} |tee "${RAMDIR}/kal.log"
+  echo "executing \"${KAL} $* -e ${FMLIST_SCAN_PPM} -s ${SCANBAND}\"  to determine calibration channel"
+  ${KAL} $* -e ${FMLIST_SCAN_PPM} -s ${SCANBAND} |tee "${RAMDIR}/kal.log"
 
   echo "****"
 
@@ -67,8 +69,8 @@ else
   echo "re-using last calibration channel ${FMLIST_SCAN_KAL_CH}"
 fi
 
-echo "executing /usr/local/bin/kal $* -e ${FMLIST_SCAN_PPM} -c ${FMLIST_SCAN_KAL_CH}"
-/usr/local/bin/kal $* -e ${FMLIST_SCAN_PPM} -c ${FMLIST_SCAN_KAL_CH} |tee "${RAMDIR}/kal-channel.log"
+echo "executing ${KAL} $* -e ${FMLIST_SCAN_PPM} -c ${FMLIST_SCAN_KAL_CH}"
+${KAL} $* -e ${FMLIST_SCAN_PPM} -c ${FMLIST_SCAN_KAL_CH} |tee "${RAMDIR}/kal-channel.log"
 
 NPPM=$(cat "${RAMDIR}/kal-channel.log" |grep "absolute error" |awk  '/.*/ { print $4; }')
 echo "*** new PPM value ${NPPM}"
