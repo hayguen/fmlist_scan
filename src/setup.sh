@@ -14,9 +14,6 @@ fi
 if [ -z "${FMLIST_SCAN_SETUP_GPS}" ]; then
   export FMLIST_SCAN_SETUP_GPS="1"
 fi
-if [ -z "${FMLIST_SCAN_SETUP_LPIE}" ]; then
-  export FMLIST_SCAN_SETUP_LPIE="1"
-fi
 
 if [ -z "${FMLIST_SCAN_MOUNT}" ]; then
   export FMLIST_SCAN_MOUNT="1"
@@ -35,7 +32,7 @@ if [ -z "${FMLIST_OM_ID}" ]; then
   export FMLIST_OM_ID=""
 fi
 
-echo "$0 [syspre|cron|fstab|files|conf|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|eticmd|pipwm|pishutd|wsrv|chkspec|pscan|kal|lpie]"
+echo "$0 [syspre|cron|fstab|files|conf|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|eticmd|pipwm|pishutd|wsrv|chkspec|pscan|kal]"
 echo "  syspre  install system prerequisites"
 echo "  cron    install crontab entries"
 echo "  fstab   install fstab entry"
@@ -56,9 +53,6 @@ echo "  wsrv    install webserver for scanner"
 echo "  chkspec build & install liquid-dsp. then compile / install checkSpectrumForCarrier"
 echo "  pscan   compile / install prescanDAB"
 echo "  kal     build & install kal."
-if [ ${FMLIST_SCAN_SETUP_LPIE} -ne 0 ]; then
-echo "  lpie    build & install layerpi."
-fi
 echo ""
 echo "environment parameters - to set before calling:"
 echo "set export FMLIST_SCAN_USER=<user>   # default user \"pi\""
@@ -208,14 +202,6 @@ while /bin/true; do
     echo "building kal"
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_kal"
     . inst_kal
-  fi
-
-  if [ ${FMLIST_SCAN_SETUP_LPIE} -ne 0 ]; then
-    if [ "$1" = "lpie" ] || [ "$1" = "" ]; then
-      echo "building lpie"
-      sudo -u ${FMLIST_SCAN_USER} bash -c "source build_lpie"
-      . inst_lpie
-    fi
   fi
 
   shift

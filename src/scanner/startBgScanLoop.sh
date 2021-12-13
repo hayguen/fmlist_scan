@@ -33,21 +33,6 @@ if [ $( ls -1 "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/" | wc -l ) -ne 0
   if [ -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/dab_chanlist.txt" ]; then HAVE_NEW_CONF="1" ; fi
   if [ -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/dabscan.inc" ]; then HAVE_NEW_CONF="1" ; fi
   if [ -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/fmscan.inc" ]; then HAVE_NEW_CONF="1" ; fi
-  if [ "${HAVE_NEW_CONF}" = "1" ]; then
-    LPIE_BIN="$(which lpie 2>/dev/null)"
-    if [ ! -z "${LPIE_BIN}" ]; then
-      R="$( sudo lpie status 2>&1 | grep "filesystem mode:" | grep -c "overlayfs" )"
-      if [ $R -ne 0 ]; then
-        # extra reboot (into ro/overlay mode) after application of new config files
-        touch "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/reboot"
-        echo "found new config whilst lpie in overlay mode. going for reboot-rw .." >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/reboots.log"
-        sync
-        sleep 5
-        sudo lpie reboot-rw
-        exit 0
-      fi
-    fi
-  fi
 
   # append to /etc/wpa_supplicant/wpa_supplicant.conf
   if [ -f "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/config/wpa_supplicant.conf" ]; then
