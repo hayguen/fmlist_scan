@@ -109,6 +109,18 @@ sudo systemctl disable scan-webserver.service
 sudo rm /lib/systemd/system/scan-webserver.service
 
 
+echo -e "\nuninstall built packages:"
+echo -e "\nlibrtlsdr:"          ; (cd git/hayguen/build_librtlsdr          && sudo make uninstall )
+echo -e "\ndab-cmdline_files:"  ; (cd git/hayguen/build_dab-cmdline_files  && sudo make uninstall )
+echo -e "\ndab-cmdline_rtlsdr:" ; (cd git/hayguen/build_dab-cmdline_rtlsdr && sudo make uninstall )
+echo -e "\neti-cmdline:"        ; (cd git/hayguen/build_eti-stuff_rtlsdr   && sudo make uninstall )
+echo -e "\ncsdr:"               ; (cd git/simonyiszk/csdr       && sudo make uninstall )
+echo -e "\nredsea:"             ; (cd git/windytan/redsea       && sudo make uninstall )
+echo -e "\nlib liquid-dsp:"     ; (cd git/jgaeddert/liquid-dsp  && sudo make uninstall )
+echo -e "\nkalibrate-rtl:"      ; (cd git/steve-m/kalibrate-rtl && sudo make uninstall )
+# echo -e "\nlibcorrect:"     ; (cd git/quiet/libcorrect      && sudo make uninstall )
+
+
 echo ""
 echo "keeping gpio-input.service. deactivate with:"
 echo "  sudo systemctl stop gpio-input.service"
