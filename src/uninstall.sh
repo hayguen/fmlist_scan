@@ -21,8 +21,10 @@ echo "removing entries from crontab .."
 
 # remove aliases
 echo "removing entries from ~/.bash_aliases .."
-ALIASEXPR="$( echo -n "$(pwd)/.bash_aliases" |sed "s#/#\\\\/#g" )"
-sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPR}/d' /home/${FMLIST_SCAN_USER}/.bash_aliases"
+ALIASEXPRA="$( echo -n "$(pwd)/.bash_aliases" |sed "s#/#\\\\/#g" )"
+ALIASEXPRB="$( echo -n "/home/${FMLIST_SCAN_USER}/bash_aliases_fmlist_scanner" |sed "s#/#\\\\/#g" )"
+sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPRA}/d' /home/${FMLIST_SCAN_USER}/.bash_aliases"
+sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPRB}/d' /home/${FMLIST_SCAN_USER}/.bash_aliases"
 
 # remove login status message
 echo "removing lpie status message from ~/.bashrc .."

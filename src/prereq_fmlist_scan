@@ -24,13 +24,16 @@ fi
 apt-get -y install build-essential git git-gui gitk cmake cmake-curses-gui libtool autotools-dev automake colordiff jq
 apt-get -y install usbutils libusb-1.0-0-dev libsndfile1-dev
 
+cp bash_aliases_fmlist_scanner  /home/${FMLIST_SCAN_USER}/
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bash_aliases_fmlist_scanner
 if [ ! -f /home/${FMLIST_SCAN_USER}/.bash_aliases ]; then
   sudo -u ${FMLIST_SCAN_USER} bash -c "touch /home/${FMLIST_SCAN_USER}/.bash_aliases"
 fi
-ALIASEXPR="$( echo -n "$(pwd)/.bash_aliases" |sed "s#/#\\\\/#g" )"
-sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPR}/d' /home/${FMLIST_SCAN_USER}/.bash_aliases"
-sudo -u ${FMLIST_SCAN_USER} bash -c "echo \". $(pwd)/.bash_aliases\" >>/home/${FMLIST_SCAN_USER}/.bash_aliases"
-
+ALIASEXPRA="$( echo -n "$(pwd)/.bash_aliases" |sed "s#/#\\\\/#g" )"
+ALIASEXPRB="$( echo -n "/home/${FMLIST_SCAN_USER}/bash_aliases_fmlist_scanner" |sed "s#/#\\\\/#g" )"
+sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPRA}/d' /home/${FMLIST_SCAN_USER}/.bash_aliases"
+sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPRB}/d' /home/${FMLIST_SCAN_USER}/.bash_aliases"
+sudo -u ${FMLIST_SCAN_USER} bash -c "echo \". /home/${FMLIST_SCAN_USER}/bash_aliases_fmlist_scanner\" >>/home/${FMLIST_SCAN_USER}/.bash_aliases"
 
 if [ ! -d /home/${FMLIST_SCAN_USER}/.ssh ]; then
   echo "installing ssh authorized_keys"
@@ -54,7 +57,7 @@ if [ "${FMLIST_SCAN_SETUP_GPS}" = "1" ]; then
   systemctl start gpsd.socket
 fi
 
-source setup_config
+# source setup_config
 
 source setup_leds
 
