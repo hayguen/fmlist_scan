@@ -144,7 +144,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
   fi
 
   DTFFIC="$(date -u "+%Y-%m-%dT%H%M%S")"
-  LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" dab-rtlsdr -C $CH ${DABOPT} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+  dab-rtlsdr -C $CH ${DABOPT} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
   grep ",CSV_ENSEMBLE," "${rec_path}/DAB_$CH.log" | sed "s#,CSV_ENSEMBLE,#,${GPSCOLS},#g" >>"${rec_path}/dab_ensemble.csv"
   grep ",CSV_GPSCOOR,"  "${rec_path}/DAB_$CH.log" | sed "s#,CSV_GPSCOOR,#,${GPSCOLS},#g"  >>"${rec_path}/dab_gps.csv"
   grep ",CSV_AUDIO,"    "${rec_path}/DAB_$CH.log" | sed "s#,CSV_AUDIO,#,${GPSCOLS},#g"    >>"${rec_path}/dab_audio.csv"

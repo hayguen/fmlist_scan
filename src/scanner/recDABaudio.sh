@@ -3,15 +3,20 @@
 source "$HOME/.config/fmlist_scan/config"
 source "$HOME/.config/fmlist_scan/dabscan.inc"
 
-function usage() {
-  echo "usage: $0 <#minutes> <filenameId> <channel> [<additional options to dab-rtlsdr>]"
-  echo " additional options - as in dab-rtlsdr, e.g. -P or -S:"
-  LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" dab-rtlsdr -h
-}
-
 if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
   mkdir -p "${FMLIST_SCAN_RAM_DIR}"
 fi
+
+if [ $( echo "$LD_LIBRARY_PATH" | grep -c "$HOME/.local/lib" ) -eq 0 ]; then
+  export LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"
+fi
+
+function usage() {
+  echo "usage: $0 <#minutes> <filenameId> <channel> [<additional options to dab-rtlsdr>]"
+  echo " additional options - as in dab-rtlsdr, e.g. -P or -S:"
+  dab-rtlsdr -h
+}
+
 
 durationMinutes="$1"
 fnID="$2"
@@ -59,7 +64,7 @@ echo "starting   dab-rtlsdr ${DABLISTENOPT} -n ${durationSeconds} -w ${FMLIST_SC
 mkdir -p "${FMLIST_SCAN_RAM_DIR}/DAB-${chan}_${DTFREC}_${fnID}"
 cd "${FMLIST_SCAN_RAM_DIR}/DAB-${chan}_${DTFREC}_${fnID}"
 
-LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" timeout -v -s SIGTERM -k ${durationKill} ${durationClose} \
+timeout -v -s SIGTERM -k ${durationKill} ${durationClose} \
   dab-rtlsdr ${DABLISTENOPT} -n ${durationSeconds} -w "${FN}" -C "$@" 2>&1 | tee ${FL}
 
 cd "${FMLIST_SCAN_RAM_DIR}"

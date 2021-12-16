@@ -34,6 +34,10 @@ if [ $( echo "$PATH" | grep -c "$HOME/bin" ) -eq 0 ]; then
   export PATH="$HOME/bin:$PATH"
 fi
 
+if [ $( echo "$LD_LIBRARY_PATH" | grep -c "$HOME/.local/lib" ) -eq 0 ]; then
+  export LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"
+fi
+
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   sudo -E $HOME/bin/rpi3b_led_init.sh
 fi
