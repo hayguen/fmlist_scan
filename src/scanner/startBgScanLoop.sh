@@ -134,7 +134,7 @@ sync
 
 
 # increase usb buffers - looks new librtlsdr requires this
-echo 0 | sudo tee /sys/module/usbcore/parameters/usbfs_memory_mb
+echo 0 | sudo tee /sys/module/usbcore/parameters/usbfs_memory_mb >/dev/null
 
 
 if [ "$1" = "autostart" ] ; then
