@@ -72,6 +72,9 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
     echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, repowering dongle, saving results, then restarting .." >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, repowering dongle, saving results, then restarting .." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
     echo "${DTF}: checkBgScanLoop.sh: after $D seconds: scanLoopBg screen session is hanging! killing session, repowering dongle, saving results, then restarting .." >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+
+    echo "${DTF}: PATH=${PATH}" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+
     stopBgScanLoop.sh
 
     pkill scanLoop.sh
@@ -88,7 +91,9 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
 
     sleep 2
 
-    resetScanDevice.sh all power 2>&1 |tee -a ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+    # resetScanDevice.sh all power 2>&1 |tee -a ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+    resetScanDevice.sh fm  power 2>&1 |tee -a ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+    resetScanDevice.sh dab power 2>&1 |tee -a ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
 
     pkill scanLoop.sh
     pkill scanFM.sh

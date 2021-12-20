@@ -7,7 +7,8 @@ fi
 
 busdev="$( listUSBdevices.sh "$1" "busdev")"
 if [ -z "$busdev" ]; then
-  echo "error: could not find bus/dev for serial '$1'"
+  echo "error: could not find bus/dev for serial '$1'. all devices:"
+  listUSBdevices.sh
   exit 10
 fi
 
