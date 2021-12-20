@@ -6,14 +6,15 @@
 # sudo systemctl restart scan-webserver.service
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import ssl
+import csv
 import datetime as dt
 from random import seed, random
-import urllib
-import subprocess
+import hashlib
 import os
 import shlex
-import hashlib
+import ssl
+import subprocess
+import urllib
 from pathlib import Path
 
 use_SSL = False   # False / True
@@ -26,6 +27,7 @@ HOST_ADDRESS = ""
 LOGIN_EXPIRATION_SECS = 60*10  # 10 min
 VERBOSE_LOG = False
 config_fn_rel_to_home = "/.config/fmlist_scan/config"
+list_info_sites = ["/list_fm_pi", "/list_fm_ps", "/list_dab_ens", "/list_dab_ens_tii", "/list_dab_progs"]
 
 PWD_FILE = str(Path.home())+'/.config/fmlist_scan/web_password'
 BIN_DIR = str(Path.home())+'/bin/'
@@ -233,26 +235,87 @@ def get_adapter_infos(adapter :str):
     return (MAC, IP4, IP6)
 
 
-def run_and_get_output(prependBinDir, cmd, timeout_val_in_sec, replace_html_chars = True):
-    cmdhtml = cmd.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n","<br>")
+def str_to_html(s):
+    # print(f"str_to_html('{s}')")
+    html = (
+        s.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("\n", "<br>\n")
+    )
+    html = html.replace(" ", "&nbsp;")
+    # print(f"  returns {html}")
+    return html
+
+
+def csv_as_html_table(full: str, *, remove_cols=[], col_max=-1, max_col_sep=", "):
+    lines = full.splitlines()
+    reader = csv.reader(lines)
+    s = ""
+    for row in reader:
+        s = s + "<tr>\n"
+        for idx, col in enumerate(row):
+            if idx in remove_cols:
+                continue
+            if idx == col_max:
+                coll = row[col_max:-1]
+                try:
+                    coll.remove("")
+                except Exception:
+                    pass
+                cols = max_col_sep.join(coll)
+                s = s + f"  <td>{str_to_html(cols)}</td>\n"
+                break  # stop processing more columns
+            else:
+                s = s + f"  <td>{str_to_html(col)}</td>\n"
+            # print(30*"-")
+            # print(s)
+        s = s + "</tr>\n"
+    return s
+
+
+def run_and_get_output(
+    prependBinDir,
+    cmd,
+    *,
+    timeout_val_in_sec,
+    replace_html_chars=True,
+    bare=False,
+    table=False,
+    remove_cols=[],
+    col_max=-1,
+):
+    cmdhtml = str_to_html(cmd)
     if prependBinDir:
-        cmd_exec = BIN_DIR+cmd
+        cmd_exec = BIN_DIR + cmd
     else:
         cmd_exec = cmd
     err_at_exec = False
+
     try:
-        out = subprocess.check_output(cmd_exec, shell=True, universal_newlines=True, timeout=timeout_val_in_sec)
-        if replace_html_chars:
-            outhtml = out.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n","<br>")
-        else:
-            outhtml = out
-        ret = f"<p>Output of {cmdhtml}:</p><p>{outhtml}</p>"
+        out = subprocess.check_output(
+            cmd_exec, shell=True, universal_newlines=True, timeout=timeout_val_in_sec
+        )
     except subprocess.TimeoutExpired:
         err_at_exec = True
         ret = f"<p>Timeout executing {cmdhtml}!</p>"
-    except:
+    except Exception:
         err_at_exec = True
         ret = f"<p>Error executing {cmdhtml}!</p>"
+
+    if not err_at_exec:
+        if bare:
+            return (out, err_at_exec)
+        elif table:
+            h = csv_as_html_table(out, remove_cols=remove_cols, col_max=col_max)
+            return (h, err_at_exec)
+        elif replace_html_chars:
+            outhtml = str_to_html(out)
+        else:
+            outhtml = out
+        ret = f"<p>Output of {cmdhtml}:</p><p>{outhtml}</p>"
+
     return (ret, err_at_exec)
 
 
@@ -490,6 +553,14 @@ class RequestHandler(BaseHTTPRequestHandler):
         r = r + '<table>\n'
         r = r + f'<tr><td><p><a href="/status.html?session={session}">Show Scanner Status</a></p><br>' + '</td>\n'
         r = r + f'<td><p><a href="/versions.html?session={session}">Version info</a></p><br>' + '</td></tr>\n'
+
+        r = r + f'<tr><td><p><a href="/list_fm_pi.html?session={session}">FM Stations PI</a></p><br>' + '</td>\n'
+        r = r + f'<td><p><a href="/list_fm_ps.html?session={session}">FM Stations PS</a></p><br>' + '</td></tr>\n'
+
+        r = r + f'<tr><td><p><a href="/list_dab_ens.html?session={session}">DAB Ensembles</a></p><br>' + '</td>\n'
+        r = r + f'<td><p><a href="/list_dab_ens_tii.html?session={session}">DAB Ensebmles w TII</a></p><br>' + '</td></tr>\n'
+        r = r + '<tr><td colspan="2"><a href="/list_dab_progs.html?session={session}">DAB programs</a></td></tr>\n'
+
         r = r + '<tr><td>' + f'<p><a href="/wifi.html?session={session}">Add WiFi Config</a></p><br>' + '</td>\n'
         r = r + '<td>' + f'<p><a href="/wifi_reset.html?session={session}">Reset All WiFi Config</a></p><br>' + '</td></tr>\n'
         r = r + '<tr><td colspan="2">' + self.create_html_form_str("wifi_reconfig", "Reconfigure WiFi", session ) + '</td></tr>\n'
@@ -840,7 +911,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
     def POST_wifi(self, d):
-        out_html, err_at_exec = run_and_get_output(True, "scannerPrepareWifiConfig.sh", 3)
+        out_html, err_at_exec = run_and_get_output(True, "scannerPrepareWifiConfig.sh", timeout_val_in_sec=3)
         if not err_at_exec:
             try:
                 with open("/dev/shm/wpa_supplicant/wpa_supplicant.conf", "a") as wpafile:
@@ -853,7 +924,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 err_at_exec = True
                 out_html = f"<p>Error appending SSID/passphrase to /dev/shm/wpa_supplicant/wpa_supplicant.conf after scannerPrepareWifiConfig.sh!</p>"
         if not err_at_exec:
-            out_html, err_at_exec = run_and_get_output(True, "scannerFinalizeWifiConfig.sh", 3)
+            out_html, err_at_exec = run_and_get_output(True, "scannerFinalizeWifiConfig.sh", timeout_val_in_sec=3)
         return (out_html, err_at_exec)
 
 
@@ -918,6 +989,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write( HEADstr( f'<meta http-equiv="refresh" content="1; url={reloadURL}">') )
         elif ps=="/status":
             self.wfile.write( HEADstr( f'<meta http-equiv="refresh" content="3; url={reloadURL}">') )
+        elif ps in list_info_sites:
+            self.wfile.write( HEADstr( f'<meta http-equiv="refresh" content="60; url={reloadURL}">') )
         else:
             self.wfile.write( HEADstr("") )
 
@@ -930,28 +1003,61 @@ class RequestHandler(BaseHTTPRequestHandler):
             print(f"requested URL path part: {ps}")
             print(f"requested URL get part:  {gps}")
 
-        if not loggedIn:
-            if ps=="/status":
-                self.wfile.write(str.encode( webhdr() ))
-                self.wfile.write(str.encode("<hr>"))
-                out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", 3)
-                self.wfile.write(str.encode(out_html))
-                self.wfile.write(str.encode("<hr>"))
-                self.wfile.write(str.encode(f'<p><a href="/status.html?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
-            else:
-                self.wfile.write(f'<h1>Login required</h1>'.encode())
-                self.wfile.write(f'<form action="?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'.encode())
-                self.wfile.write(b'<span>Config password:</span>')
-                self.wfile.write(b'<input type="password" id="pwd" name="pwd">')
-                self.wfile.write(f'<input type="hidden" id="action" name="action" value="login">'.encode())
-                self.wfile.write(f'<input type="hidden" id="session" name="session" value="{session}">'.encode())
-                self.wfile.write(b'<button style="color:blue">Sign-In</button>')
-                self.wfile.write(b'</form>')
-                self.wfile.write(str.encode( f'<br><p>without login, only <a href="/status.html?session={session}">Show Scanner Status</a> is available</p>'))
+        if ps=="/status":
+            self.wfile.write(str.encode( webhdr() ))
+            self.wfile.write(str.encode("<hr>"))
+            out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", timeout_val_in_sec=3)
+            self.wfile.write(str.encode(out_html))
+            self.wfile.write(str.encode("<hr>"))
+            self.wfile.write(str.encode(f'<p><a href="/status.html?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
+
+        elif ps in list_info_sites:
+            cmd_dict = {
+                "/list_fm_pi": "scanEvalFMcmpPI.sh",
+                "/list_fm_ps": "scanEvalFMcmpPS.sh",
+                "/list_dab_ens": "scanEvalDABens.sh",
+                "/list_dab_ens_tii": "scanEvalDABensTii.sh",
+                "/list_dab_progs": "scanEvalDABprogs.sh",
+            }
+            max_col_dict = {
+                "/list_fm_pi": -1,
+                "/list_fm_ps": -1,
+                "/list_dab_ens": -1,
+                "/list_dab_ens_tii": 4,
+                "/list_dab_progs": -1,
+            }
+            hdr_dict = {
+                "/list_fm_pi": "<table><tr><th>#</th><th>Frequency</th><th>PI</th></tr>\n",
+                "/list_fm_ps": "<table><tr><th>#</th><th>Frequency</th><th>PI</th><th>PS</th></tr>\n",
+                "/list_dab_ens": "<table><tr><th>#</th><th>Channel</th><th>EId</th><th>Ensemble</th></tr>\n",
+                "/list_dab_ens_tii": "<table><tr><th>#</th><th>Channel</th><th>EId</th><th>Ensemble</th><th>TIIs</th></tr>\n",
+                "/list_dab_progs": "<table><tr><th>Channel</th><th>EId</th><th>Ensemble</th><th>SID</th><th>Service</th></tr>\n",
+            }
+            self.wfile.write(str.encode( webhdr() ))
+            self.wfile.write(str.encode("<hr>"))
+            cmd = cmd_dict[ps]
+            max_col = max_col_dict[ps]
+            out_html, err_at_exec = run_and_get_output(False, cmd, timeout_val_in_sec=5, table=True, col_max=max_col)
+            if not err_at_exec:
+                out_html = hdr_dict[ps] + out_html + '</table>\n'
+            self.wfile.write(str.encode(out_html))
+            self.wfile.write(str.encode("<hr>"))
+            self.wfile.write(str.encode(f'<p><a href={ps}.html?session={session}">Reload/Update</a> every 60 seconds ..</p>'))
+
+        elif not loggedIn:
+            self.wfile.write(f'<h1>Login required</h1>'.encode())
+            self.wfile.write(f'<form action="?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'.encode())
+            self.wfile.write(b'<span>Config password:</span>')
+            self.wfile.write(b'<input type="password" id="pwd" name="pwd">')
+            self.wfile.write(f'<input type="hidden" id="action" name="action" value="login">'.encode())
+            self.wfile.write(f'<input type="hidden" id="session" name="session" value="{session}">'.encode())
+            self.wfile.write(b'<button style="color:blue">Sign-In</button>')
+            self.wfile.write(b'</form>')
+            self.wfile.write(str.encode( f'<br><p>without login, only <a href="/status.html?session={session}">Show Scanner Status</a> is available</p>'))
 
         else:
             if ps=="/versions":
-                out_html, err_at_exec = run_and_get_output(True, "scanner_versions.sh html", 3, False)
+                out_html, err_at_exec = run_and_get_output(True, "scanner_versions.sh html", timeout_val_in_sec=3, replace_html_chars=False)
                 self.wfile.write(str.encode(out_html))
 
             elif ps=="/wifi":
@@ -964,7 +1070,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             elif ps=="/status":
                 self.wfile.write(str.encode( webhdr() ))
                 self.wfile.write(str.encode("<hr>"))
-                out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", 3)
+                out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", timeout_val_in_sec=3)
                 self.wfile.write(str.encode(out_html))
                 self.wfile.write(str.encode("<hr>"))
                 self.wfile.write(str.encode(f'<br><p><a href="/status.html?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
@@ -1024,7 +1130,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             out_html, err_at_exec = self.POST_wifi(d)
 
         elif ps=="/wifi_reset":
-            out_html, err_at_exec = run_and_get_output(True, "scannerResetWifiConfig.sh", 3)
+            out_html, err_at_exec = run_and_get_output(True, "scannerResetWifiConfig.sh", timeout_val_in_sec=3)
 
         elif ps=="/wifi_reconfig":
             # "wpa_cli" requires "sudo apt install wpasupplicant"
@@ -1040,19 +1146,19 @@ class RequestHandler(BaseHTTPRequestHandler):
             out_html, err_at_exec = run_in_background(True, "stopBgScanLoop.sh", 1)
 
         elif ps=="/prepare_upload_all":
-            out_html, err_at_exec = run_and_get_output(False, f"( bash -l {BIN_DIR}prepareScanResultsForUpload.sh all ; {BIN_DIR}uploadScanResults.sh ) &", 5)
+            out_html, err_at_exec = run_and_get_output(False, f"( bash -l {BIN_DIR}prepareScanResultsForUpload.sh all ; {BIN_DIR}uploadScanResults.sh ) &", timeout_val_in_sec=5)
 
         elif ps=="/upload_results":
             out_html, err_at_exec = run_in_background(True, "uploadScanResults.sh", 1)
 
         elif ps=="/reboot":
             out_html, err_at_exec = run_in_background(True, "stopBgScanLoop.sh", 1)
-            out_html, err_at_exec = run_and_get_output(False, 'sudo shutdown --reboot +1 "reboot from local web control"', 5)
+            out_html, err_at_exec = run_and_get_output(False, 'sudo shutdown --reboot +1 "reboot from local web control"', timeout_val_in_sec=5)
             print('executed: sudo shutdown --reboot +1')
 
         elif ps=="/shutdown":
             out_html, err_at_exec = run_in_background(True, "stopBgScanLoop.sh", 1)
-            out_html, err_at_exec = run_and_get_output(False, 'sudo shutdown --poweroff +1 "poweroff from local web control"', 5)
+            out_html, err_at_exec = run_and_get_output(False, 'sudo shutdown --poweroff +1 "poweroff from local web control"', timeout_val_in_sec=5)
             print('executed: sudo shutdown --poweroff +1')
 
         elif ps=="/config_pwd":

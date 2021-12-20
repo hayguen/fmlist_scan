@@ -181,6 +181,8 @@ while /bin/true; do
   fi
 
   if [ "$1" = "wsrv" ]; then # || [ "$1" = "" ]; then   # do not install service for now
+    echo "installing webserver files"
+    . setup_webserver
     echo "setting up webserver for scanner"
     . inst_webserver
   fi

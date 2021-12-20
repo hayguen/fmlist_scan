@@ -4,7 +4,7 @@ if [ -z "${FMLIST_SCAN_USER}" ]; then
 fi
 sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/bin"
 
-# copy all scripts
+# copy all scripts - except webserver
 cp scanner/checkBgScanLoop.sh        /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/checkScanConfig.sh        /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/monitorBgScanLoop.sh      /home/${FMLIST_SCAN_USER}/bin/
@@ -51,7 +51,15 @@ cp scanner/get-adapter-info.py             /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_auto_config.sh          /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_reconfig_rc.sh          /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanner_versions.sh             /home/${FMLIST_SCAN_USER}/bin/
-cp webserver/scan-httpserver.py            /home/${FMLIST_SCAN_USER}/bin/
+
+cp scanner/scanEvalDABens.sh         /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanEvalDABensTii.sh      /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanEvalDABprogs.sh       /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanEvalFMcmpPI.sh        /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanEvalFMcmpPS.sh        /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanEval.inc              /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/uniq_count.awk            /home/${FMLIST_SCAN_USER}/bin/
+
 cp webserver/scannerPrepareWifiConfig.sh   /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerFinalizeWifiConfig.sh  /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerResetWifiConfig.sh     /home/${FMLIST_SCAN_USER}/bin/
@@ -68,7 +76,6 @@ CHOWNLIST=( \
   "atx-knob.sh"
   "createFMoverview.py"
   "get-adapter-info.py"
-  "scan-httpserver.py"
   "listUSBdevices.sh"
   "listenDAB.sh"
   "pipwm.sh"
@@ -82,6 +89,8 @@ CHOWNLIST=( \
   "rmmod_rtl_dvb.sh"
   "startGpsLoop.sh"
   "stopGpsLoop.sh"
+  "scanEval.inc"
+  "uniq_count.awk"
   "waitScreenTermination.sh"
 )
 

@@ -1,0 +1,24 @@
+
+if [ -z "${FMLIST_SCAN_USER}" ]; then
+  FMLIST_SCAN_USER="pi"
+fi
+sudo -u ${FMLIST_SCAN_USER} bash -c "mkdir -p /home/${FMLIST_SCAN_USER}/bin"
+
+# copy webserver scripts
+cp webserver/scan-httpserver.py            /home/${FMLIST_SCAN_USER}/bin/
+cp webserver/scannerPrepareWifiConfig.sh   /home/${FMLIST_SCAN_USER}/bin/
+cp webserver/scannerFinalizeWifiConfig.sh  /home/${FMLIST_SCAN_USER}/bin/
+cp webserver/scannerResetWifiConfig.sh     /home/${FMLIST_SCAN_USER}/bin/
+cp webserver/scannerReconfigWifi.sh        /home/${FMLIST_SCAN_USER}/bin/
+
+chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*scan*.sh
+
+# get list of files with
+# ( cd ~/bin ; ls -1 *.sh *.py | grep -v 'scan.*\.sh' | grep -v 'Scan.*\.sh' | grep -v 'gpstime.sh' | grep -v 'kal.sh' | grep -v 'rpi3b_led_' )
+CHOWNLIST=( \
+  "scan-httpserver.py"
+)
+
+for FN in "${CHOWNLIST[@]}" ; do
+  chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/${FN}
+done

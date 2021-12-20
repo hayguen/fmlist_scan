@@ -85,6 +85,14 @@ rm -f "$HOME/bin/scanner_auto_config.sh"
 rm -f "$HOME/bin/scanner_reconfig_rc.sh"
 rm -f "$HOME/bin/scanner_versions.sh"
 
+rm -f "$HOME/bin/scanEvalDABens.sh"
+rm -f "$HOME/bin/scanEvalDABensTii.sh"
+rm -f "$HOME/bin/scanEvalDABprogs.sh"
+rm -f "$HOME/bin/scanEvalFMcmpPI.sh"
+rm -f "$HOME/bin/scanEvalFMcmpPS.sh"
+rm -f "$HOME/bin/scanEval.inc"
+rm -f "$HOME/bin/uniq_count.awk"
+
 echo "removing calibration script from $HOME/bin .."
 rm -f "$HOME/bin/kal.sh"
 
