@@ -12,16 +12,20 @@ for d in $( ls -1 ) ; do
     s="$(cat "$d/serial" 2>/dev/null)"
     if [ ! -z "$p" ]; then
       if [ -z "$searchedSerial" ]; then
-        echo -n  "$(cat "$d/idVendor"):$(cat "$d/idProduct")"
-        echo -en "\t"
-        echo -n  "usbid '$d'"
-        echo -en "\t"
-        echo -n  "product '$p'"
-        echo -en "\t"
-        echo -n  "serial '$s'"
-        echo -en "\t"
-        echo -n "bus/dev $(cat $d/busnum)/$(cat $d/devnum)"
-        echo ""
+        if [ "$2" = "busdev" ]; then
+           echo "$(cat $d/busnum)/$(cat $d/devnum)"
+        else
+          echo -n  "$(cat "$d/idVendor"):$(cat "$d/idProduct")"
+          echo -en "\t"
+          echo -n  "usbid '$d'"
+          echo -en "\t"
+          echo -n  "product '$p'"
+          echo -en "\t"
+          echo -n  "serial '$s'"
+          echo -en "\t"
+          echo -n "bus/dev $(cat $d/busnum)/$(cat $d/devnum)"
+          echo ""
+        fi
       elif [ "$searchedSerial" = "$s" ]; then
         if [ "$2" = "busdev" ]; then
           echo "$(cat $d/busnum)/$(cat $d/devnum)"
