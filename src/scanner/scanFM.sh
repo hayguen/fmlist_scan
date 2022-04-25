@@ -297,9 +297,9 @@ for chunkfreq in $( echo $chunkfrqs EOL ) ; do
     GPSV_ACT="$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )"
     DTF_ACT="$(date -u "+%Y-%m-%dT%T.%N Z")"
     echo "recording frequency $chunkfreq in background. last gps ${GPS_ACT}. now ${DTF_ACT}: rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw"
-    if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-      echo -e "\\n$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before rtl_sdr -f ${chunkfreq}: $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
+    if [ -d /sys/class/thermal/thermal_zone0 ]; then
+      echo -e "\\n$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before rtl_sdr -f ${chunkfreq}: $(cat /sys/class/thermal/thermal_zone*/temp | tr '\n' ' ')" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone*/temp | tr '\n' ' ')" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
     fi
     echo timeout -s SIGTERM -k ${chunkreckilltime} ${chunkrectimeout} rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw ..
     timeout -s SIGTERM -k ${chunkreckilltime} ${chunkrectimeout} rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw &>${rec_path}/${act_rec_name}.log &
@@ -438,16 +438,16 @@ EOF
       ddci=$[ $ddci + 1 ]
     done
 
-    if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-      echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before parallel: $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
+    if [ -d /sys/class/thermal/thermal_zone0 ]; then
+      echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before parallel: $(cat /sys/class/thermal/thermal_zone*/temp | tr '\n' ' ')" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone*/temp  | tr '\n' ' ')" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
     fi
     # batch process prepared scripts in/with parallel
     # use nice, that processing does not disturb background recording of next chunk
     time nice parallel --no-notice --jobs ${par_jobs} "bash ${rec_path}/rec${rec_freq}.sh" <${rec_path}/rec${rec_freq}.txt
-    if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
-      echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh after parallel of ${carrier_num_det} carriers: $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone0/temp)" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
+    if [ -d /sys/class/thermal/thermal_zone0 ]; then
+      echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh after parallel of ${carrier_num_det} carriers: $(cat /sys/class/thermal/thermal_zone*/temp | tr '\n' ' ')" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone*/temp | tr '\n' ' ')" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
     fi
 
     # delete processed file

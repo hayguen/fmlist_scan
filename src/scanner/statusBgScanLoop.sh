@@ -11,8 +11,8 @@ export LC_ALL=C
 cd "${FMLIST_SCAN_RAM_DIR}"
 
   cat gpscoor.log
-  if [ -f /sys/class/thermal/thermal_zone0/temp ]; then
-    echo -e "Temperature: $(cat /sys/class/thermal/thermal_zone0/temp | sed -e 's/\([0-9][0-9][0-9]\)$/.\1/g' ) deg"
+  if [ -d /sys/class/thermal/thermal_zone0 ]; then
+    echo -e "Temperature: $(cat /sys/class/thermal/thermal_zone*/temp | sed -e 's/\([0-9][0-9][0-9]\)$/.\1/g' | tr '\n' ' ' ) deg"
   fi
   if [ -f LAST ]; then
     echo -en "\nLast found station: "
