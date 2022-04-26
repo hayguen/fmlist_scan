@@ -7,6 +7,7 @@ fi
 
 # usage: gpstime.sh [single]
 #   single:  single pass, then exit
+# activate debug output setting environment variable GPSDBG=1
 if [ "$1" = "single" ]; then
   if [ -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; then
     rm "${FMLIST_SCAN_RAM_DIR}/stopGps"
@@ -38,14 +39,20 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
     SET_STATIC="1"
   fi
 
-  #gpspipe -w | head -n 5 | grep TPV | egrep '("mode":2,|"mode":3)' | head -n 1 >gpsline.log
   while true ; do
     if [ "${FMLIST_SCAN_GPS_COORDS}" = "auto" ] || [ "${FMLIST_SCAN_GPS_COORDS}" = "gps" ]; then
-      rm -f gpslines.log
-      timeout -s SIGTERM -k 5 3 bash -c "gpspipe -w |head -n 5" >gpslines.log
-      NL="$( cat gpslines.log | wc -l )"
-      #echo "gpslines has $NL lines"
-      if [ $NL -le 1 ]; then
+      rm -f gpsline.log
+      timeout -s SIGTERM -k 1 4 bash -c "gpspipe -w -n 5 | head -n 6 | grep TPV | egrep '(\"mode\":2,|\"mode\":3,)' | tail -n 1 >gpsline.log"
+      if [ ! -z "$GPSDBG" ]; then
+        echo "filtered result of gpspipe -w -n 5:"
+        cat gpsline.log
+        echo ""
+      fi
+      NL="$( cat gpsline.log | wc -l )"
+      if [ ! -z "$GPSDBG" ]; then
+        echo "gpslines has ${NL} lines"
+      fi
+      if [ $NL -lt 1 ]; then
         echo "gpspipe did not return any results!"
         echo "GPS device not connected?"
         if [ "${FMLIST_SCAN_GPS_COORDS}" = "auto" ]; then
@@ -53,29 +60,41 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
         fi
         break
       fi
-      MdThree="$( grep TPV gpslines.log | grep -c '"mode":3,' )"
-      MdTwo="$( grep TPV gpslines.log | grep -c '"mode":2,' )"
+      MdThree="$( grep -c '"mode":3,' gpsline.log )"
+      MdTwo="$(   grep -c '"mode":2,' gpsline.log )"
       if [ $MdThree -ne 0 ]; then
         GPSMODE="3"
         GPSSRC="gps"
-        grep TPV gpslines.log | grep '"mode":3,' >gpsline.log
+        if [ ! -z "$GPSDBG" ]; then
+          echo "detected mode 3"
+        fi
       elif [ $MdTwo -ne 0 ]; then
         GPSMODE="2"
         GPSSRC="gps"
-        grep TPV gpslines.log | grep '"mode":2,' >gpsline.log
+        if [ ! -z "$GPSDBG" ]; then
+          echo "detected mode 2"
+        fi
       else
         echo "GPS not synced to mode 2 or 3!"
         SET_NONE="1"
         break
       fi
       SET_SYSTIM="1"
-      GPSTIM="$( sed -r 's/.*"time":"([^"]*)".*/\1/' gpsline.log )"
-      GPSLAT="$( sed -r 's/.*"lat":([0-9.\-]*).*/\1/'  gpsline.log )"
-      GPSLON="$( sed -r 's/.*"lon":([0-9.\-]*).*/\1/'  gpsline.log )"
+      GPSTIM="$( sed -r 's/.*"time":"([^"]*)".*/\1/'  gpsline.log )"
+      GPSLAT="$( sed -r 's/.*"lat":([0-9.\-]*).*/\1/' gpsline.log )"
+      GPSLON="$( sed -r 's/.*"lon":([0-9.\-]*).*/\1/' gpsline.log )"
+      if [ ! -z "$GPSDBG" ]; then
+        echo "parsed GPSTIM: '${GPSTIM}'"
+        echo "parsed GPSLAT: '${GPSLAT}'"
+        echo "parsed GPSLON: '${GPSLON}'"
+      fi
       if [ $MdThree -ne 0 ]; then
-        GPSALT="$( sed -r 's/.*"alt":([0-9.\-]*).*/\1/'  gpsline.log )"
+        GPSALT="$( sed -r 's/.*"alt":([0-9.\-]*).*/\1/' gpsline.log )"
       else
         GPSALT="-"
+      fi
+      if [ ! -z "$GPSDBG" ]; then
+        echo "parsed GPSALT: '${GPSALT}'"
       fi
     fi
     break
@@ -89,6 +108,9 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
     GPSLAT="${FMLIST_SCAN_GPS_LAT}"
     GPSLON="${FMLIST_SCAN_GPS_LON}"
     GPSALT="${FMLIST_SCAN_GPS_ALT}"
+    if [ ! -z "$GPSDBG" ]; then
+      echo "setting static coordindates: SET_STATIC = ${SET_STATIC}"
+    fi
     # try to restart gpsd
     sudo systemctl stop gpsd
     if [ $( grep -c "DEVICES=\"/dev/ttyACM0" /etc/default/gpsd ) -ne 0 ]; then
@@ -141,11 +163,23 @@ while [ ! -f "${FMLIST_SCAN_RAM_DIR}/stopGps" ]; do
         sudo date -u -s "${GPSTIM}"
       else
         echo "Not setting system time."
+        if [ ! -z "$GPSDBG" ]; then
+          echo "Not setting system time, cause delta to systemtime < 3 sec"
+        fi
       fi
     fi
   else
     echo "No GPS coordinates!"
     echo "* ${NL_GPS}: ${GPSLAT} / ${GPSLON} / ${GPSALT} @ gpstime ${GPSTIM} / systime ${SYSTIM} / mode ${GPSMODE} ${GPSSRC}" >>gpsNL-Errs.log
+    if [ ! -z "$GPSDBG" ]; then
+      echo "  NL_GPS:  '${NL_GPS}' = '0'"
+      echo "  GPSLAT:  '${GPSLAT}' != ''"
+      echo "  GPSLON:  '${GPSLON}' != ''"
+      echo "  GPSALT:  '${GPSALT}' != ''"
+      echo "  GPSTIM:  '${GPSTIM}' != ''"
+      echo "  GPSMODE: '${GPSMODE}'"
+      echo "  GPSSRC:  '${GPSSRC}' != 'none'"
+    fi
   fi
 
   if [ "$1" = "single" ]; then
