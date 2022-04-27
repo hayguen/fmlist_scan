@@ -90,6 +90,8 @@ rm -f "$HOME/bin/scanEvalDABensTii.sh"
 rm -f "$HOME/bin/scanEvalDABprogs.sh"
 rm -f "$HOME/bin/scanEvalFMcmpPI.sh"
 rm -f "$HOME/bin/scanEvalFMcmpPS.sh"
+rm -f "$HOME/bin/scanResults.sh"
+rm -f "$HOME/bin/scanDurations.sh"
 rm -f "$HOME/bin/scanEval.inc"
 rm -f "$HOME/bin/uniq_count.awk"
 
