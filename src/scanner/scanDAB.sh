@@ -130,13 +130,17 @@ for CH in $(echo "${dabchannels[@]}") ; do
   rm ${FMLIST_SCAN_RAM_DIR}/gpsvals.inc
   GPSCOLS="${GPSLAT},${GPSLON},${GPSMODE},${GPSALT},${GPSTIM}"
 
-  echo "$CH"
-  echo "CHANNEL=\"${CH}\""    >"${rec_path}/DAB_$CH.inc"
-  echo "CURRTIM=\"${DTF}\""  >>"${rec_path}/DAB_$CH.inc"
-  echo "# last GPS:  ${GPS}" >>"${rec_path}/DAB_$CH.inc"
-  echo "${GPSV}"             >>"${rec_path}/DAB_$CH.inc"
-  echo "DAB_USE_PRESCAN=\"${FMLIST_SCAN_DAB_USE_PRESCAN}\""   >>"${rec_path}/DAB_$CH.inc"
-  echo "DAB_MIN_AUTOCORR=\"${FMLIST_SCAN_DAB_MIN_AUTOCORR}\"" >>"${rec_path}/DAB_$CH.inc"
+  echo "${CH}"
+  # outputs to DAB_${CH}.inc is just informal for later debugging
+  #   cause easier to read than resulting .csv
+  echo ""                    >>"${rec_path}/DAB_channels.txt"
+  echo "# ${CH}"             >>"${rec_path}/DAB_channels.txt"
+  echo "CHANNEL=\"${CH}\""   >>"${rec_path}/DAB_channels.txt"
+  echo "CURRTIM=\"${DTF}\""  >>"${rec_path}/DAB_channels.txt"
+  echo "# last GPS:  ${GPS}" >>"${rec_path}/DAB_channels.txt"
+  echo "${GPSV}"             >>"${rec_path}/DAB_channels.txt"
+  echo "DAB_USE_PRESCAN=\"${FMLIST_SCAN_DAB_USE_PRESCAN}\""   >>"${rec_path}/DAB_channels.txt"
+  echo "DAB_MIN_AUTOCORR=\"${FMLIST_SCAN_DAB_MIN_AUTOCORR}\"" >>"${rec_path}/DAB_channels.txt"
 
   if [ -d /sys/class/thermal/thermal_zone0 ]; then
     echo -e "$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanDAB.sh before dab-rtlsdr -C ${CH}: $(cat /sys/class/thermal/thermal_zone*/temp | tr '\n' ' ')" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
@@ -144,16 +148,16 @@ for CH in $(echo "${dabchannels[@]}") ; do
   fi
 
   DTFFIC="$(date -u "+%Y-%m-%dT%H%M%S")"
-  dab-rtlsdr -C $CH ${DABOPT} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
-  grep ",CSV_ENSEMBLE," "${rec_path}/DAB_$CH.log" | sed "s#,CSV_ENSEMBLE,#,${GPSCOLS},#g" >>"${rec_path}/dab_ensemble.csv"
-  grep ",CSV_GPSCOOR,"  "${rec_path}/DAB_$CH.log" | sed "s#,CSV_GPSCOOR,#,${GPSCOLS},#g"  >>"${rec_path}/dab_gps.csv"
-  grep ",CSV_AUDIO,"    "${rec_path}/DAB_$CH.log" | sed "s#,CSV_AUDIO,#,${GPSCOLS},#g"    >>"${rec_path}/dab_audio.csv"
-  grep ",CSV_PACKET,"   "${rec_path}/DAB_$CH.log" | sed "s#,CSV_PACKET,#,${GPSCOLS},#g"   >>"${rec_path}/dab_packet.csv"
+  dab-rtlsdr -C ${CH} ${DABOPT} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+  grep ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" | sed "s#,CSV_ENSEMBLE,#,${GPSCOLS},#g" >>"${rec_path}/dab_ensemble.csv"
+  grep ",CSV_GPSCOOR,"  "${rec_path}/DAB_${CH}.log" | sed "s#,CSV_GPSCOOR,#,${GPSCOLS},#g"  >>"${rec_path}/dab_gps.csv"
+  grep ",CSV_AUDIO,"    "${rec_path}/DAB_${CH}.log" | sed "s#,CSV_AUDIO,#,${GPSCOLS},#g"    >>"${rec_path}/dab_audio.csv"
+  grep ",CSV_PACKET,"   "${rec_path}/DAB_${CH}.log" | sed "s#,CSV_PACKET,#,${GPSCOLS},#g"   >>"${rec_path}/dab_packet.csv"
 
   NP=$( cat "${rec_path}/DAB_${CH}_stderr.log" | grep " is part of the ensemble" | grep -c "^programnameHandler:" )
-  NE=$( cat "${rec_path}/DAB_${CH}_stderr.log" | grep " is recognized" | grep -c "^ensemblenameHandler:" )
-  echo "DAB_ENSEMBLE=\"${NE}\"" >>"${rec_path}/DAB_${CH}.inc"
-  echo "NUM_PROGRAMS=\"${NP}\"" >>"${rec_path}/DAB_${CH}.inc"
+  NE=$( cat "${rec_path}/DAB_${CH}_stderr.log" | grep " is recognized" | grep -c "ensemblenameHandler:" )
+  echo "DAB_ENSEMBLE=\"${NE}\"" >>"${rec_path}/DAB_channels.txt"
+  echo "NUM_PROGRAMS=\"${NP}\"" >>"${rec_path}/DAB_channels.txt"
 
   if [ $NP -eq 0 ]; then
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
@@ -164,11 +168,11 @@ for CH in $(echo "${dabchannels[@]}") ; do
       rm "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log"
     fi
   else
-    echo "DAB_$CH" >${FMLIST_SCAN_RAM_DIR}/LAST
+    echo "DAB_${CH}" >${FMLIST_SCAN_RAM_DIR}/LAST
     NUMFOUND=$[ $NUMFOUND + 1 ]
 
     if [ "${FMLIST_SCAN_DAB_SAVE_FIC}" = "1" ]; then
-      mv ficdata.fic ${rec_path}/${DTFFIC}_DAB_$CH.fic
+      mv ficdata.fic ${rec_path}/${DTFFIC}_DAB_${CH}.fic
     fi
 
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
