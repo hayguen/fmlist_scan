@@ -7,7 +7,7 @@ After=multi-user.target
 Type=idle
 User=%SCAN_USER%
 WorkingDirectory=/home/%SCAN_USER%/bin
-ExecStart=/home/%SCAN_USER%/bin/scan-httpserver.py
+ExecStart=bash -l -c /home/%SCAN_USER%/bin/scan-httpserver.py
 Restart=on-failure
 
 [Install]
