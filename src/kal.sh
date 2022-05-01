@@ -12,6 +12,7 @@ fi
 
 ############################################
 
+export LD_LIBRARY_PATH="/home/${FMLIST_SCAN_USER}/.local/lib:$LD_LIBRARY_PATH"
 KAL=/home/${FMLIST_SCAN_USER}/.local/bin/kal
 
 if [ -z "$1" ]; then
