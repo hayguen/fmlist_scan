@@ -8,6 +8,10 @@ fi
 # new desired state
 rm -f ${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
 
+if [ ! -z "$1" ] && [ ! "$1" = "abort" ] && [ ! "$1" = "wait" ]; then
+  echo "unrecognized option '$1': expected 'abort' or 'wait'"
+fi
+
 if [ "$1" = "abort" ]; then
   shift
   touch "${FMLIST_SCAN_RAM_DIR}/abortScanLoop"
