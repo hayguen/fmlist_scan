@@ -325,7 +325,7 @@ chmod 644 /etc/sidedoor/id_rsa.pub
 
 # for uploadScanFilesToDeveloper.sh: scp requires id_rsa owned by calling user
 cp sidedoor-key/id_rsa /etc/sidedoor/id_rsa_sidedoor
-chown pi:pi /etc/sidedoor/id_rsa_sidedoor
+chown ${CALL_USER}:${CALL_USER} /etc/sidedoor/id_rsa_sidedoor
 chmod 600 /etc/sidedoor/id_rsa_sidedoor
 
 echo "writing sidedoor config /etc/default/sidedoor"
