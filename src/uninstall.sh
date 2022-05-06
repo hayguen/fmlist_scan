@@ -1,14 +1,21 @@
 #!/bin/bash
 
 if [ ! "$(whoami)" = "root" ]; then
-  echo "$0 must be called as root or with sudo"
+  echo "$0 must be called with sudo -E"
   exit 0
 fi
 
 source $HOME/.config/fmlist_scan/config
 
+if [ -z "${FMLIST_SCAN_USER}" ]; then
+  echo "error: missing or invalid config file '$HOME/.config/fmlist_scan/config'."
+  echo "   variable FMLIST_SCAN_USER is empty."
+  exit 0
+fi
+
 if [ ! "$HOME" = "/home/${FMLIST_SCAN_USER}" ]; then
   echo "error: call sudo with option '-E' to preserve users home directory!"
+  echo "  call: sudo -E ./uninstall.sh"
   exit 0
 fi
 
