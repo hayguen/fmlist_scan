@@ -1,0 +1,31 @@
+
+BASE=$(pwd)
+
+if [ ! -z "${FMLIST_SCAN_USER}" ]; then
+  sudo -u ${FMLIST_SCAN_USER} bash -l -c "stopGpsLoop.sh force"
+  sudo -u ${FMLIST_SCAN_USER} bash -l -c "waitScreenTermination.sh gpsLoopBg 10"
+fi
+
+systemctl stop gpsd.service
+systemctl stop gpsd.socket
+
+systemctl disable gpsd.service
+systemctl disable gpsd.socket
+
+apt -y remove gpsd
+apt -y remove gpsd-clients
+apt -y remove gpsd-tools
+apt -y remove libgps23
+apt -y remove libgps24
+apt -y remove libgps25
+apt -y remove libgps26
+apt -y remove libgps27
+apt -y remove libgps28
+apt -y remove python3-gps
+apt-get -y --fix-missing install scons python3-distutils libncurses5-dev libusb-1.0-0-dev # libdbus-1-dev
+
+# die socket Dateien sollte nicht mehr da sein ..
+sudo rm /etc/systemd/system/gpsd.socket
+sudo rm /etc/systemd/system/gpsd.service
+
+cd ${BASE}

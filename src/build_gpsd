@@ -1,0 +1,16 @@
+
+BASE=$(pwd)
+
+cd ${BASE}
+
+if [ ! -f gpsd-3.24.tar.gz ]; then
+  echo "getting gpsd-3.24.tar.gz to $(pwd) .."
+  wget http://download-mirror.savannah.gnu.org/releases/gpsd/gpsd-3.24.tar.gz
+fi
+
+tar zxf gpsd-3.24.tar.gz
+cd gpsd-3.24/
+scons
+scons check
+
+cd ${BASE}
