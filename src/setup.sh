@@ -32,7 +32,7 @@ if [ -z "${FMLIST_OM_ID}" ]; then
   export FMLIST_OM_ID=""
 fi
 
-echo "$0 [syspre|cron|fstab|files|conf|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|eticmd|pipwm|pishutd|wsrv|chkspec|pscan|kal]"
+echo "$0 [syspre|cron|fstab|files|conf|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|eticmd|pipwm|pishutd|wsrv|chkspec|pscan|kal|gpsd]"
 echo "  syspre  install system prerequisites"
 echo "  cron    install crontab entries"
 echo "  fstab   install fstab entry"
@@ -52,7 +52,8 @@ echo "  pishutd build & install libwiringPi. then compile / install pishutdown"
 echo "  wsrv    install webserver for scanner"
 echo "  chkspec build & install liquid-dsp. then compile / install checkSpectrumForCarrier"
 echo "  pscan   compile / install prescanDAB"
-echo "  kal     build & install kal."
+echo "  kal     build & install kal"
+echo "  gpsd    build & install gpsd - system - or from source"
 echo ""
 echo "environment parameters - to set before calling:"
 echo "set export FMLIST_SCAN_USER=<user>   # default user \"pi\""
@@ -120,6 +121,32 @@ while /bin/true; do
     . prereq_redsea
     . prereq_dab-cmdline
     . prereq_eti-cmdline
+  fi
+
+  if [ "$1" = "gpsd" ] || [ "$1" = "" ]; then
+    if [ "${FMLIST_SCAN_SETUP_GPS}" = "1" ]; then
+      if [ "${FMLIST_SCAN_SETUP_GPSSRC}" = "0" ]; then
+        echo "installing gpsd from distribution"
+        apt-get -y install gpsd gpsd-clients
+      elif [ "${FMLIST_SCAN_SETUP_GPSSRC}" = "1" ]; then
+        echo "installing gpsd from sources"
+        . prereq_gpsd
+        sudo -u ${FMLIST_SCAN_USER} bash -c "source build_gpsd"
+        . inst_gpsd
+      else
+        echo "skipping gpsd installation without env FMLIST_SCAN_SETUP_GPSSRC"
+      fi
+      echo "stopping gpsd services gpsd.socket and gpsd.service with systemctl"
+      systemctl stop gpsd.service
+      systemctl stop gpsd.socket
+      echo "setup gpsd defaults to /etc/default/gpsd"
+      cp gpsd.conf /etc/default/gpsd
+      systemctl daemon-reload
+      systemctl enable gpsd.socket
+      systemctl enable gpsd.service
+    else
+      echo "skipping gpsd installation without env FMLIST_SCAN_SETUP_GPS = 1"
+    fi
   fi
 
   if [ "$1" = "rtl" ] || [ "$1" = "" ]; then

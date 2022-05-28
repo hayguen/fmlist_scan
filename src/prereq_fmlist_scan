@@ -14,9 +14,6 @@ apt-get -y install sox lame espeak-ng alsa-utils
 apt-get -y install netcat-openbsd netcat-traditional socat
 apt-get -y install xxd
 
-if [ ${FMLIST_SCAN_SETUP_GPS} = "1" ]; then
-  apt-get -y install gpsd gpsd-clients
-fi
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   apt-get -y install libraspberrypi-bin
 fi
@@ -48,14 +45,6 @@ cp gpstime.sh /home/${FMLIST_SCAN_USER}/bin/
 cp get_gpstime.sh /home/${FMLIST_SCAN_USER}/bin/
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/gpstime.sh
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/get_gpstime.sh
-
-if [ "${FMLIST_SCAN_SETUP_GPS}" = "1" ]; then
-  systemctl stop gpsd.socket
-  systemctl disable gpsd.socket
-  cp gpsd.conf /etc/default/gpsd
-  systemctl enable gpsd.socket
-  systemctl start gpsd.socket
-fi
 
 # source setup_config
 

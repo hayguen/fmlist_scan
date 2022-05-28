@@ -11,6 +11,7 @@ if [ "$1" = "full" ]; then
   echo -e "\nlib liquid-dsp:" ; (cd git/jgaeddert/liquid-dsp  && git log -n 1 )
   echo -e "\nlibcorrect:"     ; (cd git/quiet/libcorrect      && git log -n 1 )
   echo -e "\nkalibrate-rtl:"  ; (cd git/steve-m/kalibrate-rtl && git log -n 1 )
+  echo -e "\ngpsd:"           ; (which gpsd && gpsd -V )
 else
   #GIT_DATE_FMT="--date=iso-strict"
   GIT_DATE_FMT="--date=iso"
@@ -25,6 +26,7 @@ else
   d_ldsp=$( cd git/jgaeddert/liquid-dsp   && git log ${GIT_DATE_FMT} -n 1 | egrep "^Date:" | sed 's/Date: //g' )
   d_libcorr=$( cd git/quiet/libcorrect    && git log ${GIT_DATE_FMT} -n 1 | egrep "^Date:" | sed 's/Date: //g' )
   d_kalib=$( cd git/steve-m/kalibrate-rtl && git log ${GIT_DATE_FMT} -n 1 | egrep "^Date:" | sed 's/Date: //g' )
+  d_gpsd=$( which gpsd )
 
   c_fmlist_scan=$( cd .                   && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
   c_librtlsdr=$( cd git/hayguen/librtlsdr && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
@@ -36,6 +38,7 @@ else
   c_ldsp=$( cd git/jgaeddert/liquid-dsp   && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
   c_libcorr=$( cd git/quiet/libcorrect    && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
   c_kalib=$( cd git/steve-m/kalibrate-rtl && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
+  c_gpsd=$( gpsd -V )
 
   if [ "$1" = "html" ]; then
     echo "<table>"
@@ -49,6 +52,7 @@ else
     echo "<tr><td>libliquid-dsp</td><td>${c_ldsp}</td><td>${d_ldsp}</td></tr>"
     echo "<tr><td>libcorrect</td><td>${c_libcorr}</td><td>${d_libcorr}</td></tr>"
     echo "<tr><td>kalibrate-rtl</td><td>${c_kalib}</td><td>${d_kalib}</td></tr>"
+    echo "<tr><td>gpsd</td><td>${c_gpsd}</td><td>${d_gpsd}</td></tr>"
     echo "</table>"
   else
     echo "fmlist_scan    ${c_fmlist_scan} ${d_fmlist_scan}"
@@ -61,5 +65,6 @@ else
     echo "libliquid-dsp  ${c_ldsp} ${d_ldsp}"
     echo "libcorrect     ${c_libcorr} ${d_libcorr}"
     echo "kalibrate-rtl  ${c_kalib} ${d_kalib}"
+    echo "gpsd           ${c_gpsd} ${d_gpsd}"
   fi
 fi

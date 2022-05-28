@@ -1,0 +1,9 @@
+
+BASE=$(pwd)
+
+cd ${BASE}
+
+cd gpsd-3.24
+sudo scons systemd=1 udev-install
+
+cd ${BASE}
