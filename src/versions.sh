@@ -12,6 +12,8 @@ if [ "$1" = "full" ]; then
   echo -e "\nlibcorrect:"     ; (cd git/quiet/libcorrect      && git log -n 1 )
   echo -e "\nkalibrate-rtl:"  ; (cd git/steve-m/kalibrate-rtl && git log -n 1 )
   echo -e "\ngpsd:"           ; (which gpsd && gpsd -V )
+  echo -e "\nos-release:"     ; (source /etc/os-release; echo "$PRETTY_NAME" )
+  echo -e "\narchitecture:"   ; arch
 else
   #GIT_DATE_FMT="--date=iso-strict"
   GIT_DATE_FMT="--date=iso"
@@ -39,6 +41,8 @@ else
   c_libcorr=$( cd git/quiet/libcorrect    && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
   c_kalib=$( cd git/steve-m/kalibrate-rtl && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
   c_gpsd=$( gpsd -V )
+  c_os_rel=$( (source /etc/os-release ; echo "$PRETTY_NAME" ) )
+  c_arch=$( arch )
 
   if [ "$1" = "html" ]; then
     echo "<table>"
@@ -53,6 +57,8 @@ else
     echo "<tr><td>libcorrect</td><td>${c_libcorr}</td><td>${d_libcorr}</td></tr>"
     echo "<tr><td>kalibrate-rtl</td><td>${c_kalib}</td><td>${d_kalib}</td></tr>"
     echo "<tr><td>gpsd</td><td>${c_gpsd}</td><td>${d_gpsd}</td></tr>"
+    echo "<tr><td>os-release</td><td>${c_os_rel}</td><td></td></tr>"
+    echo "<tr><td>architecture</td><td>${c_arch}</td><td></td></tr>"
     echo "</table>"
   else
     echo "fmlist_scan    ${c_fmlist_scan} ${d_fmlist_scan}"
@@ -66,5 +72,7 @@ else
     echo "libcorrect     ${c_libcorr} ${d_libcorr}"
     echo "kalibrate-rtl  ${c_kalib} ${d_kalib}"
     echo "gpsd           ${c_gpsd} ${d_gpsd}"
+    echo "os-release     ${c_os_rel}"
+    echo "architecture   ${c_arch}"
   fi
 fi

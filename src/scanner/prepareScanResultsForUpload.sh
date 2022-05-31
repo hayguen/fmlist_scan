@@ -74,6 +74,15 @@ ls -1 |egrep "^[0-9]{4}-[0-9]{2}-[0-9]{2}\$" |grep -v "${GREPOPT}" |sort |while 
   echo "12,\"${FMLIST_UP_COMMENT}\""                   >>${TF}
   echo "13,\"${FMLIST_UP_PERMISSION}\",\"${FMLIST_UP_RESTRICT_USERS}\"" >>${TF}
   echo "14,\"${FMLIST_UP_POSITION}\""                  >>${TF}
+
+  (
+  LNID="100"
+  scanner_versions.sh | head -n 50 | while read line ; do
+    echo "$LNID, \"${line}\""
+    LNID=$[ $LNID + 1 ]
+  done
+  ) >>${TF}
+
   createFMoverview.py --nowrite summaries/${DTF}_fm_rds.csv | grep "^15," >>${TF}
 
   sed 's/^/20,/' summaries/${DTF}_dab_ensemble.csv  >>${TF}
