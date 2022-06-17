@@ -14,6 +14,7 @@
     "FMLIST_SCAN_SETUP_GPS"          \
     "FMLIST_SCAN_GPS_ALL_TIME"       \
     "FMLIST_SCAN_DEAD_REBOOT"        \
+    "FMLIST_SCAN_RESET_DEVICE"       \
     "FMLIST_SCAN_AUTO_IP_INFO"       \
     "FMLIST_SCAN_AUTO_CONFIG"        \
     "FMLIST_SCAN_AUTOSTART"          \

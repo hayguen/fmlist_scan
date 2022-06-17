@@ -148,10 +148,16 @@ while /bin/true; do
         sudo reboot now
         exit 0
       fi
-      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} fails of test"
-      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
-      resetScanDevice.sh fm 2>&1 |tee -a ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+      if [ ${NUM_RTL_FAILS} -eq ${FMLIST_SCAN_DEAD_RTL_TRIES} ] && [ ${FMLIST_SCAN_RESET_DEVICE} -ne 0 ]; then
+        echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} fails of test"
+        echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+        echo "${DTF}: scanLoop: resetting device for FM - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+        resetScanDevice.sh fm 2>&1 |tee -a ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+      else
+        echo "${DTF}: scanLoop: would reset device - but deactivated"
+        echo "${DTF}: scanLoop: would reset device - but deactivated" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+        echo "${DTF}: scanLoop: would reset device - but deactivated" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+      fi
       continue
     fi
   fi
@@ -195,10 +201,16 @@ while /bin/true; do
         sudo reboot now
         exit 0
       fi
-      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} fails of test"
-      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
-      resetScanDevice.sh dab 2>&1 |tee -a ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+      if [ ${NUM_RTL_FAILS} -eq ${FMLIST_SCAN_DEAD_RTL_TRIES} ] && [ ${FMLIST_SCAN_RESET_DEVICE} -ne 0 ]; then
+        echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} fails of test"
+        echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+        echo "${DTF}: scanLoop: resetting device for DAB - after ${NUM_RTL_FAILS} fails of test" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+        resetScanDevice.sh dab 2>&1 |tee -a ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+      else
+        echo "${DTF}: scanLoop: would reset device - but deactivated"
+        echo "${DTF}: scanLoop: would reset device - but deactivated" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+        echo "${DTF}: scanLoop: would reset device - but deactivated" >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+      fi
       continue
     fi
   fi
