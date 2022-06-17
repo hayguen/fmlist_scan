@@ -11,7 +11,7 @@ if [ "$1" = "full" ]; then
   echo -e "\nlib liquid-dsp:" ; (cd git/jgaeddert/liquid-dsp  && git log -n 1 )
   echo -e "\nlibcorrect:"     ; (cd git/quiet/libcorrect      && git log -n 1 )
   echo -e "\nkalibrate-rtl:"  ; (cd git/steve-m/kalibrate-rtl && git log -n 1 )
-  echo -e "\ngpsd:"           ; (which gpsd && gpsd -V )
+  echo -e "\ngpsd:"           ; (sudo bash -l -c "which gpsd" && sudo bash -l -c "gpsd -V" )
   echo -e "\nos-release:"     ; (source /etc/os-release; echo "$PRETTY_NAME" )
   echo -e "\narchitecture:"   ; arch
 else
@@ -28,7 +28,7 @@ else
   d_ldsp=$( cd git/jgaeddert/liquid-dsp   && git log ${GIT_DATE_FMT} -n 1 | egrep "^Date:" | sed 's/Date: //g' )
   d_libcorr=$( cd git/quiet/libcorrect    && git log ${GIT_DATE_FMT} -n 1 | egrep "^Date:" | sed 's/Date: //g' )
   d_kalib=$( cd git/steve-m/kalibrate-rtl && git log ${GIT_DATE_FMT} -n 1 | egrep "^Date:" | sed 's/Date: //g' )
-  d_gpsd=$( which gpsd )
+  d_gpsd=$( sudo bash -l -c "which gpsd" )
 
   c_fmlist_scan=$( cd .                   && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
   c_librtlsdr=$( cd git/hayguen/librtlsdr && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
@@ -40,7 +40,7 @@ else
   c_ldsp=$( cd git/jgaeddert/liquid-dsp   && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
   c_libcorr=$( cd git/quiet/libcorrect    && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
   c_kalib=$( cd git/steve-m/kalibrate-rtl && git log ${GIT_DATE_FMT} -n 1 | egrep "^commit" | cut -d ' ' -f 2 )
-  c_gpsd=$( gpsd -V )
+  c_gpsd=$( sudo bash -l -c "gpsd -V" )
   c_os_rel=$( (source /etc/os-release ; echo "$PRETTY_NAME" ) )
   c_arch=$( arch )
 
