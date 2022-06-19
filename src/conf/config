@@ -17,8 +17,11 @@ export FMLIST_SCAN_GPS_LON="${FMLIST_SCAN_GPS_LON}"               # longitude fo
 export FMLIST_SCAN_GPS_ALT="${FMLIST_SCAN_GPS_ALT}"               # altitude  for static, e.g. 307
 export FMLIST_QTH_PREFIX="${FMLIST_QTH_PREFIX}"       # if you have multiple QTHs, running the scanner,
                                        # you can change this .. and the filenames for
-                                       # local_GPS_COORDS.inc, local_FM_stations.csv and local_DAB_stations.csv
+                                       # local_GPS_COORDS.inc, local_dab_ensembles.csv, local_dab_programs.csv, local_fm_programs.csv
                                        # these QTH (user/position) specific files will not get overwritten with an update
+                                       # the files local_dab_ensembles.csv, local_dab_programs.csv, local_fm_programs.csv
+                                       #   can be copied from /dev/shm/scanEval after running scanEvalSummary.sh
+                                       #   those files must be sorted and comments are not permitted
 if [ -f $%HOME/.config/fmlist_scan/$%{FMLIST_QTH_PREFIX}_GPS_COORDS.inc ]; then
   # have special config file for "static" coordinates? with export of
   # FMLIST_SCAN_GPS_LAT, FMLIST_SCAN_GPS_LON and FMLIST_SCAN_GPS_ALT
