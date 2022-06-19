@@ -87,12 +87,6 @@ fi
 if [ ! -f /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_SUN_TIMES.inc ]; then
   cat conf/local_SUN_TIMES.inc     >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_SUN_TIMES.inc
 fi
-if [ ! -f /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_FM_stations.csv ]; then
-  cat conf/local_FM_stations.csv   >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_FM_stations.csv
-fi
-if [ ! -f /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_DAB_stations.csv ]; then
-  cat conf/local_DAB_stations.csv  >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_DAB_stations.csv
-fi
 
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/config
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/fmscan.inc
@@ -100,7 +94,5 @@ chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/dab_chanlist.txt
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_GPS_COORDS.inc
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_SUN_TIMES.inc
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_FM_stations.csv
-chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_DAB_stations.csv
 
 cd ${BASE}
