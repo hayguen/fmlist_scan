@@ -91,6 +91,8 @@ ls -1 |egrep "^[0-9]{4}-[0-9]{2}-[0-9]{2}\$" |grep -v "${GREPOPT}" |sort |while 
   sed 's/^/30,/' summaries/${DTF}_fm_rds.csv        >>${TF}
   sed 's/^/31,/' summaries/${DTF}_fm_carrier.csv    >>${TF}
 
+  scanEvalSummary.sh "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/${d}" >>${TF}
+
   echo "compressing to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/up_outbox/${DTF}_upload.csv.gz"
   cat ${TF} |gzip -c >up_outbox/${DTF}_upload.csv.gz
   mv "$d" "processed/${DTF}"
