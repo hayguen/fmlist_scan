@@ -57,6 +57,7 @@ cp scanner/scanEvalDABensTii.sh      /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanEvalDABprogs.sh       /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanEvalFMcmpPI.sh        /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanEvalFMcmpPS.sh        /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanEvalSummary.sh        /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanResults.sh            /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanDurations.sh          /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanEval.inc              /home/${FMLIST_SCAN_USER}/bin/

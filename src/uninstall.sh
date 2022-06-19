@@ -37,7 +37,6 @@ sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPRB}/d' /home/${FMLIST_SC
 echo "removing lpie status message from ~/.bashrc .."
 ALIASEXPR="$( echo -n "$(pwd)/lpie_status.sh" |sed "s#/#\\\\/#g" )"
 sudo -u ${FMLIST_SCAN_USER} bash -c "sed -i '/${ALIASEXPR}/d' /home/${FMLIST_SCAN_USER}/.bashrc"
-
 # remove gps scripts
 echo "removing gps scripts from $HOME/bin .."
 rm -f "$HOME/bin/get_gpstime.sh"
@@ -97,6 +96,7 @@ rm -f "$HOME/bin/scanEvalDABensTii.sh"
 rm -f "$HOME/bin/scanEvalDABprogs.sh"
 rm -f "$HOME/bin/scanEvalFMcmpPI.sh"
 rm -f "$HOME/bin/scanEvalFMcmpPS.sh"
+rm -f "$HOME/bin/scanEvalSummary.sh"
 rm -f "$HOME/bin/scanResults.sh"
 rm -f "$HOME/bin/scanDurations.sh"
 rm -f "$HOME/bin/scanEval.inc"
