@@ -21,6 +21,7 @@ if [ -d ${GITPROJ} ]; then
 else
   git clone https://github.com/${GITUSER}/${GITPROJ}.git
 fi
+git checkout fcb7010f10b # install 0.18
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
 cmake ../${GITPROJ} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local
