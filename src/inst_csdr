@@ -8,7 +8,7 @@ GITPROJ=csdr
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
 sudo -u ${FMLIST_SCAN_USER} make install
-
+cp /home/${FMLIST_SCAN_USER}/.local/lib/libcsdr.so.0.18.0 /usr/lib # (hardcoded) filename to be copied into /usr/lib
 ldconfig
 
 cd ${BASE}
