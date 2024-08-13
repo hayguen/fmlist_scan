@@ -19,7 +19,7 @@ if [ -d ${GITPROJ} ]; then
   cd ${GITPROJ}
   git pull --rebase
 else
-  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git -b master # the default branch is develop
 fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
