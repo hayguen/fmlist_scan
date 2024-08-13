@@ -45,7 +45,11 @@ else
 fi
 
 for testNo in $(echo $ARGS); do
+  echo " "
+  echo "------------------------------------------"
   echo "starting test ${testNo}"
+  echo "------------------------------------------"
+  echo " "
 
   case "$testNo" in
     "1")
@@ -58,13 +62,13 @@ for testNo in $(echo $ARGS); do
 
     "2")
       echo "testing dongle + rtl_fm + redsea .. you should see some JSON text:"
-      echo "rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea --bler"
+      echo "rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea --bler -r $MPXRATE"
       echo "Press Ctrl+C to abort"
-      rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea --bler
+      rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea --bler -r $MPXRATE
       ;;
 
     "3")
-      echo "testing dongle + rtl_fm + play .. you should head audio - when sound connected?!"
+      echo "testing dongle + rtl_fm + play .. you should hear audio - when sound connected?!"
       echo "Press Ctrl+C to abort"
       DECIM=$[ $MPXRATE / $ASRATE ]
       RSRATE=$[ $ASRATE * $DECIM ]
@@ -96,7 +100,7 @@ for testNo in $(echo $ARGS); do
        | csdr fir_decimate_cc 8 0.125 HAMMING 2>/dev/null \
        | csdr fmdemod_quadri_cf \
        | csdr convert_f_s16 \
-       | redsea --bler
+       | redsea --bler -r $MPXRATE
       ;;
 
     "6")
@@ -116,11 +120,15 @@ for testNo in $(echo $ARGS); do
        | csdr fir_decimate_cc 8 0.125 HAMMING \
        | csdr fmdemod_quadri_cf \
        | csdr convert_f_s16 \
-       | redsea --bler
+       | redsea --bler -r $MPXRATE
       ;;
 
     *)
+      echo " "
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       echo "error: unknown test $testNo"
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      echo " "
       ;;
   esac
 done
