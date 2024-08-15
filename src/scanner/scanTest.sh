@@ -39,7 +39,7 @@ TUNEFREQ=$[ ${TUNEFREQK} * 1000 ]
 echo "using test frequency ${TUNEFREQK} kHz on UKW/FM"
 
 if [ -z "$1" ]; then
-  ARGS="1 2 3 4 5"
+  ARGS="1 2 3 4 5 6"
 else
   ARGS=$*
 fi
