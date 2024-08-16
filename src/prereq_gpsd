@@ -22,7 +22,7 @@ apt -y remove libgps26
 apt -y remove libgps27
 apt -y remove libgps28
 apt -y remove python3-gps
-apt-get -y --fix-missing install scons python3-distutils libncurses5-dev libusb-1.0-0-dev gpsmon # libdbus-1-dev
+apt-get -y --fix-missing install scons python3-distutils libncurses5-dev libusb-1.0-0-dev  # libdbus-1-dev
 
 # socket files should not be there any more ...
 sudo rm /etc/systemd/system/gpsd.socket
