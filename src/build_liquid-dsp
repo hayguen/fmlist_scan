@@ -14,7 +14,7 @@ if [ -d ${GITPROJ} ]; then
   cd ${GITPROJ}
   git pull --rebase
 else
-  git clone https://github.com/${GITUSER}/${GITPROJ}.git
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git --depth=1  # will compile much faster without hangs
 fi
 
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
