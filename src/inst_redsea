@@ -7,7 +7,10 @@ GITPROJ=redsea
 
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
 # make install not necessary
-meson setup build && cd build && meson compile # new installation procedure since v1.0
+# new installation procedure since v1.0
+
+meson setup build && cd build
+taskset -c 0 meson compile # will only use one CPU for compiling, see https://github.com/windytan/redsea/issues/120
 meson install
 
 cd ${BASE}
