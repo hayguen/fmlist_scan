@@ -280,7 +280,7 @@ if [ -z "${JS_GW_PORT}" ]; then
     # allow config of port number from command line
     JS_GW_PORT="$1"
   else
-    echo "error: JS_GW_PORT has to be requested from h_ayguen@web.de"
+    echo "error: JS_GW_PORT has to be a number between 8000 and 8999 and needs to be requested from h_ayguen@web.de"
     exit 0
   fi
 fi
