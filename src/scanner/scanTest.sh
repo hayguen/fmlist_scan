@@ -62,9 +62,9 @@ for testNo in $(echo $ARGS); do
 
     "2")
       echo "testing dongle + rtl_fm + redsea .. you should see some JSON text:"
-      echo "rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea --bler -r $MPXRATE"
+      echo "rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea -p --streams --bler -r $MPXRATE"
       echo "Press Ctrl+C to abort"
-      rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea --bler -r $MPXRATE
+      rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea -p --streams --bler -r $MPXRATE
       ;;
 
     "3")
@@ -100,7 +100,7 @@ for testNo in $(echo $ARGS); do
        | csdr fir_decimate_cc 8 0.125 HAMMING 2>/dev/null \
        | csdr fmdemod_quadri_cf \
        | csdr convert_f_s16 \
-       | redsea --bler -r $MPXRATE
+       | redsea --streams -p --bler -r $MPXRATE
       ;;
 
     "6")
@@ -120,7 +120,7 @@ for testNo in $(echo $ARGS); do
        | csdr fir_decimate_cc 8 0.125 HAMMING \
        | csdr fmdemod_quadri_cf \
        | csdr convert_f_s16 \
-       | redsea --bler -r $MPXRATE
+       | redsea --streams -p --bler -r $MPXRATE
       ;;
 
     *)
