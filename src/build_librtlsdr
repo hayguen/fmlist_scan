@@ -34,6 +34,8 @@ make
 
 sudo cp ./src/librtlsdr.so.0 /usr/lib 
 
+echo "SUCCESS: librtlsdr copied to /usr/lib"
+
 echo "remaining todo: sudo make install"
 echo "remaining todo: sudo ldconfig"
 
