@@ -365,11 +365,11 @@ cat ${rdy_rec_name}.raw \\
  | csdr fir_decimate_cc $chunk2mpx_dec 2>/dev/null \\
  | csdr fmdemod_quadri_cf \\
  | csdr convert_f_s16 \\
- | redsea --bler --output-hex \\
+ | redsea --streams -p --bler --output-hex \\
  > redsea.\${f}.spy
 
 cat redsea.\${f}.spy \\
- | redsea --input-hex \\
+ | redsea --streams -p --input-hex \\
  > redsea.\${f}.txt
 
 
