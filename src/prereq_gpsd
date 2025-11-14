@@ -21,8 +21,11 @@ apt -y remove libgps25
 apt -y remove libgps26
 apt -y remove libgps27
 apt -y remove libgps28
+apt -y remove libgps29
+apt -y remove libgps30
 apt -y remove python3-gps
-apt-get -y --fix-missing install scons python3-distutils libncurses5-dev libusb-1.0-0-dev  # libdbus-1-dev
+apt-get -y --fix-missing install scons python3-setuptools libncurses-dev libusb-1.0-0-dev  # since Ubuntu 24.04 distutils were replaced by setuptools
+
 
 # socket files should not be there any more ...
 sudo rm /etc/systemd/system/gpsd.socket
