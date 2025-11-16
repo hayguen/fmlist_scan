@@ -93,7 +93,7 @@ while /bin/true; do
   if [ ! -z "$1" ]; then
     echo " "
     echo "-------------------------"
-    echo -e "\nstarting setup of option '$1'"
+    echo -e "starting setup of option '$1'"
     echo "-------------------------"
     echo " "
   fi
@@ -189,6 +189,8 @@ while /bin/true; do
         echo " "
         echo "-------------------------"
         echo "skipping gpsd installation without env FMLIST_SCAN_SETUP_GPSSRC"
+        echo "-------------------------"
+        echo " "
       fi
         echo " "
         echo "-------------------------"
@@ -207,7 +209,11 @@ while /bin/true; do
       systemctl enable gpsd.socket
       systemctl enable gpsd.service
     else
+      echo " "
+      echo "-------------------------"
       echo "skipping gpsd installation without env FMLIST_SCAN_SETUP_GPS = 1"
+      echo "-------------------------"
+      echo " "
     fi
   fi
 
@@ -349,6 +355,9 @@ while /bin/true; do
     echo " "
     echo "-------------------------"
     echo "building kal"
+    echo "-------------------------"
+    echo " "
+
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_kal"
     . inst_kal
   fi
