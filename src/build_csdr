@@ -19,7 +19,9 @@ if [ -d ${GITPROJ} ]; then
   cd ${GITPROJ}
   git pull --rebase
 else
-  git clone https://github.com/${GITUSER}/${GITPROJ}.git -b master # the default branch is develop
+  git clone https://github.com/${GITUSER}/${GITPROJ}.git -b develop       
+  # Note: was '-b master' before, but does no longer work on latest Debian, 
+  # Hint: the default branch is develop, indeed
 fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
