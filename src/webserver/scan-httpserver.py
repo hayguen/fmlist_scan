@@ -558,7 +558,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         r = r + f'<td><p><a href="/list_fm_ps.html?session={session}">FM Stations PS</a></p><br>' + '</td></tr>\n'
 
         r = r + f'<tr><td><p><a href="/list_dab_ens.html?session={session}">DAB Ensembles</a></p><br>' + '</td>\n'
-        r = r + f'<td><p><a href="/list_dab_ens_tii.html?session={session}">DAB Ensebmles w TII</a></p><br>' + '</td></tr>\n'
+        r = r + f'<td><p><a href="/list_dab_ens_tii.html?session={session}">DAB Ensembles w TII</a></p><br>' + '</td></tr>\n'
         r = r + '<tr><td colspan="2"><a href="/list_dab_progs.html?session={session}">DAB programs</a></td></tr>\n'
 
         r = r + '<tr><td>' + f'<p><a href="/wifi.html?session={session}">Add WiFi Config</a></p><br>' + '</td>\n'

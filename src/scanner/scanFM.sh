@@ -358,18 +358,17 @@ source gpsv.\${f}.inc
 rm gpsv.\${f}.inc
 GPSCOLS="\${GPSLAT},\${GPSLON},\${GPSMODE},\${GPSALT},\${GPSTIM}"
 
-cat ${rdy_rec_name}.raw \\
- | csdr convert_u8_f \\
- | csdr fastdcblock_ff \\
- | csdr shift_addfast_cc \${ddcnrfreq[\$1]} 2>/dev/null \\
- | csdr fir_decimate_cc $chunk2mpx_dec 2>/dev/null \\
- | csdr fmdemod_quadri_cf \\
- | csdr convert_f_s16 \\
- | redsea --bler --output-hex \\
- > redsea.\${f}.spy
+cat ${rdy_rec_name}.raw \
+| csdr convert -i char -o float \
+| csdr dcblock \
+| csdr shift \${ddcnrfreq[\$1]} 2>/dev/null \
+| csdr firdecimate  $chunk2mpx_dec --window=hamming 2>/dev/null \
+| csdr fmdemod  \
+| csdr convert -i float -o s16 \
+| redsea -p --bler --output-hex --timestamp "@%Y/%m/%d %T" > redsea.\${f}.spy
 
 cat redsea.\${f}.spy \\
- | redsea --input-hex \\
+ | redsea -p --input-hex \\
  > redsea.\${f}.txt
 
 
@@ -538,4 +537,3 @@ fi
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ] && [ ${FMLIST_SCAN_PWM_FEEDBACK} -ne 0 ]; then
   scanToneFeedback.sh fm ${NUMRDS}
 fi
-

@@ -32,6 +32,10 @@ cd ${BASE}/git/${GITUSER}/build_${GITPROJ}
 cmake ../${GITPROJ} -DINSTALL_UDEV_RULES=OFF -DLINK_RTLTOOLS_AGAINST_STATIC_LIB=ON -DDETACH_KERNEL_DRIVER=ON -DCMAKE_INSTALL_PREFIX=$HOME/.local
 make
 
+sudo cp ./src/librtlsdr.so.0 /usr/lib 
+
+echo "SUCCESS: librtlsdr copied to /usr/lib"
+
 echo "remaining todo: sudo make install"
 echo "remaining todo: sudo ldconfig"
 

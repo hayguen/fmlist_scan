@@ -1,6 +1,7 @@
 
 BASE=$(pwd)
 
-apt-get -y install libsndfile1-dev automake autoconf
+apt-get -y install libsndfile1-dev automake autoconf git build-essential meson libliquid-dev python3-pip ninja-build nlohmann-json3-dev
+pip3 install --user meson
 
 cd ${BASE}

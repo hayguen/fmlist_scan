@@ -1,7 +1,11 @@
 #!/bin/bash
 
 if [ ! "$(whoami)" = "root" ]; then
-  echo "$0 must be called as root or with sudo"
+    echo " "
+    echo "-------------------------"
+    echo "$0 must be called as root or with sudo"
+    echo "-------------------------"
+    echo " "
   exit 0
 fi
 
@@ -66,9 +70,17 @@ if [ "$1" = "-h" ] || [ "$1" = "--h" ] || [ "$1" = "--help" ]; then
 fi
 
 if [ "$1" = "" ]; then
-  echo "will install/build ALL (except gui) - without parameters"
+    echo " "
+    echo "-------------------------"   
+    echo "will install/build ALL (except gui) - without parameters"
+    echo "-------------------------"
+    echo " "
 else
-  echo "will install/build selected options: $*"
+    echo " "
+    echo "-------------------------"
+    echo "will install/build selected options: $*"
+    echo "-------------------------"
+    echo " "
 fi
 for C in $(seq 5 -1 1) ; do
   echo -en "\r${C} secs to start .. press Ctrl-C to abort"
@@ -79,42 +91,74 @@ echo -e "\n\n"
 while /bin/true; do
 
   if [ ! -z "$1" ]; then
-    echo -e "\nstarting setup of option '$1'"
+    echo " "
+    echo "-------------------------"
+    echo -e "starting setup of option '$1'"
+    echo "-------------------------"
+    echo " "
   fi
 
   if [ "$1" = "syspre" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "installing system prerequisites"
+    echo "-------------------------"
+    echo " "
     . prereq_fmlist_scan
   fi
 
   if [ "$1" = "cron" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "installing crontab"
+    echo "-------------------------"
+    echo " "
     . prereq_crontab
   fi
 
   if [ "$1" = "fstab" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "installing fstab entry"
+    echo "-------------------------"
+    echo " "
     . prereq_fstab
   fi
 
   if [ "$1" = "files" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "installing scanner files"
+    echo "-------------------------"
+    echo " "
     . prereq_scan_files
   fi
 
   if [ "$1" = "conf" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "installing config files"
+    echo "-------------------------"
+    echo " "
     . prereq_config
   fi
 
   # gui software is not installed automatically
   if [ "$1" = "gui" ]; then
+    echo " "
+    echo "-------------------------"
     echo "installing gui software/tools"
+    echo "-------------------------"
+    echo " "
     . prereq_gui_software
   fi
 
   if [ "$1" = "pre" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "installing prerequisites"
+    echo "-------------------------"
+    echo " "
     . prereq_librtlsdr
     . prereq_csdr
     . prereq_liquid-dsp
@@ -126,73 +170,129 @@ while /bin/true; do
   if [ "$1" = "gpsd" ] || [ "$1" = "" ]; then
     if [ "${FMLIST_SCAN_SETUP_GPS}" = "1" ]; then
       if [ "${FMLIST_SCAN_SETUP_GPSSRC}" = "0" ]; then
+        echo " "
+        echo "-------------------------"
         echo "installing gpsd from distribution"
+        echo "-------------------------"
+        echo " "
         apt-get -y install gpsd gpsd-clients
       elif [ "${FMLIST_SCAN_SETUP_GPSSRC}" = "1" ]; then
+        echo " "
+        echo "-------------------------"
         echo "installing gpsd from sources"
+        echo "-------------------------"
+        echo " "
         . prereq_gpsd
         sudo -u ${FMLIST_SCAN_USER} bash -c "source build_gpsd"
         . inst_gpsd
       else
+        echo " "
+        echo "-------------------------"
         echo "skipping gpsd installation without env FMLIST_SCAN_SETUP_GPSSRC"
+        echo "-------------------------"
+        echo " "
       fi
-      echo "stopping gpsd services gpsd.socket and gpsd.service with systemctl"
+        echo " "
+        echo "-------------------------"
+        echo "stopping gpsd services gpsd.socket and gpsd.service with systemctl"
+        echo "-------------------------"
+        echo " "
       systemctl stop gpsd.service
       systemctl stop gpsd.socket
+      echo " "
+      echo "-------------------------"
       echo "setup gpsd defaults to /etc/default/gpsd"
+      echo "-------------------------"
+      echo " "
       cp gpsd.conf /etc/default/gpsd
       systemctl daemon-reload
       systemctl enable gpsd.socket
       systemctl enable gpsd.service
     else
+      echo " "
+      echo "-------------------------"
       echo "skipping gpsd installation without env FMLIST_SCAN_SETUP_GPS = 1"
+      echo "-------------------------"
+      echo " "
     fi
   fi
 
   if [ "$1" = "rtl" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building librtlsdr"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_librtlsdr"
     . inst_librtlsdr
   fi
 
   if [ "$1" = "csdr" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building csdr"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_csdr"
     . inst_csdr
   fi
 
   if [ "$1" = "lfec" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building libcorrect/libfec"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_libcorrect"
     . inst_libcorrect
   fi
 
   if [ "$1" = "ldsp" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building libliquid-dsp"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_liquid-dsp"
     . inst_liquid-dsp
   fi
 
   if [ "$1" = "redsea" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building redsea"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_redsea"
     . inst_redsea
   fi
 
   if [ "$1" = "dabcmd" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building dab-cmdline"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_dab-cmdline"
     . inst_dab-cmdline
   fi
 
   if [ "$1" = "eticmd" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building eti-cmdline"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_eti-cmdline"
     sudo -u ${FMLIST_SCAN_USER} bash -c "source inst_eti-cmdline"
   fi
 
   if [ "$1" = "pipwm" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building libwiringPi, pipwm"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi"
     . inst_wpi
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pipwm"
@@ -200,7 +300,11 @@ while /bin/true; do
   fi
 
   if [ "$1" = "pishutd" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building libwiringPi, pishutdown"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi"
     . inst_wpi
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pishutdown"
@@ -208,27 +312,52 @@ while /bin/true; do
   fi
 
   if [ "$1" = "wsrv" ]; then # || [ "$1" = "" ]; then   # do not install service for now
+    echo " "
+    echo "-------------------------"
     echo "installing webserver files"
+    echo "-------------------------"
+    echo " "
     . setup_webserver
+    echo " "
+    echo "-------------------------"
     echo "setting up webserver for scanner"
+    echo "-------------------------"
+    echo " "
     . inst_webserver
   fi
 
   if [ "$1" = "chkspec" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building libliquid-dsp"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_liquid-dsp"
     . inst_liquid-dsp
+    echo " "
+    echo "-------------------------"
     echo "building checkSpectrumForCarrier"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_checkSpectrum"
   fi
 
   if [ "$1" = "pscan" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building prescanDAB"
+    echo "-------------------------"
+    echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_prescanDAB"
   fi
 
   if [ "$1" = "kal" ] || [ "$1" = "" ]; then
+    echo " "
+    echo "-------------------------"
     echo "building kal"
+    echo "-------------------------"
+    echo " "
+
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_kal"
     . inst_kal
   fi
@@ -239,4 +368,3 @@ while /bin/true; do
   fi
 
 done
-
