@@ -39,35 +39,60 @@ TUNEFREQ=$[ ${TUNEFREQK} * 1000 ]
 echo "using test frequency ${TUNEFREQK} kHz on UKW/FM"
 
 if [ -z "$1" ]; then
-  ARGS="1 2 3 4 5"
+  ARGS="1 2 3 4 5 6"
 else
   ARGS=$*
 fi
 
 for testNo in $(echo $ARGS); do
+  echo " "
+  echo "------------------------------------------"
   echo "starting test ${testNo}"
+  echo "------------------------------------------"
+  echo " "
 
   case "$testNo" in
     "1")
       echo "test dongle:"
       echo "rtl_test"
+      echo ""
+      echo "-----------------------------------"
       echo "Press Ctrl+C to abort"
+      echo "-----------------------------------"
+      echo ""
       rtl_test
       sleep 5
       ;;
 
     "2")
-      echo "testing dongle + rtl_fm + redsea .. you should see some JSON text:"
-      echo "rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea --bler"
-      echo "Press Ctrl+C to abort"
-      rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea --bler
+      echo "testing dongle + rtl_fm + redsea"
+      echo ""
+      echo "rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea -p --streams --bler -r $MPXRATE"
+      echo ""
+      echo "Whereas \$RDSRATE is $RDSRATE, \$TUNEFREQ is $TUNEFREQ and \$MPXRATE is $MPXRATE"
+      echo ""
+      echo "-----------------------------------"
+      echo "You should see some JSON texts"
+      echo "Press Ctrl+C to abort afterwards"
+      echo "-----------------------------------"
+      echo ""
+      rtl_fm -M fm -l 0 -A std -p 0 -s $RDSRATE -F 9 -f $TUNEFREQ | redsea -p --streams --bler -r $MPXRATE
       ;;
 
     "3")
-      echo "testing dongle + rtl_fm + play .. you should head audio - when sound connected?!"
-      echo "Press Ctrl+C to abort"
+      echo "testing dongle + rtl_fm + play"
+      echo ""
       DECIM=$[ $MPXRATE / $ASRATE ]
       RSRATE=$[ $ASRATE * $DECIM ]
+      echo "rtl_fm -M wbfm -s $RSRATE -E rdc -r $ASRATE -f $TUNEFREQ | play -r $ASRATE -t raw -e s -b 16 -c 1 -V1 -"
+      echo ""
+      echo "whereas \$RSRATE = $RSRATE, \$ASRATE = $ASRATE, \$TUNEFREQ = $TUNEFREQ"
+      echo ""
+      echo "-----------------------------------------------"
+      echo "You should hear audio (if sound is connected)"
+      echo "Press Ctrl+C to abort afterwards"
+      echo "-----------------------------------------------"
+      echo ""
       echo "receiving at $RSRATE , decimating by $DECIM , playing audio at $ASRATE Hz"
       rtl_fm -M wbfm -s $RSRATE -E rdc -r $ASRATE -f $TUNEFREQ | play -r $ASRATE -t raw -e s -b 16 -c 1 -V1 -
       ;;
@@ -79,24 +104,41 @@ for testNo in $(echo $ARGS); do
       RCVFRQ=$[ $SRATE / 4 ]
       LOFREQ=$[ $TUNEFREQ - $RCVFRQ ]
       NUMSMP=$[ $RECDURATION * $SRATE ]
-      echo "recording 10 secs with rtl_sdr to ramdisk. Please wait!"
+      echo "recording 10 secs with rtl_sdr to ramdisk."
+      echo ""
+      echo "rtl_sdr -s $SRATE -n $NUMSMP -f $LOFREQ  ${FMLIST_SCAN_RAM_DIR}/test.raw"
+      echo ""
+      echo "and then"
+      echo "ls -alh ${FMLIST_SCAN_RAM_DIR}/test.raw"
+      echo ""
+      echo "--------------------------"
+      echo "Please wait for 10 secs"
+      echo "and do NOT press Ctrl+C"
+      echo "--------------------------"
+      echo ""
       echo "recording at RF rate $SRATE , decimating by $DECIM to $RDSRATE"
       rtl_sdr -s $SRATE -n $NUMSMP -f $LOFREQ  ${FMLIST_SCAN_RAM_DIR}/test.raw
       ls -alh ${FMLIST_SCAN_RAM_DIR}/test.raw
       echo "filesize must be ~ $[ ( $SRATE * $RECDURATION * 2 ) / 1024 / 1024 ] MB .. check this now!"
+      echo ""
+      echo "----------------------------"
+      echo "will automatically continue"
+      echo "in 5 seconds"
+      echo "----------------------------"
+      echo ""
       sleep 5
       ;;
 
     "5")
       echo "testing record + csdr + redsea!"
       cat ${FMLIST_SCAN_RAM_DIR}/test.raw \
-       | csdr convert_u8_f \
-       | csdr fastdcblock_ff \
-       | csdr shift_addfast_cc -0.25 2>/dev/null \
-       | csdr fir_decimate_cc 8 0.125 HAMMING 2>/dev/null \
-       | csdr fmdemod_quadri_cf \
-       | csdr convert_f_s16 \
-       | redsea --bler
+       | csdr convert -i char -o float \
+       | csdr dcblock \
+       | csdr shift -0.25 2>/dev/null \
+       | csdr firdecimate --window=hamming 8 0.125 2>/dev/null \
+       | csdr fmdemod \
+       | csdr convert -i float -o s16 \
+       | redsea --streams -p --bler -r 171k
       ;;
 
     "6")
@@ -107,20 +149,28 @@ for testNo in $(echo $ARGS); do
       echo "receiving, demodulating and decoding RDS .."
       echo "receiving at RF rate $SRATE, decimating by $DECIM to $RDSRATE"
       echo "=> relative receive frequency is 1/4 of samplerate = $RCVFRQ"
-      echo "=> LO frequency = $LOFREQ"
+      echo "=> \$LOFREQ = $LOFREQ, \$MPXRATE = $MPXRATE"
+      echo ""
+      echo "-----------------------"
       echo "Press Ctrl+C to abort"
+      echo "-----------------------"
+      echo ""
       rtl_sdr -s $SRATE -f $LOFREQ - \
-       | csdr convert_u8_f \
-       | csdr fastdcblock_ff \
-       | csdr shift_addfast_cc -0.25 \
-       | csdr fir_decimate_cc 8 0.125 HAMMING \
-       | csdr fmdemod_quadri_cf \
-       | csdr convert_f_s16 \
-       | redsea --bler
+      | csdr convert -i char -o float \
+      | csdr dcblock \
+      | csdr shift -0.25 2>/dev/null \
+      | csdr firdecimate 8 0.125 --window=hamming 2>/dev/null \
+      | csdr fmdemod \
+      | csdr convert -i float -o s16 \
+      | redsea -p --bler -r $MPXRATE
       ;;
 
     *)
+      echo " "
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       echo "error: unknown test $testNo"
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      echo " "
       ;;
   esac
 done

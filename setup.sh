@@ -3,18 +3,18 @@
 #export FMLIST_SCAN_USER="hayguen"  # default Linux OS user "pi" - with sudo rights
 #export FMLIST_SCAN_RASPI="0"       # default "1" if Raspberry Pi hardware
 #export FMLIST_SCAN_SETUP_GPS="1"   # default "1" to activate gpsd and cronjob for user. set to "1" also for PC
-#export FMLIST_SCAN_SETUP_GPSSRC="0" # mandatory option for FMLIST_SCAN_SETUP_GPS. "1" builds and installs from sources: gpsd 3.24
+#export FMLIST_SCAN_SETUP_GPSSRC="0" # mandatory option for FMLIST_SCAN_SETUP_GPS. "1" builds and installs from sources: gpsd
 
 #export FMLIST_SCAN_MOUNT="0"       # default "1" to setup FMLIST_SCAN_RESULT_DEV in /etc/fstab. set "0" without USB memory stick
 #export FMLIST_SCAN_RESULT_DEV="/dev/sda1"
 #export FMLIST_SCAN_RESULT_DIR="/mnt/sda1"  # where to mount the device .. and access the contents
 #export FMLIST_SCAN_RESULT_DIR="/home/fmlist/results"  # set this existing path, without USB memory stick
 
-#export FMLIST_USER=""              # optional: username (email) at https://www.fmlist.org/
+#export FMLIST_USER=""              # username (e-mail) at https://www.fmlist.org/
 #export FMLIST_OM_ID=""             # optional: OM id at https://www.fmlist.org/
 
-pushd src &>/dev/null
+pushd src &>/dev/null               # change directory to src for the following setups
 
-./setup.sh "$@"
+./setup.sh "$@"                     # execute the setup.sh in src subdirectory with the given parameter
 
 popd &>/dev/null

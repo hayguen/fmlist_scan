@@ -18,13 +18,9 @@ else
 fi
 
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
-git checkout 5c891e0e28ccce9fcc0bcbc29e05523856dac89d		# last known good
+git checkout master		# do not checkout single commit, but latest version from master branch
 
-./autogen.sh
-./configure --disable-tmc
-make
-
-echo "remaining todo: sudo make install"
+# echo "remaining todo: sudo make install" # no more necessary since v1.0
 
 cd ${BASE}
 

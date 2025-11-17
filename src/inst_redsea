@@ -6,7 +6,12 @@ GITUSER=windytan
 GITPROJ=redsea
 
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
-make install
+# make install not necessary
+# new installation procedure since v1.0
+
+meson setup build && cd build
+taskset -c 0 meson compile -j1 # will only use one CPU for compiling, see https://github.com/windytan/redsea/issues/120 and https://github.com/windytan/redsea/wiki/Building-on-a-low%E2%80%90end-system
+meson install
 
 cd ${BASE}
 
