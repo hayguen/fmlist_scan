@@ -2,7 +2,7 @@
 
 ## General information
 
-This is an FM (87.5-108 MHz) and DAB (Digital Audio Broadcasting) scanner for collecting automated logs on headless systems for later upload to FMLIST, including GPS tracking for mobile logs, RDS collection, DAB TII codes and DAB ensemble details, see URDS section at https://www.fmlist.org/ (login required).
+This is an FM (87.5-108 MHz) and DAB (Digital Audio Broadcasting) scanner using popular RTLSDR dongles for collecting automated logs on headless systems for later upload to FMLIST, including GPS tracking for mobile logs, RDS collection, DAB TII codes and DAB ensemble details, see URDS section at https://www.fmlist.org/ (login required).
 
 The scanner mainly runs on Raspberry Pi 3B+ and 4B with RaspberryPi OS. Main parts also run on other Debian based Linux OS'es, requiring minor configuration.
 
@@ -32,3 +32,4 @@ The project was initially presented at the VHF meeting 2018: see https://ukw-tag
 
 Mailing List, Wiki, Translation of step-by-step setup guide and more: https://groups.io/g/fmlist-scanner
 
+This software has been tested under Raspberry OS 3B+ 64bit with Debian 13 (trixie), see https://www.raspberrypi.com/software/operating-systems/ , a GPS USB-receiver, an RTL Dongle (Realtek RTL2832U OEM with Rafael Micro 820T/2 tuner).
