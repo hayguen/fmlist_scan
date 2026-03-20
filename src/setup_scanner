@@ -89,6 +89,7 @@ CHOWNLIST=( \
   "recDABaudio.sh"
   "recWFMchunk.sh"
   "redsea.json2csv.sh"
+  "reset_rtl_by_serial.sh"
   "rmmod_rtl_dvb.sh"
   "startGpsLoop.sh"
   "stopGpsLoop.sh"
