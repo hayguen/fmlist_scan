@@ -47,4 +47,7 @@ cd ${BASE}
 if [ -f wiringpi-latest.deb ]; then
   rm wiringpi-latest.deb
 fi
-wget https://project-downloads.drogon.net/wiringpi-latest.deb
+# wget https://project-downloads.drogon.net/wiringpi-latest.deb  # this download does no longer exist
+wget https://github.com/WiringPi/WiringPi/releases/download/3.18/wiringpi_3.18_armhf.deb
+
+mv https://github.com/WiringPi/WiringPi/releases/download/3.18/wiringpi_3.18_armhf.deb wiringpi-latest.deb # workaround for existing code
