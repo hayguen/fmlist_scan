@@ -13,7 +13,7 @@ apt-get -y install dos2unix dosfstools f2fs-tools uuidcdef
 apt-get -y install exfat-utils   # package got renamed. use extra command
 apt-get -y install exfatprogs    # this is new name
 apt-get -y install sox lame espeak-ng alsa-utils
-apt-get -y install netcat-openbsd netcat-traditional socat
+apt-get -y install netcat-openbsd netcat-traditional socat net-tools
 apt-get -y install coreutils bsdextrautils xxd
 
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
