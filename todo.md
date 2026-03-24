@@ -6,18 +6,21 @@ This is a to-do-list and a collection of ideas for the FMLIST-Scanner
 
 - [ ] install webserver by default
 - [ ] print message when installation was successful
-- [ ] show voltage in monitorBgScanLoop
+- [ ] show voltage in monitorB gScanLoop
 - [ ] switch off unused components (HDMI, Bluetooth) in order to reduce power consumption and make this accessible thru Webserver
 - [ ] use a modern webserver UI
-- [ ] install `net-tools` for `ifconfig` during installation
 - [ ] check why `gpsd-client` is not installed
 - [ ] detect bug and fix build directory for dab-cmdline in CMakeFiles
+- [ ] install eti-cmdline as default
+
 
 ## already done 
 
 - [x] RDSSpy time stamp added
 - [x] improved output during installation and in scanTests
 - [x] hint for sidedoor-scanner range added
+- [x] install dablin as additional package
+- [x] install `net-tools` for `ifconfig` during installation
 
 # Bugs
 
