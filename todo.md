@@ -10,7 +10,7 @@ This is a to-do-list and a collection of ideas for the FMLIST-Scanner
 - [ ] switch off unused components (HDMI, Bluetooth) in order to reduce power consumption and make this accessible thru Webserver
 - [ ] use a modern webserver UI
 - [ ] install `net-tools` for `ifconfig` during installation
-- [ ] check why gpsd is not installed
+- [ ] check why `gpsd-client` is not installed
 - [ ] detect bug and fix build directory for dab-cmdline in CMakeFiles
 
 ## already done 
