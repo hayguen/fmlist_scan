@@ -15,7 +15,7 @@ cd "${FMLIST_SCAN_RAM_DIR}"
     #CPUTEMPS=$(cat /sys/class/thermal/thermal_zone*/temp 2>/dev/null | sed -e 's/\([0-9][0-9][0-9]\)$/.\1/g' | tr '\n' ' ')
     CPUTEMPS=$(cat /sys/class/thermal/thermal_zone*/temp 2>/dev/null | sed -e 's/\([0-9]\)\([0-9][0-9]\)$/.\1/g' | tr '\n' ' ')
     #CPUFREQS=$(cat /sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_cur_freq 2>/dev/null | sed -e 's/\([0-9][0-9][0-9]\)$/.\1/g' | tr '\n' ' ')
-    CPUFREQS=$(cat /sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_cur_freq 2>/dev/null | sed -e 's/\([0-9][0-9][0-9]\)$//g' | tr '\n' ' ')
+    CPUFREQS=$(sudo cat /sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_cur_freq 2>/dev/null | sed -e 's/\([0-9][0-9][0-9]\)$//g' | tr '\n' ' ')
     CPUSTATUS=""
     if [ ! -z "${CPUTEMPS}" ]; then
       CPUSTATUS="Temperature: ${CPUTEMPS}deg"
