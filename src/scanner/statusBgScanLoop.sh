@@ -41,6 +41,6 @@ cd "${FMLIST_SCAN_RAM_DIR}"
   tail -n 10 checkBgScanLoop.log | grep -v "Delta from LAST to CURR"
 
   echo ""
-  ( echo "unique, #DAB Ens., #DAB prg, #FM prg" ; SKIP_SCANNED=1 SKIP_MISSING=1 SKIP_ADD=1 scanEvalSummary.sh | awk -F, '{ OFS=","; print $1, $3, $5, $7; }' ) \
+  ( echo "unique (incl. duplicates), #DAB Ens., #DAB prg, #FM prg" ; SKIP_SCANNED=1 SKIP_MISSING=1 SKIP_ADD=1 scanEvalSummary.sh | awk -F, '{ OFS=","; print $1, $3, $5, $7; }' ) \
     | sed 's/^40,/scanned,/g' |sed 's/^41,/missed,/g' |sed 's/^42,/additional,/g' |sed 's/^43,/refs,/g' \
     | column -s , -t

@@ -35,8 +35,12 @@ cat scan_*_fm_rds.csv \
  > /dev/shm/scanEval/fm_programs.csv
 
 NUM_DAB_ENS=$( cat /dev/shm/scanEval/dab_ensembles.csv | wc -l )
+NUM_DAB_ENS_UNIQ=$( awk -F',' '{ $1=""; sub(/^,/, ""); print }' /dev/shm/scanEval/dab_ensembles.csv | sort | uniq | wc -l )
 NUM_DAB_PRG=$( cat /dev/shm/scanEval/dab_programs.csv  | wc -l )
-NUM_FM_PRG=$(  cat /dev/shm/scanEval/fm_programs.csv   | wc -l )
+NUM_DAB_PRG_UNIQ=$(awk -F',' '{ print $4 "," $5 }' /dev/shm/scanEval/dab_programs.csv | sort | uniq | wc -l)
+NUM_FM_PRG=$( cat /dev/shm/scanEval/fm_programs.csv   | wc -l )
+NUM_FM_PRG_UNIQ=$( awk -F',' '{ print $2 }' /dev/shm/scanEval/fm_programs.csv | sort | uniq | wc -l )
+
 
 REF_DAB_ENS="0"
 MIS_DAB_ENS="-"
@@ -79,7 +83,7 @@ if [ -f "${HOME}/.config/fmlist_scan/${FMLIST_QTH_PREFIX}_fm_programs.csv" ]; th
   fi
 fi
 
-echo "40, scanned 10k #DAB_Ensembles, ${NUM_DAB_ENS}, 20k #DAB_Programs, ${NUM_DAB_PRG}, 30k #FM_Programs, ${NUM_FM_PRG}"
+echo "40, scanned 10k #DAB_Ensembles, ${NUM_DAB_ENS_UNIQ}(${NUM_DAB_ENS}), 20k #DAB_Programs, ${NUM_DAB_PRG_UNIQ}(${NUM_DAB_PRG}), 30k #FM_Programs, ${NUM_FM_PRG_UNIQ}(${NUM_FM_PRG})"
 echo "43, reference #DAB_Ensembles, ${REF_DAB_ENS}, #DAB_Programs, ${REF_DAB_PRG}, #FM_Programs, ${REF_FM_PRG}"
 echo "41, missing 40k #DAB_Ensembles, ${MIS_DAB_ENS}, 50k #DAB_Programs, ${MIS_DAB_PRG}, 60k #FM_Programs, ${MIS_FM_PRG}"
 echo "42, additional 70k #DAB_Ensembles, ${ADD_DAB_ENS}, 80k #DAB_Programs, ${ADD_DAB_PRG}, 90k #FM_Programs, ${ADD_FM_PRG}"
