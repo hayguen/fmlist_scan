@@ -19,6 +19,7 @@ cp scanner/startGpsLoop.sh           /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/stopGpsLoop.sh            /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/waitScreenTermination.sh  /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanToneFeedback.sh       /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/get_throttled.sh          /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/pipwm.sh                  /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/saveScanResults.sh        /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/rmScanResults.sh          /home/${FMLIST_SCAN_USER}/bin/
@@ -78,6 +79,7 @@ CHOWNLIST=( \
   "anonTimeForPreparedResults.sh"
   "atx-knob.sh"
   "createFMoverview.py"
+  "get_throttled.sh"
   "get-adapter-info.py"
   "listUSBdevices.sh"
   "listenDAB.sh"
