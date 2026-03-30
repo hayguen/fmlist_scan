@@ -27,7 +27,6 @@ This is a to-do-list and a collection of ideas for the FMLIST-Scanner
 
 ## open
 
-- [ ] scanTest 5 does not work, seems scanTest 4 prepares the file, but the spectrum of test.raw looks strange
 - [ ] updates might distroy GUI (Raspberry in general)
 - [ ] detect bug and fix build directory for dab-cmdline in CMakeFiles
 - [ ] `*.so` ist kein symbolischer Link
@@ -39,6 +38,7 @@ This is a to-do-list and a collection of ideas for the FMLIST-Scanner
 - [x] Debian 13 (trixie) changed packages
 - [x] fix redsea installation for RPI3B, will not crash
 - [x] gpsd checks return authentification error (but installation is not affected), `sudo scons` does not solve it, this has not be solved, but I have not seen it during the last installations
+- [x] scanTest 5 does not work, seems scanTest 4 prepares the file, but the spectrum of test.raw looks strange
 
 
 Updated: March 2026
