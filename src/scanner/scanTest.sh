@@ -131,14 +131,34 @@ for testNo in $(echo $ARGS); do
 
     "5")
       echo "testing record + csdr + redsea!"
+      DECIM=$[ 1 + $RFRATE / $RDSRATE ]
+      SRATE=$[ $RDSRATE * $DECIM ]
+      RCVFRQ=$[ $SRATE / 4 ]
+      LOFREQ=$[ $TUNEFREQ - $RCVFRQ ]
+      NUMSMP=$[ $RECDURATION * $SRATE ]
+      echo "(Again) recording 10 secs with rtl_sdr to ramdisk."
+      echo ""
+      echo "rtl_sdr -s $SRATE -n $NUMSMP -f $LOFREQ  ${FMLIST_SCAN_RAM_DIR}/test.raw"
+      echo ""
+      echo "then use this test.raw and process with csdr and then pipe to"
+      echo ""
+      echo "redsea -p --bler -r $RDSRATE"
+      echo ""
+      echo "--------------------------"
+      echo "Please wait for 10 secs"
+      echo "and do NOT press Ctrl+C"
+      echo "--------------------------"
+      echo ""
+      echo "recording at RF rate $SRATE , decimating by $DECIM to $RDSRATE"
+      rtl_sdr -s $SRATE -n $NUMSMP -f $LOFREQ  ${FMLIST_SCAN_RAM_DIR}/test.raw
       cat ${FMLIST_SCAN_RAM_DIR}/test.raw \
        | csdr convert -i char -o float \
        | csdr dcblock \
        | csdr shift -0.25 2>/dev/null \
-       | csdr firdecimate --window=hamming 8 0.125 2>/dev/null \
+       | csdr firdecimate --window=hamming $DECIM 0.125 2>/dev/null \
        | csdr fmdemod \
        | csdr convert -i float -o s16 \
-       | redsea --streams -p --bler -r 171k
+       | redsea -p --bler -r $RDSRATE
       ;;
 
     "6")
