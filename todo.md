@@ -41,4 +41,4 @@ This is a to-do-list and a collection of ideas for the FMLIST-Scanner
 - [x] gpsd checks return authentification error (but installation is not affected), `sudo scons` does not solve it, this has not be solved, but I have not seen it during the last installations
 
 
-Updated: November 2025
+Updated: March 2026
