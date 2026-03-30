@@ -18,5 +18,7 @@ while /bin/true; do
   clear
   echo ""
   statusBgScanLoop.sh
+  echo ""
+  get_throttled.sh
   sleep "${SLEEPDUR}"
 done
