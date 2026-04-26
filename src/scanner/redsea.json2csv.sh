@@ -5,7 +5,7 @@ jsonf="$1"
 
 PI="$(  jq ".pi"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/[^"]*"//' -e 's/"//g' )"
 NPI="$( jq ".pi"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |awk '{ print $1; }' )"
-PS="$(  jq ".ps"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/[^"]*"/"/' -e 's/,/;/g' )"
+PS="$(  jq ".ps"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/[^"]*"/"/' -e 's/,/;/g' -e 's/ /_/g' )"
 APS="$( jq ".ps"               "${jsonf}" |grep -v null |uniq -c |sed -e 's/[^"]*"/"/' -e 's/,/;/g' |tr '\n' ',' )"
 NPS="$( jq ".ps"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |awk '{ print $1; }' )"
 TA="$(  jq ".ta"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/.*true/1/' -e 's/.*false/0/g' )"
