@@ -59,7 +59,7 @@ echo "Previously detected power supply issues since reboot:"
 PAST_HEX=${THROTTLED_CODE_HEX:0:1}
 PAST_BIN=${HEX_BIN_MAP[$PAST_HEX]}
 if [ $PAST_HEX = "0" ]; then
-  echo "Power Voltage is ok"
+  echo "Supply Voltage was always ok since reboot"
 else
   bit_n=16
   for (( i=${#PAST_BIN}-1; i>=0; i--)); do
