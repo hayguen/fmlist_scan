@@ -72,12 +72,17 @@ echo "starting   eti-cmdline-rtlsdr -Q -P 4 -O ${FMLIST_SCAN_RAM_DIR}/${FN} -C $
 #   -Q autogain on
 
 
-# save DAB images in RAM
+# make directory and change to it 
 mkdir -p "${FMLIST_SCAN_RAM_DIR}/DAB-${chan}_${DTFREC}_${fnID}"
 cd "${FMLIST_SCAN_RAM_DIR}/DAB-${chan}_${DTFREC}_${fnID}"
 
+# save DAB images in RAM 
+# Remark: the length in seconds is according to the value in the command and will be ended by the timeout) 
+# then
+# skip 1st DAB frame (6144 bytes) for compatibility with ODR-DABmod
 LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" timeout -v -s SIGTERM -k ${durationKill} ${durationClose} \
-  eti-cmdline-rtlsdr -Q -P 4 -O "${FN}" -C "$@" 2>&1 | tee ${FL}
+  eti-cmdline-rtlsdr -Q -P 4 -O "${FN}" -C "$@" 2>&1 | tee ${FL} | tee /dev/tty | dd of=/dev/stdout bs=1 skip=6144  
+# former command:  eti-cmdline-rtlsdr -Q -P 4 -O "${FN}" -C "$@" 2>&1 | tee ${FL}
 
 # eti-cmdline-rtlsdr ${DABLISTENOPT} -O "${FN}" -C "$@" 2>&1 | tee ${FL}
 
@@ -94,5 +99,7 @@ fi
 echo "copying to ${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/DABeti/ .."
 
 cp -r "${FMLIST_SCAN_RAM_DIR}/DAB-${chan}_${DTFREC}_${fnID}" "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/DABeti/"
-echo "finished."
+
 rm -rf "${FMLIST_SCAN_RAM_DIR}/DAB-${chan}_${DTFREC}_${fnID}"
+
+echo "finished."
