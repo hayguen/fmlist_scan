@@ -12,6 +12,7 @@ This is a to-do-list and a collection of ideas for the FMLIST-Scanner
 - [ ] install eti-cmdline as default
 - [ ] add comments for suitable operating systems, Armbian not working due to sudo problems
 - [ ] convert manual (PDF) to Markdown and translate it line by line to English (work still in progress).
+- [ ] find a way to skip 6144 bytes in eti and (!) display the console output anyway
 
 ## already done 
 
@@ -21,7 +22,8 @@ This is a to-do-list and a collection of ideas for the FMLIST-Scanner
 - [x] install dablin as additional package
 - [x] install `net-tools` for `ifconfig` during installation
 - [x] show voltage in monitorBgScanLoop (well, not done, but undervoltage will be shown)
-
+- [x] RDS PS export underscores (`_`) instead of spaces
+- [x] uninstall redsea is no more possible
 
 # Bugs
 
