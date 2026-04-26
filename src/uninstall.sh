@@ -134,7 +134,7 @@ echo -e "\ndab-cmdline_files:"  ; (cd git/hayguen/build_dab-cmdline_files  && su
 echo -e "\ndab-cmdline_rtlsdr:" ; (cd git/hayguen/build_dab-cmdline_rtlsdr && sudo make uninstall )
 echo -e "\neti-cmdline:"        ; (cd git/hayguen/build_eti-stuff_rtlsdr   && sudo make uninstall )
 echo -e "\ncsdr:"               ; (cd git/simonyiszk/csdr       && sudo make uninstall )
-echo -e "\nredsea:"             ; (cd git/windytan/redsea       && sudo make uninstall )
+# echo -e "\nredsea:"             ; (cd git/windytan/redsea       && sudo make uninstall )   # due to meson an unintall is no more possible
 echo -e "\nlib liquid-dsp:"     ; (cd git/jgaeddert/liquid-dsp  && sudo make uninstall )
 echo -e "\nkalibrate-rtl:"      ; (cd git/steve-m/kalibrate-rtl && sudo make uninstall )
 # echo -e "\nlibcorrect:"     ; (cd git/quiet/libcorrect      && sudo make uninstall )
