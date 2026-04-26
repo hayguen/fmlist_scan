@@ -36,7 +36,11 @@ cd "${FMLIST_SCAN_RAM_DIR}"
   else
     echo "Scanner should not run. No Last found station."
   fi
-  echo "Scanner scanLoop is$( screen -ls |grep -c 'scanLoopBg' | sed 's/^0$/ NOT/g' |sed 's/^1$//g' ) running in screen."
+    echo -e "Scanner scanLoop is \n===========\n   NOT  \n===========\nrunning in screen."
+  else
+    echo "Scanner scanLoop is running in screen."
+  fi
+
   echo ""
   tail -n 10 checkBgScanLoop.log | grep -v "Delta from LAST to CURR"
 
