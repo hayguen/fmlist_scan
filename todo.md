@@ -12,6 +12,8 @@ This is a to-do-list and a collection of ideas for the FMLIST-Scanner
 - [ ] install eti-cmdline as default
 - [ ] add comments for suitable operating systems, Armbian not working due to sudo problems
 - [ ] convert manual (PDF) to Markdown and translate it line by line to English (work still in progress).
+- [ ] check if `scan_*_dab_gps.csv` is really needed (as always 0 bytes)
+
 
 
 ## already done 
