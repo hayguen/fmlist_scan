@@ -58,7 +58,7 @@ HOSTNAME = ""
 
 def read_all_lines(fn):
     try:
-        with open(fn, "r") as f:
+        with open(fn, "r", encoding="utf-8") as f:
             cc = f.readlines()
             f.close()
     except:
@@ -68,7 +68,7 @@ def read_all_lines(fn):
 
 def write_all_lines(fn_new, cc):
     try:
-        with open(fn_new, "w") as f:
+        with open(fn_new, "w", encoding="utf-8") as f:
             f.writelines(cc)
             f.close()
             return True
@@ -501,13 +501,159 @@ seed()   # int(dt.datetime.now().timestamp()))
 
 
 def HEADstr(t : str):
-    #stylehdr = b'<head><meta http-equiv="refresh" content="0"/><style>p, button {font-size: 1em}</style><style>table, th, td {border: 1px solid black;}</style></head>'
-    stylehdr = b'<head><style>p, button {font-size: 1em}</style><style>table, th, td {border: 1px solid black;}</style>'
+    stylehdr = """<head>
+<meta charset=\"utf-8\">
+<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+<style>
+:root {
+    --bg-0: #f3f7f1;
+    --bg-1: #e7f0e5;
+    --panel: #ffffff;
+    --ink: #1d2b24;
+    --muted: #4e6659;
+    --line: #c8d7cd;
+    --accent: #0f7a57;
+    --accent-strong: #095940;
+    --shadow: 0 14px 40px rgba(16, 48, 35, 0.10);
+    --radius: 14px;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+    margin: 0;
+    padding: 1.25rem;
+    color: var(--ink);
+    font-family: \"Segoe UI Variable Text\", \"Trebuchet MS\", \"Verdana\", sans-serif;
+    line-height: 1.45;
+    background:
+        radial-gradient(1200px 420px at 10% -10%, #d9eadf 0%, transparent 62%),
+        radial-gradient(850px 350px at 100% 0%, #dceee3 0%, transparent 58%),
+        linear-gradient(165deg, var(--bg-0), var(--bg-1));
+}
+body > * {
+    width: min(1080px, 100%);
+    margin-left: auto;
+    margin-right: auto;
+}
+h1 {
+    margin: 0 0 .55rem;
+    font-size: clamp(1.4rem, 2.8vw, 2.2rem);
+    letter-spacing: .02em;
+}
+h2 {
+    margin: 0 0 .9rem;
+    color: var(--muted);
+    font-size: clamp(1.05rem, 2vw, 1.35rem);
+    font-weight: 650;
+}
+p { margin: .45rem 0; }
+a {
+    color: var(--accent-strong);
+    text-decoration-color: color-mix(in srgb, var(--accent-strong), transparent 45%);
+    text-underline-offset: 2px;
+}
+hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 1rem auto;
+}
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+}
+th, td {
+    border-bottom: 1px solid #dde8e1;
+    padding: .62rem .72rem;
+    vertical-align: top;
+    text-align: left;
+    font-size: .95rem;
+}
+th {
+    background: #eef6f1;
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+tr:nth-child(even) td { background: #fbfdfc; }
+tr:last-child td { border-bottom: 0; }
+form {
+    margin: .5rem 0;
+}
+input, select, textarea {
+    width: 100%;
+    max-width: 100%;
+    border: 1px solid #b8cbc0;
+    border-radius: 10px;
+    padding: .52rem .65rem;
+    font: inherit;
+    color: var(--ink);
+    background: #fcfffd;
+    outline: none;
+    transition: border-color .16s ease, box-shadow .16s ease;
+}
+input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(15, 122, 87, .16);
+}
+textarea {
+    resize: vertical;
+    min-height: 5rem;
+}
+button {
+    border: 0;
+    border-radius: 999px;
+    padding: .52rem .95rem;
+    font: 700 .93rem/1.2 \"Segoe UI Variable Text\", \"Trebuchet MS\", \"Verdana\", sans-serif;
+    color: #ffffff;
+    background: linear-gradient(180deg, #12956b 0%, #0d6f4f 100%);
+    box-shadow: 0 8px 20px rgba(13, 111, 79, .26);
+    cursor: pointer;
+    transition: transform .14s ease, filter .14s ease;
+}
+button:hover { filter: brightness(1.05); }
+button:active { transform: translateY(1px); }
+body > h1 {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: .85rem 1rem;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    transform: translateY(6px);
+    animation: rise .34s ease forwards;
+}
+@keyframes rise {
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 900px) {
+    body {
+        padding: .75rem;
+        font-size: 15px;
+    }
+    th, td {
+        padding: .52rem .5rem;
+        font-size: .9rem;
+    }
+    table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+</style>
+"""
 
     if len(t) > 0:
-        x = stylehdr + str.encode(t) + b'</head>\n'
+        x = (stylehdr + t + '</head>\n').encode('utf-8')
     else:
-        x = stylehdr + b'</head>\n'
+        x = (stylehdr + '</head>\n').encode('utf-8')
     if VERBOSE_LOG:
         print(f"headstr: {x}")
     return x
@@ -520,6 +666,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.log_request(code)
         self.send_response_only(code)
         self.send_header('Server','python3 httpserver for FMLIST-scanner ')
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Date', self.date_time_string())
         self.end_headers()
 
@@ -1252,5 +1399,4 @@ def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     run(handler_class=RequestHandler)
-
 
