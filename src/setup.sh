@@ -18,6 +18,9 @@ fi
 if [ -z "${FMLIST_SCAN_SETUP_GPS}" ]; then
   export FMLIST_SCAN_SETUP_GPS="1"
 fi
+if [ -z "${FMLIST_SCAN_SETUP_GPSSRC}" ]; then
+  export FMLIST_SCAN_SETUP_GPSSRC="0"
+fi
 
 if [ -z "${FMLIST_SCAN_MOUNT}" ]; then
   export FMLIST_SCAN_MOUNT="1"
@@ -88,6 +91,9 @@ for C in $(seq 5 -1 1) ; do
 done
 echo -e "\n\n"
 
+FAILED_STEPS=()
+SUCCESS_STEPS=()
+
 while /bin/true; do
 
   if [ ! -z "$1" ]; then
@@ -104,7 +110,11 @@ while /bin/true; do
     echo "installing system prerequisites"
     echo "-------------------------"
     echo " "
-    . prereq_fmlist_scan
+    if . prereq_fmlist_scan; then
+        SUCCESS_STEPS+=("syspre")
+    else
+        FAILED_STEPS+=("syspre")
+    fi
   fi
 
   if [ "$1" = "cron" ] || [ "$1" = "" ]; then
@@ -113,7 +123,11 @@ while /bin/true; do
     echo "installing crontab"
     echo "-------------------------"
     echo " "
-    . prereq_crontab
+    if . prereq_crontab; then
+        SUCCESS_STEPS+=("cron")
+    else
+        FAILED_STEPS+=("cron")
+    fi
   fi
 
   if [ "$1" = "fstab" ] || [ "$1" = "" ]; then
@@ -122,7 +136,11 @@ while /bin/true; do
     echo "installing fstab entry"
     echo "-------------------------"
     echo " "
-    . prereq_fstab
+    if . prereq_fstab; then
+        SUCCESS_STEPS+=("fstab")
+    else
+        FAILED_STEPS+=("fstab")
+    fi
   fi
 
   if [ "$1" = "files" ] || [ "$1" = "" ]; then
@@ -131,7 +149,11 @@ while /bin/true; do
     echo "installing scanner files"
     echo "-------------------------"
     echo " "
-    . prereq_scan_files
+    if . prereq_scan_files; then
+        SUCCESS_STEPS+=("files")
+    else
+        FAILED_STEPS+=("files")
+    fi
   fi
 
   if [ "$1" = "conf" ] || [ "$1" = "" ]; then
@@ -140,7 +162,11 @@ while /bin/true; do
     echo "installing config files"
     echo "-------------------------"
     echo " "
-    . prereq_config
+    if . prereq_config; then
+        SUCCESS_STEPS+=("conf")
+    else
+        FAILED_STEPS+=("conf")
+    fi
   fi
 
   # gui software is not installed automatically
@@ -150,7 +176,11 @@ while /bin/true; do
     echo "installing gui software/tools"
     echo "-------------------------"
     echo " "
-    . prereq_gui_software
+    if . prereq_gui_software; then
+        SUCCESS_STEPS+=("gui")
+    else
+        FAILED_STEPS+=("gui")
+    fi
   fi
 
   if [ "$1" = "pre" ] || [ "$1" = "" ]; then
@@ -159,12 +189,11 @@ while /bin/true; do
     echo "installing prerequisites"
     echo "-------------------------"
     echo " "
-    . prereq_librtlsdr
-    . prereq_csdr
-    . prereq_liquid-dsp
-    . prereq_redsea
-    . prereq_dab-cmdline
-    . prereq_eti-cmdline
+    if . prereq_librtlsdr && . prereq_csdr && . prereq_liquid-dsp && . prereq_redsea && . prereq_dab-cmdline && . prereq_eti-cmdline; then
+        SUCCESS_STEPS+=("pre")
+    else
+        FAILED_STEPS+=("pre")
+    fi
   fi
 
   if [ "$1" = "gpsd" ] || [ "$1" = "" ]; then
@@ -175,16 +204,22 @@ while /bin/true; do
         echo "installing gpsd from distribution"
         echo "-------------------------"
         echo " "
-        apt-get -y install gpsd gpsd-clients
+        if apt-get -y install gpsd gpsd-clients; then
+            SUCCESS_STEPS+=("gpsd")
+        else
+            FAILED_STEPS+=("gpsd")
+        fi
       elif [ "${FMLIST_SCAN_SETUP_GPSSRC}" = "1" ]; then
         echo " "
         echo "-------------------------"
         echo "installing gpsd from sources"
         echo "-------------------------"
         echo " "
-        . prereq_gpsd
-        sudo -u ${FMLIST_SCAN_USER} bash -c "source build_gpsd"
-        . inst_gpsd
+        if . prereq_gpsd && sudo -u ${FMLIST_SCAN_USER} bash -c "source build_gpsd" && . inst_gpsd; then
+            SUCCESS_STEPS+=("gpsd")
+        else
+            FAILED_STEPS+=("gpsd")
+        fi
       else
         echo " "
         echo "-------------------------"
@@ -224,7 +259,11 @@ while /bin/true; do
     echo "-------------------------"
     echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_librtlsdr"
-    . inst_librtlsdr
+    if . inst_librtlsdr; then
+        SUCCESS_STEPS+=("rtl")
+    else
+        FAILED_STEPS+=("rtl")
+    fi
   fi
 
   if [ "$1" = "csdr" ] || [ "$1" = "" ]; then
@@ -234,7 +273,11 @@ while /bin/true; do
     echo "-------------------------"
     echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_csdr"
-    . inst_csdr
+    if . inst_csdr; then
+        SUCCESS_STEPS+=("csdr")
+    else
+        FAILED_STEPS+=("csdr")
+    fi    
   fi
 
   if [ "$1" = "lfec" ] || [ "$1" = "" ]; then
@@ -244,7 +287,11 @@ while /bin/true; do
     echo "-------------------------"
     echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_libcorrect"
-    . inst_libcorrect
+    if . inst_libcorrect; then
+        SUCCESS_STEPS+=("lfec")
+    else
+        FAILED_STEPS+=("lfec")
+    fi
   fi
 
   if [ "$1" = "ldsp" ] || [ "$1" = "" ]; then
@@ -254,7 +301,11 @@ while /bin/true; do
     echo "-------------------------"
     echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_liquid-dsp"
-    . inst_liquid-dsp
+    if . inst_liquid-dsp; then
+        SUCCESS_STEPS+=("ldsp")
+    else
+        FAILED_STEPS+=("ldsp")
+    fi
   fi
 
   if [ "$1" = "redsea" ] || [ "$1" = "" ]; then
@@ -264,7 +315,11 @@ while /bin/true; do
     echo "-------------------------"
     echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_redsea"
-    . inst_redsea
+    if . inst_redsea; then
+        SUCCESS_STEPS+=("redsea")
+    else
+        FAILED_STEPS+=("redsea")
+    fi
   fi
 
   if [ "$1" = "dabcmd" ] || [ "$1" = "" ]; then
@@ -274,7 +329,11 @@ while /bin/true; do
     echo "-------------------------"
     echo " "
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_dab-cmdline"
-    . inst_dab-cmdline
+    if . inst_dab-cmdline; then
+        SUCCESS_STEPS+=("dabcmd")
+    else
+        FAILED_STEPS+=("dabcmd")
+    fi
   fi
 
   if [ "$1" = "eticmd" ] || [ "$1" = "" ]; then
@@ -283,8 +342,11 @@ while /bin/true; do
     echo "building eti-cmdline"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_eti-cmdline"
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source inst_eti-cmdline"
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_eti-cmdline" && sudo -u ${FMLIST_SCAN_USER} bash -c "source inst_eti-cmdline"; then
+        SUCCESS_STEPS+=("eticmd")
+    else
+        FAILED_STEPS+=("eticmd")
+    fi
   fi
 
   if [ "$1" = "pipwm" ] || [ "$1" = "" ]; then
@@ -293,10 +355,11 @@ while /bin/true; do
     echo "building libwiringPi, pipwm"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi"
-    . inst_wpi
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pipwm"
-    . setup_pipwm
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi" && . inst_wpi && sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pipwm" && . setup_pipwm; then
+        SUCCESS_STEPS+=("pipwm")
+    else
+        FAILED_STEPS+=("pipwm")
+    fi
   fi
 
   if [ "$1" = "pishutd" ] || [ "$1" = "" ]; then
@@ -305,10 +368,11 @@ while /bin/true; do
     echo "building libwiringPi, pishutdown"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi"
-    . inst_wpi
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pishutdown"
-    . inst_pishutdown
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi" && . inst_wpi && sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pishutdown" && . inst_pishutdown; then
+        SUCCESS_STEPS+=("pishutd")
+    else
+        FAILED_STEPS+=("pishutd")
+    fi
   fi
 
   if [ "$1" = "wsrv" ]; then # || [ "$1" = "" ]; then   # do not install service for now
@@ -317,13 +381,16 @@ while /bin/true; do
     echo "installing webserver files"
     echo "-------------------------"
     echo " "
-    . setup_webserver
     echo " "
     echo "-------------------------"
     echo "setting up webserver for scanner"
     echo "-------------------------"
     echo " "
-    . inst_webserver
+    if . setup_webserver && . inst_webserver; then
+        SUCCESS_STEPS+=("wsrv")
+    else
+        FAILED_STEPS+=("wsrv")
+    fi
   fi
 
   if [ "$1" = "chkspec" ] || [ "$1" = "" ]; then
@@ -332,14 +399,16 @@ while /bin/true; do
     echo "building libliquid-dsp"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_liquid-dsp"
-    . inst_liquid-dsp
     echo " "
     echo "-------------------------"
     echo "building checkSpectrumForCarrier"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_checkSpectrum"
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_liquid-dsp" && . inst_liquid-dsp && sudo -u ${FMLIST_SCAN_USER} bash -c "source build_checkSpectrum"; then
+        SUCCESS_STEPS+=("chkspec")
+    else
+        FAILED_STEPS+=("chkspec")
+    fi
   fi
 
   if [ "$1" = "pscan" ] || [ "$1" = "" ]; then
@@ -348,7 +417,11 @@ while /bin/true; do
     echo "building prescanDAB"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_prescanDAB"
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_prescanDAB"; then
+        SUCCESS_STEPS+=("pscan")
+    else
+        FAILED_STEPS+=("pscan")
+    fi
   fi
 
   if [ "$1" = "kal" ] || [ "$1" = "" ]; then
@@ -359,7 +432,11 @@ while /bin/true; do
     echo " "
 
     sudo -u ${FMLIST_SCAN_USER} bash -c "source build_kal"
-    . inst_kal
+    if . inst_kal; then
+        SUCCESS_STEPS+=("kal")
+    else
+        FAILED_STEPS+=("kal")
+    fi
   fi
 
   shift
@@ -368,3 +445,17 @@ while /bin/true; do
   fi
 
 done
+
+echo " "
+echo "========================================="
+if [ ${#FAILED_STEPS[@]} -eq 0 ]; then
+    echo "✓ SETUP COMPLETED SUCCESSFULLY"
+    echo "  All ${#SUCCESS_STEPS[@]} steps completed without errors"
+    exit 0
+else
+    echo "✗ SETUP COMPLETED WITH ERRORS"
+    echo "  Failed steps: ${FAILED_STEPS[*]}"
+    echo "  Successful steps: ${SUCCESS_STEPS[*]}"
+    exit 1
+fi
+echo "========================================="
