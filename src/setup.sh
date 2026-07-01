@@ -375,7 +375,7 @@ while /bin/true; do
     fi
   fi
 
-  if [ "$1" = "wsrv" ]; then # || [ "$1" = "" ]; then   # do not install service for now
+  if [ "$1" = "wsrv" ] || [ "$1" = "" ]; then   # install webserver by default
     echo " "
     echo "-------------------------"
     echo "installing webserver files"
