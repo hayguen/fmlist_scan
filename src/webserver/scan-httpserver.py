@@ -619,6 +619,28 @@ button {
 }
 button:hover { filter: brightness(1.05); }
 button:active { transform: translateY(1px); }
+.pwd-toggle-btn {
+    border: none;
+    background: none;
+    color: var(--accent-strong);
+    cursor: pointer;
+    padding: 0;
+    font-size: 1.1rem;
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-weight: bold;
+}
+.pwd-toggle-btn:hover {
+    color: var(--accent);
+}
+.pwd-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.pwd-input-container input {
+    flex: 1;
+}
 body > h1 {
     background: var(--panel);
     border: 1px solid var(--line);
@@ -648,6 +670,19 @@ body > h1 {
     }
 }
 </style>
+<script>
+function togglePasswordVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    const button = event.target;
+    if (input.type === 'password') {
+        input.type = 'text';
+        button.textContent = 'Hide';
+    } else {
+        input.type = 'password';
+        button.textContent = 'Show';
+    }
+}
+</script>
 """
 
     if len(t) > 0:
@@ -657,7 +692,6 @@ body > h1 {
     if VERBOSE_LOG:
         print(f"headstr: {x}")
     return x
-
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -773,7 +807,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         r = r + f'<input type="hidden" id="action" name="action" value="wifi">\n'
         r = r + '<table>\n'
         r = r + f'<tr><td>WiFi SSID</td><td><input type="text" id="ssid" name="ssid"></td></tr>\n'
-        r = r + '<tr><td>WPA/2 passphrase</td><td><input type="password" id="pwd" name="pwd"></td></tr>\n'
+        #r = r + '<tr><td>WPA/2 passphrase</td><td><input type="password" id="pwd" name="pwd"></td></tr>\n'
+        r = r + '<tr><td>WPA/2 passphrase</td><td><div class="pwd-input-container"><input type="password" id="pwd" name="pwd"><button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(\'pwd\')">Show</button></div></td></tr>\n'
         r = r + '</table>\n'
         r = r + '<br>\n'
         r = r + '<button style="color:blue">Add WiFi</button>\n'
@@ -1195,7 +1230,11 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(f'<h1>Login required</h1>'.encode())
             self.wfile.write(f'<form action="?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'.encode())
             self.wfile.write(b'<span>Config password:</span>')
+            # self.wfile.write(b'<input type="password" id="pwd" name="pwd">')
+            self.wfile.write(b'<div class="pwd-input-container">')
             self.wfile.write(b'<input type="password" id="pwd" name="pwd">')
+            self.wfile.write(f"<button type=\"button\" class=\"pwd-toggle-btn\" onclick=\"togglePasswordVisibility('pwd')\" >Show</button>".encode())
+            self.wfile.write(b'</div>')
             self.wfile.write(f'<input type="hidden" id="action" name="action" value="login">'.encode())
             self.wfile.write(f'<input type="hidden" id="session" name="session" value="{session}">'.encode())
             self.wfile.write(b'<button style="color:blue">Sign-In</button>')
@@ -1240,9 +1279,18 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f'<h1>Change Config Passphrase</h1>'.encode())
                 self.wfile.write(f'<form action="/config_pwd?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'.encode())
                 self.wfile.write(b'<span>Old passphrase:</span>')
+                #self.wfile.write(f'<input type="password" id="old_pwd" name="old_pwd">'.encode())
+                #self.wfile.write(b'<br><span>New passphrase:</span>')
+                #self.wfile.write(b'<input type="password" id="new_pwd" name="new_pwd">')
+                self.wfile.write(b'<div class="pwd-input-container">')
                 self.wfile.write(f'<input type="password" id="old_pwd" name="old_pwd">'.encode())
+                self.wfile.write(b'<button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(\'old_pwd\')">Show</button>')
+                self.wfile.write(b'</div>')
                 self.wfile.write(b'<br><span>New passphrase:</span>')
+                self.wfile.write(b'<div class="pwd-input-container">')
                 self.wfile.write(b'<input type="password" id="new_pwd" name="new_pwd">')
+                self.wfile.write(b'<button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(\'new_pwd\')">Show</button>')
+                self.wfile.write(b'</div>')
                 self.wfile.write(f'<input type="hidden" id="action" name="action" value="config_pwd">'.encode())
                 self.wfile.write(b'<button style="color:blue">Change</button>')
                 self.wfile.write(b'</form>')
@@ -1399,4 +1447,5 @@ def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     run(handler_class=RequestHandler)
+
 
