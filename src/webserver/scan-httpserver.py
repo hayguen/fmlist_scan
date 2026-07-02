@@ -721,7 +721,7 @@ class RequestHandler(BaseHTTPRequestHandler):
     def create_html_form_str(self, f, t, session ):
         s = f'<form action="/{f}.html?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'
         s = s + f'<input type="hidden" id="action" name="action" value="{f}">'
-        s = s + f'<button style="color:blue">{t}</button>'
+        s = s + f'<button>{t}</button>'
         s = s + '</form>'
         return s
 
@@ -811,7 +811,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         r = r + '<tr><td>WPA/2 passphrase</td><td><div class="pwd-input-container"><input type="password" id="pwd" name="pwd"><button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(\'pwd\')">Show</button></div></td></tr>\n'
         r = r + '</table>\n'
         r = r + '<br>\n'
-        r = r + '<button style="color:blue">Add WiFi</button>\n'
+        r = r + '<button>Add WiFi</button>\n'
         r = r + '<br>\n'
         r = r + '</form>\n'
         self.wfile.write(str.encode(r))
@@ -948,7 +948,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             #s = s + "<tr><th>Name</th><th>Value / Content</th><th>Description</th><tr>\n"
             s = s + form_cont
             s = s + "</table><br>"
-            s = s + f'<button style="color:blue">CONFIGURE</button>'
+            s = s + f'<button>CONFIGURE</button>'
             s = s + '</form>'
             out_html = s
             break
@@ -1237,7 +1237,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(b'</div>')
             self.wfile.write(f'<input type="hidden" id="action" name="action" value="login">'.encode())
             self.wfile.write(f'<input type="hidden" id="session" name="session" value="{session}">'.encode())
-            self.wfile.write(b'<button style="color:blue">Sign-In</button>')
+            self.wfile.write(b'<button>Sign-In</button>')
             self.wfile.write(b'</form>')
             self.wfile.write(str.encode( f'<br><p>without login, only <a href="/status.html?session={session}">Show Scanner Status</a> is available</p>'))
 
@@ -1292,13 +1292,13 @@ class RequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(b'<button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility(\'new_pwd\')">Show</button>')
                 self.wfile.write(b'</div>')
                 self.wfile.write(f'<input type="hidden" id="action" name="action" value="config_pwd">'.encode())
-                self.wfile.write(b'<button style="color:blue">Change</button>')
+                self.wfile.write(b'<button>Change</button>')
                 self.wfile.write(b'</form>')
 
             else:
                 self.GET_menu(session)
 
-        self.wfile.write(str.encode( f'<p>back to <a href="/index.html?session={session}">menu</a></p>'))
+        self.wfile.write(str.encode( f'<p><button type="button" onclick="window.location.href=\'/index.html?session={session}\'">Back to menu</button></p>' ))
         self.wfile.write(str.encode( f'<p>to <a href="https://groups.io/g/fmlist-scanner" target="_groups_io">Mailing List and Group at groups.io</a></p>'))
         self.wfile.write(str.encode( f'<p>to <a href="https://www.fmlist.org/" target="_fmlist_org">FMLIST.org</a>. look for the URDS menu.</p>'))
         self.wfile.write(b'</body>')
@@ -1431,7 +1431,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         self.wfile.write('<hr>'.encode())
         # self.wfile.write(str.encode( f'<p>will reload site with GET, to get rid of POST parameters, in few seconds ..</p>'))
-        self.wfile.write(str.encode( f'<p>back to <a href="/index.html?session={session}">menu</a></p>'))
+        self.wfile.write(str.encode( f'<p><button type="button" onclick="window.location.href=\'/index.html?session={session}\'">Back to menu</button></p>' ))
 
         self.wfile.write(b'</body>')
         self.wfile.write(b'</html>')
