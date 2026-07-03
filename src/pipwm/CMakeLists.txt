@@ -1,5 +1,5 @@
-project (pipwm)
 cmake_minimum_required(VERSION 3.5)
+project (pipwm)
 
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
