@@ -228,6 +228,10 @@ while /bin/true; do
     break
   fi
 
+  if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
+    break
+  fi
+
   if [ "$1" = "single" ] || [ "$1" = "singleshot" ]; then
     # stop loop before saving results. results are saved anyway after loop
     break
