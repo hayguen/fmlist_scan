@@ -74,6 +74,19 @@ export FMSCAN_NO=$[ ${FMSCAN_NO} + 1 ]
 echo "reading scan parameters (chunkduration, par_jobs, ddc_step, ukw_beg, ukw_end) from ${FMLIST_SCAN_RAM_DIR}/fmscan.inc"
 source ${FMLIST_SCAN_RAM_DIR}/fmscan.inc
 
+if ! echo "${par_jobs}" | grep -Eq '^[0-9]+$' || [ "${par_jobs}" -le 0 ]; then
+  par_jobs=1
+fi
+if command -v nproc >/dev/null 2>&1; then
+  max_par_jobs=$(nproc)
+  if [ "${max_par_jobs}" -gt 1 ]; then
+    max_par_jobs=$[ ${max_par_jobs} - 1 ]
+  fi
+  if [ "${par_jobs}" -gt "${max_par_jobs}" ]; then
+    par_jobs="${max_par_jobs}"
+  fi
+fi
+
 echo -n "${FMSCAN_NO}" >${FMLIST_SCAN_RAM_DIR}/fmscan.no
 
 
@@ -365,14 +378,19 @@ cat ${rdy_rec_name}.raw \
 | csdr firdecimate  $chunk2mpx_dec --window=hamming 2>/dev/null \
 | csdr fmdemod  \
 | csdr convert -i float -o s16 \
-| redsea -p --bler --output-hex --timestamp "@%Y/%m/%d %T" > redsea.\${f}.spy
+| {
+  if [ ${FMLIST_SCAN_SAVE_RDSSPY} -ne 0 ] || [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
+    redsea -p --bler --output-hex --timestamp "@%Y/%m/%d %T" \
+      | tee redsea.\${f}.spy \
+      | redsea -p --input-hex > redsea.\${f}.txt
+  else
+    redsea -p --bler --output-hex --timestamp "@%Y/%m/%d %T" \
+      | redsea -p --input-hex > redsea.\${f}.txt
+  fi
+}
 
-cat redsea.\${f}.spy \\
- | redsea -p --input-hex \\
- > redsea.\${f}.txt
 
-
-NL=\$(cat redsea.\${f}.txt | wc -l)
+NL=\$(wc -l < redsea.\${f}.txt)
 echo "NUM_DECODED_JSON_LINES=\"\${NL}\"" >>redsea.\${f}.inc
 
 if [ \$NL -le 0 ]; then
@@ -382,15 +400,17 @@ if [ \$NL -le 0 ]; then
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
     echo "${DTF_RDY}: FM \${f}: NO RDS decode" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     mv redsea.\${f}.txt redsea.\${f}_noRDS.txt
-    mv redsea.\${f}.spy redsea.\${f}_noRDS.spy
+    if [ -f redsea.\${f}.spy ]; then
+      mv redsea.\${f}.spy redsea.\${f}_noRDS.spy
+    fi
 
     echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_carrier.\${f}.csv
     echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm_carrier.\${f}.csv
     echo ",${DTF_RDY},\${GPSCOLS}" >>fm_carrier.\${f}.csv
 
   else
-    rm redsea.\${f}.txt
-    rm redsea.\${f}.inc
+    rm -f redsea.\${f}.txt
+    rm -f redsea.\${f}.inc
   fi
 else
   echo "processing freq \$f : decoded rds"
@@ -500,7 +520,6 @@ EOF
   if [ "$chunkfreq" != "EOL" ]; then
     echo "waiting for record with pid ${recpid} to finish .."
     wait $recpid
-    sleep 0.5
 
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
       echo "rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${rec_path}/${rdy_rec_name}.raw finished" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
