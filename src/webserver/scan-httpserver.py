@@ -669,6 +669,35 @@ body > h1 {
         -webkit-overflow-scrolling: touch;
     }
 }
+@media (max-width: 900px) and (orientation: portrait) {
+    table.config-table {
+        display: table;
+        overflow-x: visible;
+    }
+    table.config-table tr {
+        display: block;
+        border-bottom: 1px solid #dde8e1;
+    }
+    table.config-table tr:last-child {
+        border-bottom: 0;
+    }
+    table.config-table th,
+    table.config-table td {
+        display: block;
+        width: 100%;
+        border-bottom: 0;
+        padding: .5rem .55rem;
+    }
+    table.config-table th {
+        position: static;
+    }
+    table.config-table td:nth-child(3),
+    table.config-table th:nth-child(3) {
+        padding-top: .1rem;
+        color: var(--muted);
+        font-size: .86rem;
+    }
+}
 </style>
 <script>
 function togglePasswordVisibility(inputId) {
@@ -944,7 +973,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             s = f'<form action="/config?session={session}" method="POST" enctype="application/x-www-form-urlencoded">'
             s = s + f'<input type="hidden" id="action" name="action" value="config">'
-            s = s + "<table>"
+            s = s + '<table class="config-table">'
             #s = s + "<tr><th>Name</th><th>Value / Content</th><th>Description</th><tr>\n"
             s = s + form_cont
             s = s + "</table><br>"
