@@ -70,6 +70,11 @@ if [ ! -z "${FMLIST_SCAN_PPM}" ]; then
   DABOPT="${DABOPT} -p ${FMLIST_SCAN_PPM}"
 fi
 
+# mobile scans are faster; only fixed-position scans include detailed audio analysis (-D)
+if { [ "${FMLIST_UP_POSITION}" = "fixed" ] || [ "${FMLIST_UP_POSITION}" = "fixed position" ]; } && [[ " ${DABOPT} " != *" -D "* ]]; then
+  DABOPT="${DABOPT} -D"
+fi
+
 if [ "${FMLIST_SCAN_DAB_SAVE_FIC}" = "1" ]; then
   DABOPT="${DABOPT} -f"
 fi
