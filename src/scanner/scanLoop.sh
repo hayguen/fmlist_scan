@@ -50,6 +50,8 @@ if [ -f "${FMLIST_SCAN_RAM_DIR}/abortScanLoop" ]; then
   rm "${FMLIST_SCAN_RAM_DIR}/abortScanLoop"
 fi
 
+rm -f "${FMLIST_SCAN_RAM_DIR}/LAST.info"
+
 #
 
 echo -e "\\nSTARTING_SCANNER\\n\\n" >>${FMLIST_SCAN_RAM_DIR}/scanner.log

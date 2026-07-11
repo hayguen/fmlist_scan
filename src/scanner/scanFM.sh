@@ -418,6 +418,9 @@ else
   echo "RDS=\"1\"" >>redsea.\${f}.inc
   RDS="1"
   RDSCOLS="\$( redsea.json2csv.sh redsea.\${f}.txt )"
+  PI="\$( echo \"\${RDSCOLS}\" | cut -d',' -f1 | tr -d '\"' | sed 's/^0x//' )"
+  PS="\$( echo \"\${RDSCOLS}\" | cut -d',' -f3 | tr -d '\"' )"
+  echo "\${PI} \${PS}" >${FMLIST_SCAN_RAM_DIR}/LAST.info
 
     echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_rds.\${f}.csv
     echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm_rds.\${f}.csv
