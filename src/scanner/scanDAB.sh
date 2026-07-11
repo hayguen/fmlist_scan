@@ -173,9 +173,22 @@ for CH in $(echo "${dabchannels[@]}") ; do
       rm "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log"
     fi
   else
-    echo "DAB_${CH}" >${FMLIST_SCAN_RAM_DIR}/LAST
     ENSNAME=$( grep "ensemblenameHandler:" "${rec_path}/DAB_${CH}_stderr.log" | head -n1 | sed "s/.*ensemblenameHandler: \('[^']*'\).*\((EId [^)]*)\).*/\1 \2/" )
-    echo "${ENSNAME}" >${FMLIST_SCAN_RAM_DIR}/LAST.info
+    LAST_KEY="DAB_${CH}"
+    LAST_INFO="${ENSNAME}"
+    (
+      flock -x 214
+      echo "${LAST_KEY}" >${FMLIST_SCAN_RAM_DIR}/LAST
+      echo "${LAST_INFO}" >${FMLIST_SCAN_RAM_DIR}/LAST.info
+      if [ -f ${FMLIST_SCAN_RAM_DIR}/LAST.history ]; then
+        awk -v k="${LAST_KEY}" 'index($0, k " ") != 1' ${FMLIST_SCAN_RAM_DIR}/LAST.history >${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+      else
+        : >${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+      fi
+      echo "${LAST_KEY} ${LAST_INFO}" >>${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+      tail -n 50 ${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp >${FMLIST_SCAN_RAM_DIR}/LAST.history
+      rm -f ${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+    ) 214>${FMLIST_SCAN_RAM_DIR}/last.lock
     NUMFOUND=$[ $NUMFOUND + 1 ]
 
     if [ "${FMLIST_SCAN_DAB_SAVE_FIC}" = "1" ]; then
