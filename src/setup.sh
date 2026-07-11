@@ -33,7 +33,13 @@ if [ -z "${FMLIST_SCAN_RESULT_DIR}" ]; then
 fi
 
 if [ -z "${FMLIST_USER}" ]; then
-  export FMLIST_USER=""
+  echo " "
+  echo "-------------------------"
+  echo "warning: FMLIST_USER is not set"
+  echo "please uncomment and set FMLIST_USER in setup.sh before running this script"
+  echo "-------------------------"
+  echo " "
+  exit 1
 fi
 if [ -z "${FMLIST_OM_ID}" ]; then
   export FMLIST_OM_ID=""
