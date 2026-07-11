@@ -1260,7 +1260,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(b'<span>Config password:</span>')
             # self.wfile.write(b'<input type="password" id="pwd" name="pwd">')
             self.wfile.write(b'<div class="pwd-input-container">')
-            self.wfile.write(b'<input type="password" id="pwd" name="pwd">')
+            self.wfile.write(b'<input type="password" id="pwd" name="pwd" autofocus>')
             self.wfile.write(f"<button type=\"button\" class=\"pwd-toggle-btn\" onclick=\"togglePasswordVisibility('pwd')\" >Show</button>".encode())
             self.wfile.write(b'</div>')
             self.wfile.write(f'<input type="hidden" id="action" name="action" value="login">'.encode())
