@@ -174,6 +174,8 @@ for CH in $(echo "${dabchannels[@]}") ; do
     fi
   else
     echo "DAB_${CH}" >${FMLIST_SCAN_RAM_DIR}/LAST
+    ENSNAME=$( grep "ensemblenameHandler:" "${rec_path}/DAB_${CH}_stderr.log" | head -n1 | sed "s/.*ensemblenameHandler: \('[^']*'\).*\((EId [^)]*)\).*/\1 \2/" )
+    echo "${ENSNAME}" >${FMLIST_SCAN_RAM_DIR}/LAST.info
     NUMFOUND=$[ $NUMFOUND + 1 ]
 
     if [ "${FMLIST_SCAN_DAB_SAVE_FIC}" = "1" ]; then

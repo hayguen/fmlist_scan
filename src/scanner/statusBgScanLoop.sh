@@ -27,7 +27,13 @@ cd "${FMLIST_SCAN_RAM_DIR}"
   fi
   if [ -f LAST ]; then
     echo -en "\nLast found station: "
-    sed -e 's/0000$//g' -e 's/\([0-9][0-9]\)$/.\1 MHz/g' LAST
+    sed -e 's/0000$//g' -e 's/\([0-9][0-9]\)$/.\1 MHz/g' -e 's/^DAB_/DAB /' LAST | tr -d '\n'
+    if [ -f LAST.info ]; then
+      echo -n " "
+      cat LAST.info
+    else
+      echo ""
+    fi
 
     CURR="$(date -u +%s)"
     LAST="$(stat -c %Y ${FMLIST_SCAN_RAM_DIR}/LAST)"
