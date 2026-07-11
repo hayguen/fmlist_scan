@@ -414,13 +414,26 @@ if [ \$NL -le 0 ]; then
   fi
 else
   echo "processing freq \$f : decoded rds"
-  echo "FM \$f" >${FMLIST_SCAN_RAM_DIR}/LAST
   echo "RDS=\"1\"" >>redsea.\${f}.inc
   RDS="1"
   RDSCOLS="\$( redsea.json2csv.sh redsea.\${f}.txt )"
   PI="\$( echo \"\${RDSCOLS}\" | cut -d',' -f1 | tr -d '\"' | sed 's/^0x//' )"
   PS="\$( echo \"\${RDSCOLS}\" | cut -d',' -f3 | tr -d '\"' )"
-  echo "\${PI} \${PS}" >${FMLIST_SCAN_RAM_DIR}/LAST.info
+  LAST_KEY="FM \${f}"
+  LAST_INFO="\${PI} \${PS}"
+  (
+    flock -x 214
+    echo "\${LAST_KEY}" >${FMLIST_SCAN_RAM_DIR}/LAST
+    echo "\${LAST_INFO}" >${FMLIST_SCAN_RAM_DIR}/LAST.info
+    if [ -f ${FMLIST_SCAN_RAM_DIR}/LAST.history ]; then
+      awk -v k="\${LAST_KEY}" 'index($0, k " ") != 1' ${FMLIST_SCAN_RAM_DIR}/LAST.history >${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+    else
+      : >${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+    fi
+    echo "\${LAST_KEY} \${LAST_INFO}" >>${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+    tail -n 50 ${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp >${FMLIST_SCAN_RAM_DIR}/LAST.history
+    rm -f ${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+  ) 214>${FMLIST_SCAN_RAM_DIR}/last.lock
 
     echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_rds.\${f}.csv
     echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm_rds.\${f}.csv

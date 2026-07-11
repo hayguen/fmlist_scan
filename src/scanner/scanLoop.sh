@@ -51,6 +51,7 @@ if [ -f "${FMLIST_SCAN_RAM_DIR}/abortScanLoop" ]; then
 fi
 
 rm -f "${FMLIST_SCAN_RAM_DIR}/LAST.info"
+rm -f "${FMLIST_SCAN_RAM_DIR}/LAST.history"
 
 #
 
