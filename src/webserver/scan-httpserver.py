@@ -958,9 +958,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             form_cont = form_cont + read_and_gen_textarea_form_from_cfg( [
               ("FMLIST_UP_COMMENT", "Upload Comments shown in URDS table") ],
               cfg_dict, cc_config, 3, 40 )
-
             form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
-              ("FMLIST_UP_POSITION", "Position for next upload") ],
+              ("FMLIST_UP_POSITION", "Position for next upload<br>mobile scans are faster; fixed enables detailed DAB audio analysis") ],
               cfg_dict, cc_config, [ ("fixed", "fixed position"), ("mobile", "mobile") ] )
 
             form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
