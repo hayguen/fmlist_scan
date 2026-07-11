@@ -36,9 +36,11 @@ cd "${FMLIST_SCAN_RAM_DIR}"
   else
     echo "Scanner should not run. No Last found station."
   fi
-    echo -e "Scanner scanLoop is \n===========\n   NOT  \n===========\nrunning in screen."
-  else
+
+  if screen -list |grep -q "scanLoopBg" ; then
     echo "Scanner scanLoop is running in screen."
+  else
+    echo -e "Scanner scanLoop is \n===========\n   NOT  \n===========\nrunning in screen."
   fi
 
   echo ""
