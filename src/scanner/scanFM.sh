@@ -15,6 +15,38 @@ if [ "${FMLIST_SCAN_FM}" = "0" ] || [ "${FMLIST_SCAN_FM}" = "OFF" ]; then
   exit 0
 fi
 
+FM_BACKEND_RAW="${FMLIST_FM_BACKEND}"
+if [ -z "${FM_BACKEND_RAW}" ]; then
+  FM_BACKEND_RAW="tef6686"
+fi
+FM_BACKEND="$( echo "${FM_BACKEND_RAW}" | tr '[:upper:]' '[:lower:]' )"
+if [ "${FM_BACKEND}" = "rtlsdr" ]; then
+  FM_BACKEND="rtl"
+fi
+if [ "${FM_BACKEND}" = "tef" ]; then
+  FM_BACKEND="tef6686"
+fi
+
+if [ "${FM_BACKEND}" = "tef6686" ]; then
+  SCANFM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+  if command -v python3 >/dev/null 2>&1; then
+    if [ -z "$1" ]; then
+      exec python3 "${SCANFM_DIR}/scanFM_tef.py"
+    else
+      exec python3 "${SCANFM_DIR}/scanFM_tef.py" "$1"
+    fi
+  elif command -v python >/dev/null 2>&1; then
+    if [ -z "$1" ]; then
+      exec python "${SCANFM_DIR}/scanFM_tef.py"
+    else
+      exec python "${SCANFM_DIR}/scanFM_tef.py" "$1"
+    fi
+  else
+    echo "FM scan failed: python runtime is required for TEF6686 backend"
+    exit 1
+  fi
+fi
+
 
 DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
 DTFREC="$(date -u "+%Y-%m-%dT%H%M%S")"
@@ -405,7 +437,7 @@ if [ \$NL -le 0 ]; then
     fi
 
     echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_carrier.\${f}.csv
-    echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm_carrier.\${f}.csv
+    echo -n ",\$(printf "%.0f" \${carrier_pwr_ratioMin[\$1]}),\$(printf "%.0f" \${carrier_pwr_ratioMax[\$1]})" >>fm_carrier.\${f}.csv
     echo ",${DTF_RDY},\${GPSCOLS}" >>fm_carrier.\${f}.csv
 
   else
@@ -436,7 +468,7 @@ else
   ) 214>${FMLIST_SCAN_RAM_DIR}/last.lock
 
     echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_rds.\${f}.csv
-    echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm_rds.\${f}.csv
+    echo -n ",\$(printf "%.0f" \${carrier_pwr_ratioMin[\$1]}),\$(printf "%.0f" \${carrier_pwr_ratioMax[\$1]})" >>fm_rds.\${f}.csv
     echo -n ",${DTF_RDY},\${GPSCOLS}" >>fm_rds.\${f}.csv
     echo ",\${RDSCOLS}" >>fm_rds.\${f}.csv
 

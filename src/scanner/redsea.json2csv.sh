@@ -5,8 +5,12 @@ jsonf="$1"
 
 PI="$(  jq ".pi"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/[^"]*"//' -e 's/"//g' )"
 NPI="$( jq ".pi"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |awk '{ print $1; }' )"
-PS="$(  jq ".ps"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/[^"]*"/"/' -e 's/,/;/g' -e 's/ /_/g' )"
-APS="$( jq ".ps"               "${jsonf}" |grep -v null |uniq -c |sed -e 's/[^"]*"/"/' -e 's/,/;/g' |tr '\n' ',' )"
+PS="$(  jq ".ps"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/[^"]*"/"/' -e 's/,/;/g' -e 's/[[:space:]]/_/g' )"
+APS="$( jq -r '.ps // empty' "${jsonf}" \
+  | sed -e 's/,/;/g' -e 's/[[:space:]]/_/g' -e 's/"/_/g' \
+  | awk 'NF && !seen[$0]++' \
+  | paste -sd ';' - \
+  | tr -d '\r\n' )"
 NPS="$( jq ".ps"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |awk '{ print $1; }' )"
 TA="$(  jq ".ta"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/.*true/1/' -e 's/.*false/0/g' )"
 TP="$(  jq ".tp"               "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/.*true/1/' -e 's/.*false/0/g' )"
@@ -16,7 +20,24 @@ GRP="$( jq ".group"            "${jsonf}" |grep -v null |sort |uniq -c |sort -nr
 STR="$( jq ".di.stereo"        "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/.*true/1/' -e 's/.*false/0/g' )"
 DPT="$( jq ".di.dynamic_pty"   "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/.*true/1/' -e 's/.*false/0/g' )"
 OPI="$( jq ".other_network.pi" "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/[^"]*"//' -e 's/"//g' )"
-AF="$(jq -c ".partial_alt_frequencies" "${jsonf}" |grep -v null | awk '{ print length($0) " " $0; }' $file | sort -r -n | cut -d ' ' -f 2- | head -n 1 | sed -e 's/\[//g;s/\]//g' | sed -e 's/,/;/g')" # only use longest AF list and replace square brackets and commas, only working with parameter -p in redsea
+AF="$(
+  jq -r '
+    .partial_alt_frequencies[]?,
+    .alt_frequencies[]?,
+    .alt_frequencies_a[]?,
+    .alt_frequencies_b.same_programme[]?
+  ' "${jsonf}" 2>/dev/null \
+    | awk '
+      ($1 ~ /^[0-9]+$/) {
+        v = $1 + 0
+        # Valid FM frequencies in kHz.
+        if (v >= 87500 && v <= 108000 && !seen[v]++) print v
+      }
+    ' \
+    | sort -n \
+    | paste -sd ';' - \
+    | tr -d '\r\n'
+)" # extract AFs from structured redsea fields; unique AFs, numerically sorted, semicolon-separated
 longPS="$(jq ".long_ps"        "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/[^"]*"/"/' -e 's/,/;/g' )"
 RFTapp="$(jq ".rft.app_name"   "${jsonf}" |grep -v null |sort |uniq -c |sort -nr |head -n 1 |sed -e 's/[^"]*"/"/;s/,/;/g'| sed 's/\"//g' )"
 
@@ -40,5 +61,5 @@ fi
 if [ "$2" = "debug" ]; then
   echo "PI:${PI},NPI:${NPI},PS:${PS},NPS:${NPS},TA:${TA},TP:${TP},MUSIC:${MSC},PTY:${PTY},GRP:${GRP},STEREO:${STR},DYNPTY:${DPT},OTHER_PI:${OPI},"
 else
-  echo "${PI},${NPI},${PS},${NPS},${TA},${TP},${MSC},${PTY},${GRP},${STR},${DPT},${OPI},,,,,,,${AF},${RT}"
+  echo "${PI},${NPI},${PS},${NPS},${TA},${TP},${MSC},${PTY},${GRP},${STR},${DPT},${OPI},,,,,,,${AF},${RT},${APS},${longPS}"
 fi

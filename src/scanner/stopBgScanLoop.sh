@@ -19,6 +19,26 @@ fi
 
 touch "${FMLIST_SCAN_RAM_DIR}/stopScanLoop"
 
+# Kill any running TEF scan processes (Python) to interrupt scanning
+pgrep -f "python.*scanFM_tef" >/dev/null 2>&1 && {
+  echo "Sending SIGTERM to running scanFM_tef.py processes..."
+  pkill -TERM -f "python.*scanFM_tef" 2>/dev/null
+  sleep 0.5
+  # Force kill if still running
+  pgrep -f "python.*scanFM_tef" >/dev/null 2>&1 && {
+    echo "Force killing scanFM_tef.py processes..."
+    pkill -KILL -f "python.*scanFM_tef" 2>/dev/null
+  }
+}
+
+# Also kill any redsea processes that might be decoding RDS
+pgrep -f "redsea" >/dev/null 2>&1 && {
+  pkill -TERM -f "redsea" 2>/dev/null
+  sleep 0.2
+  pgrep -f "redsea" >/dev/null 2>&1 && {
+    pkill -KILL -f "redsea" 2>/dev/null
+  }
+}
 
 stopGpsLoop.sh silent
 

@@ -4,6 +4,10 @@ This is a to-do-list and a collection of ideas for the FMLIST-Scanner
 
 ## open
 
+- [ ] make parallel scanning (TEF/RTLSDR) possible
+- [ ] intelligent mobile scan for new signals (for example stay longer when captured for first time)
+- [ ] think about removing the webserver password at all (as it is in local network anyway)
+- [ ] GPS and TEF serial connection still to be tested in parallel (`/dev/ttyUSB0` conflict?)
 - [ ] switch off unused components (HDMI, Bluetooth) in order to reduce power consumption and make this accessible thru Webserver
 - [ ] check why `gpsd-client` is not installed
 - [ ] add comments for suitable operating systems, Armbian not working due to sudo problems
@@ -16,6 +20,10 @@ This is a to-do-list and a collection of ideas for the FMLIST-Scanner
 
 ## already done 
 
+- [x] integration of TEF6686 through serial and WiFi connection, while DAB uses rtlsdr
+- [x] AF now sorted
+- [x] in monitor, show a history of logged frequencies and print PS/PI and Ensemble
+- [x] detailled audio analysis for DAB audio streams (only when static )
 - [x] install eti-cmdline as default
 - [x] install webserver by default
 - [x] print message when installation was successful or when it failed

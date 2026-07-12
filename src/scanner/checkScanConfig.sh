@@ -66,6 +66,8 @@
 
   OTHER_VARS=( \
     "FMLIST_SCAN_GPS_COORDS" \
+    "FMLIST_FM_BACKEND"      \
+    "FMLIST_TEF_TRANSPORT"   \
   )
 
   OPTIONAL_VARS=( \
@@ -79,6 +81,13 @@
     "FMLIST_SCAN_SAVE_LOG_OPT" \
     "FMLIST_FM_RTLSDR_DEV"     \
     "FMLIST_DAB_RTLSDR_DEV"    \
+    "FMLIST_TEF_SERIAL_PORT"   \
+    "FMLIST_TEF_SERIAL_BAUD"   \
+    "FMLIST_TEF_TCP_HOST"      \
+    "FMLIST_TEF_TCP_PORT"      \
+    "FMLIST_TEF_SCAN_THRESHOLD_DB" \
+    "FMLIST_TEF_DWELL_MOBILE_SEC"  \
+    "FMLIST_TEF_DWELL_FIXED_SEC"   \
   )
 
 
@@ -117,6 +126,16 @@
     echo "error: missing FMLIST_SCAN_GPS_COORDS in $HOME/.config/fmlist_scan/config"
   elif [ ! "${FMLIST_SCAN_GPS_COORDS}" = "gps" ] && [ ! "${FMLIST_SCAN_GPS_COORDS}" = "static" ] && [ ! "${FMLIST_SCAN_GPS_COORDS}" = "auto" ]; then
     echo "error: FMLIST_SCAN_GPS_COORDS must be 'gps', 'static' or 'auto'"
+  fi
+
+  if [ -z "${FMLIST_FM_BACKEND}" ]; then
+    echo "error: missing FMLIST_FM_BACKEND in $HOME/.config/fmlist_scan/config"
+  elif [ ! "${FMLIST_FM_BACKEND}" = "rtl" ] && [ ! "${FMLIST_FM_BACKEND}" = "rtlsdr" ] && [ ! "${FMLIST_FM_BACKEND}" = "tef6686" ] && [ ! "${FMLIST_FM_BACKEND}" = "tef" ]; then
+    echo "error: FMLIST_FM_BACKEND must be 'rtl', 'rtlsdr', 'tef6686' or 'tef'"
+  fi
+
+  if [ -n "${FMLIST_TEF_TRANSPORT}" ] && [ ! "${FMLIST_TEF_TRANSPORT}" = "serial" ] && [ ! "${FMLIST_TEF_TRANSPORT}" = "tcp" ]; then
+    echo "error: FMLIST_TEF_TRANSPORT must be 'serial' or 'tcp'"
   fi
 
 
