@@ -39,6 +39,7 @@ export FMLIST_SCAN_AUTO_CONFIG="${FMLIST_SCAN_AUTO_CONFIG}"              # recon
 export FMLIST_SCAN_AUTOSTART="${FMLIST_SCAN_AUTOSTART}"                # default is "1": autostart scanner in background
 export FMLIST_SCAN_FM="${FMLIST_SCAN_FM}"                       # "0" or "1"; default is "1" for active UKW/FM scan
 export FMLIST_SCAN_DAB="${FMLIST_SCAN_DAB}"                      # "0" or "1"; default is "1" for active DAB scan
+export FMLIST_FM_BACKEND="${FMLIST_FM_BACKEND}"                # FM backend: "rtl"/"rtlsdr" or "tef6686"
 export FMLIST_ALWAYS_FAST_MODE="${FMLIST_ALWAYS_FAST_MODE}"              # deactivates verbose scan when GPS not connected, default is "0"
 export FMLIST_SPORADIC_E_MODE="${FMLIST_SPORADIC_E_MODE}"               # deactivates DAB scan, uses special scan parameters in FM for quick scan
                                                 #   requires the entries in SUN_TIMES.inc
@@ -75,6 +76,17 @@ export FMLIST_SCAN_RESULT_DIR="${FMLIST_SCAN_RESULT_DIR}"       # where to save 
 export FMLIST_SCAN_SAVE_PARTIAL="${FMLIST_SCAN_SAVE_PARTIAL}"             # copy/save partial results from ramdisk to FMLIST_SCAN_RESULT_DIR?
 export FMLIST_FM_RTLSDR_DEV="${FMLIST_FM_RTLSDR_DEV}"                  # FM:  optional device/serial, see rtl_test / rtl_eeprom
 export FMLIST_FM_DEV_R820T="${FMLIST_FM_DEV_R820T}"                  # "0" or "1"; default is "0". has the  FM-device an R820T/2 tuner?
+export FMLIST_TEF_TRANSPORT="${FMLIST_TEF_TRANSPORT}"            # TEF transport: "serial" or "tcp"
+export FMLIST_TEF_SERIAL_PORT="${FMLIST_TEF_SERIAL_PORT}"        # TEF serial device, e.g. /dev/ttyUSB0
+export FMLIST_TEF_SERIAL_BAUD="${FMLIST_TEF_SERIAL_BAUD}"        # TEF serial baud rate
+export FMLIST_TEF_TCP_HOST="${FMLIST_TEF_TCP_HOST}"              # TEF TCP host/IP
+export FMLIST_TEF_TCP_PORT="${FMLIST_TEF_TCP_PORT}"              # TEF TCP port
+export FMLIST_TEF_TCP_AUTH="${FMLIST_TEF_TCP_AUTH}"              # TCP auth: "none" (default) or "xdr" (salt+SHA1)
+export FMLIST_TEF_TCP_PASSWORD="${FMLIST_TEF_TCP_PASSWORD}"      # password used only when FMLIST_TEF_TCP_AUTH="xdr"
+export FMLIST_TEF_SCAN_THRESHOLD_DB="${FMLIST_TEF_SCAN_THRESHOLD_DB}"    # min signal level: "auto" (default) or fixed dB value; auto = noise floor (25th pct) + margin
+export FMLIST_TEF_SCAN_THRESHOLD_MARGIN_DB="${FMLIST_TEF_SCAN_THRESHOLD_MARGIN_DB}"  # margin above noise floor for auto threshold (default: 15 dB)
+export FMLIST_TEF_DWELL_MOBILE_SEC="6"      # per-frequency dwell for mobile scans
+export FMLIST_TEF_DWELL_FIXED_SEC="11"        # per-frequency dwell for fixed scans
 export FMLIST_DAB_RTLSDR_DEV="${FMLIST_DAB_RTLSDR_DEV}"                 # DAB: optional device/serial
 export FMLIST_DAB_DEV_R820T="${FMLIST_DAB_DEV_R820T}"                 # "0" or "1"; default is "0". has the DAB-device an R820T/2 tuner?
 export FMLIST_SCAN_PPM="${FMLIST_SCAN_PPM}"                      # ppm value of RTLSDR receiver

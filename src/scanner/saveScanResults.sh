@@ -63,14 +63,35 @@ ls -1 | grep ^scan_ | while read d ; do
       pushd $d
       rm -f ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv
       rm -f ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv
-      for res in $(ls -1 fm_carrier.*.csv) ; do
-        cat "$res" >>${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv
-      done
-      for res in $(ls -1 fm_rds.*.csv) ; do
-        cat "$res" >>${FMLIST_SCAN_RAM_DIR}/fm_rds.csv
-      done
-      TMIN=$( cat ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv | sort -n | head -n 1 | awk -F ',' '{ print $1; }' )
-      echo "${TMIN},$(cat ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv |wc -l),$(cat ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv |wc -l)" >${FMLIST_SCAN_RAM_DIR}/fm_count.csv
+
+      shopt -s nullglob
+      carrier_files=(fm_carrier.*.csv)
+      rds_files=(fm_rds.*.csv)
+
+      if [ ${#carrier_files[@]} -gt 0 ]; then
+        cat "${carrier_files[@]}" >${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv
+      fi
+      if [ ${#rds_files[@]} -gt 0 ]; then
+        cat "${rds_files[@]}" >${FMLIST_SCAN_RAM_DIR}/fm_rds.csv
+      fi
+      shopt -u nullglob
+
+      NCAR="0"
+      NRDS="0"
+      if [ -f ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv ]; then
+        NCAR=$(wc -l <${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv)
+      fi
+      if [ -f ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv ]; then
+        NRDS=$(wc -l <${FMLIST_SCAN_RAM_DIR}/fm_rds.csv)
+      fi
+
+      if [ ${NCAR} -gt 0 ] || [ ${NRDS} -gt 0 ]; then
+        TMIN=$( cat ${FMLIST_SCAN_RAM_DIR}/fm_carrier.csv ${FMLIST_SCAN_RAM_DIR}/fm_rds.csv 2>/dev/null | sort -n | head -n 1 | awk -F ',' '{ print $1; }' )
+      else
+        TMIN=$(date -u +%s)
+      fi
+
+      echo "${TMIN},${NCAR},${NRDS}" >${FMLIST_SCAN_RAM_DIR}/fm_count.csv
 
       popd
     elif [ $(echo "$d" |grep -c "_DAB\$") -ne 0 ]; then

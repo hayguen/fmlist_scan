@@ -140,13 +140,16 @@ fi
     else
       echo ""
     fi
+  else
+    :
+  fi
 
+  # Always show delta time when LAST file exists
+  if [ -f ${FMLIST_SCAN_RAM_DIR}/LAST ] && [ -s ${FMLIST_SCAN_RAM_DIR}/LAST ]; then
     CURR="$(date -u +%s)"
     LAST="$(stat -c %Y ${FMLIST_SCAN_RAM_DIR}/LAST)"
     D=$[ $CURR - $LAST ]
     echo "Delta from LAST to CURR = $D secs"
-  else
-    :
   fi
 
   if screen -list |grep -q "scanLoopBg" ; then

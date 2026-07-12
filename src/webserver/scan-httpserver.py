@@ -910,12 +910,49 @@ class RequestHandler(BaseHTTPRequestHandler):
             form_cont = form_cont + '<tr><td colspan="3"><br><b>&nbsp;SDR hardware</b></td></tr>'
             form_cont = form_cont + '<tr><th>Name</th><th>Value / Content</th><th>Description</th><tr>\n'
 
+            form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
+                ("FMLIST_FM_BACKEND",        "FM backend to use") ],
+                cfg_dict, cc_config,
+                [ ("tef6686", "TEF6686"), ("rtl", "RTL-SDR") ] )
+
             form_cont = form_cont + read_and_gen_text_form_from_cfg( [
-              ("FMLIST_FM_RTLSDR_DEV",     "FM: specify RTLSDR device's serial and it's antenna.<br>Leave empty to use any device") ],
-              cfg_dict, cc_config )
+                ("FMLIST_FM_RTLSDR_DEV",     "FM: specify RTLSDR device's serial and it's antenna.<br>Leave empty to use any device") ],
+                cfg_dict, cc_config )
             form_cont = form_cont + read_and_gen_check_form_from_cfg( [
-              ("FMLIST_FM_DEV_R820T",      "FM device has R820T/2 tuner?") ],
-              cfg_dict, cc_config )
+                ("FMLIST_FM_DEV_R820T",      "FM device has R820T/2 tuner?") ],
+                cfg_dict, cc_config )
+
+            form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
+                ("FMLIST_TEF_TRANSPORT",     "TEF transport mode") ],
+                cfg_dict, cc_config,
+                [ ("serial", "serial (/dev/ttyUSBx)"), ("tcp", "TCP (WiFi/Ethernet)") ] )
+
+            form_cont = form_cont + read_and_gen_text_form_from_cfg( [
+                ("FMLIST_TEF_SERIAL_PORT",   "TEF serial device path"),
+                ("FMLIST_TEF_SERIAL_BAUD",   "TEF serial baud rate"),
+                ("FMLIST_TEF_TCP_HOST",      "TEF TCP host/IP"),
+                ("FMLIST_TEF_TCP_PORT",      "TEF TCP port") ],
+                cfg_dict, cc_config )
+
+            form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
+                ("FMLIST_TEF_TCP_AUTH",      "TEF TCP authentication mode") ],
+                cfg_dict, cc_config,
+                [ ("none", "none"), ("xdr", "xdr (salt+SHA1)") ] )
+
+            form_cont = form_cont + read_and_gen_text_form_from_cfg( [
+                ("FMLIST_TEF_TCP_PASSWORD",  "TEF TCP password (used only when auth mode is xdr)") ],
+                cfg_dict, cc_config )
+
+            form_cont = form_cont + read_and_gen_text_form_from_cfg( [
+                ("FMLIST_TEF_SCAN_THRESHOLD_DB",        "TEF FM threshold (\"auto\" or fixed dB value)"),
+                ("FMLIST_TEF_SCAN_THRESHOLD_MARGIN_DB", "Margin above noise floor for auto threshold") ],
+                cfg_dict, cc_config )
+
+            form_cont = form_cont + read_and_gen_number_form_from_cfg( [
+                ("FMLIST_TEF_DWELL_MOBILE_SEC", "TEF dwell time per frequency for mobile scan"),
+                ("FMLIST_TEF_DWELL_FIXED_SEC",  "TEF dwell time per frequency for fixed scan") ],
+                cfg_dict, cc_config, 1, 120 )
+
             form_cont = form_cont + read_and_gen_text_form_from_cfg( [
               ("FMLIST_DAB_RTLSDR_DEV",    "DAB: specify RTLSDR device's serial and it's antenna.<br>Leave empty to use any device") ],
               cfg_dict, cc_config )
