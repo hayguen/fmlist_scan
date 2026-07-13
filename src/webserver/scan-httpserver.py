@@ -892,6 +892,10 @@ class RequestHandler(BaseHTTPRequestHandler):
               cfg_dict, cc_config )
 
             form_cont = form_cont + f'<tr><td>QTH_PREFIX</td><td><input type="text" id="cfg_qth_prefix" name="cfg_qth_prefix" value="{str(gps_qth_prefix)}"> </td><td>prefix for config filename for _GPS_COORDS.inc<br>usually "local"</td></tr>'
+            form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
+                            ("FMLIST_SCAN_GPS_COORDS", "GPS coordinate source mode") ],
+                            cfg_dict, cc_config,
+                            [ ("auto", "auto (prefer gps, fallback to static)"), ("gps", "gps"), ("static", "static") ] )
             form_cont = form_cont + f'<tr><td>SCAN_GPS_LAT</td><td><input type="text" id="cfg_gps_lat" name="cfg_gps_lat" value="{str(gps_lat)}"> </td><td>decimal latitude, e.g. 48.885582 </td></tr>'
             form_cont = form_cont + f'<tr><td>SCAN_GPS_LON</td><td><input type="text" id="cfg_gps_lon" name="cfg_gps_lon" value="{str(gps_lon)}"> </td><td>decimal longitude, e.g. 8.702656 </td></tr>'
             form_cont = form_cont + f'<tr><td>SCAN_GPS_ALT</td><td><input type="text" id="cfg_gps_alt" name="cfg_gps_alt" value="{str(gps_alt)}"> </td><td>decimal altitude, e.g. 307 </td></tr>'
@@ -1080,6 +1084,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             replace_export_value(cc_config, "FMLIST_SCAN_AUTOSTART",     "1" if "cfg_scan_autostart" in d     else "0")
             replace_export_value(cc_config, "FMLIST_SCAN_AUTO_IP_INFO",  "1" if "cfg_scan_auto_ip_info" in d  else "0")
             replace_export_value(cc_config, "FMLIST_SCAN_AUTO_CONFIG",   "1" if "cfg_scan_auto_config" in d   else "0")
+            v = d["cfg_scan_gps_coords"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_SCAN_GPS_COORDS", v )
             replace_export_value(cc_config, "FMLIST_SCAN_FM",            "1" if "cfg_scan_fm" in d            else "0")
             replace_export_value(cc_config, "FMLIST_SCAN_DAB",           "1" if "cfg_scan_dab" in d           else "0")
             replace_export_value(cc_config, "FMLIST_ALWAYS_FAST_MODE",   "1" if "cfg_always_fast_mode" in d   else "0")
@@ -1087,11 +1093,47 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             # group
 
+            v = d["cfg_fm_backend"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_FM_BACKEND", v )
+
             replace_export_value(cc_config, "FMLIST_FM_DEV_R820T",       "1" if "cfg_fm_dev_r820t" in d       else "0")
             replace_export_value(cc_config, "FMLIST_DAB_DEV_R820T",      "1" if "cfg_dab_dev_r820t" in d      else "0")
 
             v = d["cfg_fm_rtlsdr_dev"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
             replace_export_value(cc_config, "FMLIST_FM_RTLSDR_DEV", v )
+
+            v = d["cfg_tef_transport"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_TRANSPORT", v )
+
+            v = d["cfg_tef_serial_port"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_SERIAL_PORT", v )
+
+            v = d["cfg_tef_serial_baud"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_SERIAL_BAUD", v )
+
+            v = d["cfg_tef_tcp_host"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_TCP_HOST", v )
+
+            v = d["cfg_tef_tcp_port"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_TCP_PORT", v )
+
+            v = d["cfg_tef_tcp_auth"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_TCP_AUTH", v )
+
+            v = d["cfg_tef_tcp_password"].replace('"',"'").replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')
+            replace_export_value(cc_config, "FMLIST_TEF_TCP_PASSWORD", v )
+
+            v = d["cfg_tef_scan_threshold_db"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_SCAN_THRESHOLD_DB", v )
+
+            v = d["cfg_tef_scan_threshold_margin_db"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_SCAN_THRESHOLD_MARGIN_DB", v )
+
+            v = d["cfg_tef_dwell_mobile_sec"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_DWELL_MOBILE_SEC", v )
+
+            v = d["cfg_tef_dwell_fixed_sec"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_DWELL_FIXED_SEC", v )
 
             v = d["cfg_dab_rtlsdr_dev"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
             replace_export_value(cc_config, "FMLIST_DAB_RTLSDR_DEV", v )
