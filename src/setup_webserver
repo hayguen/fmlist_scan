@@ -11,6 +11,18 @@ cp webserver/scannerFinalizeWifiConfig.sh  /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerResetWifiConfig.sh     /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerReconfigWifi.sh        /home/${FMLIST_SCAN_USER}/bin/
 
+# normalize line endings from potential Windows checkouts and ensure scripts are executable
+sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scan-httpserver.py
+sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scannerPrepareWifiConfig.sh
+sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scannerFinalizeWifiConfig.sh
+sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scannerResetWifiConfig.sh
+sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scannerReconfigWifi.sh
+chmod 755 /home/${FMLIST_SCAN_USER}/bin/scan-httpserver.py
+chmod 755 /home/${FMLIST_SCAN_USER}/bin/scannerPrepareWifiConfig.sh
+chmod 755 /home/${FMLIST_SCAN_USER}/bin/scannerFinalizeWifiConfig.sh
+chmod 755 /home/${FMLIST_SCAN_USER}/bin/scannerResetWifiConfig.sh
+chmod 755 /home/${FMLIST_SCAN_USER}/bin/scannerReconfigWifi.sh
+
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*scan*.sh
 
 # get list of files with
