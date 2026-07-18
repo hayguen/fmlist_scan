@@ -50,6 +50,11 @@ if [ "${FM_BACKEND}" = "tef" ]; then
   FM_BACKEND="tef6686"
 fi
 
+PARALLEL_FM_DAB="${FMLIST_SCAN_PARALLEL_FM_DAB}"
+if [ -z "${PARALLEL_FM_DAB}" ]; then
+  PARALLEL_FM_DAB="0"
+fi
+
 if [ ${FMLIST_SCAN_RASPI} -ne 0 ]; then
   sudo -E $HOME/bin/rpi3b_led_init.sh
 fi
@@ -263,12 +268,47 @@ while /bin/true; do
 
   NUM_RTL_FAILS=0
 
-  scanFM.sh
-  if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
-    break
+  CAN_PARALLEL_FM_DAB="0"
+  if [ "${PARALLEL_FM_DAB}" = "1" ] \
+    && [ "${FMLIST_SCAN_FM}" != "0" ] \
+    && [ "${FMLIST_SCAN_FM}" != "OFF" ] \
+    && [ "${FMLIST_SCAN_DAB}" != "0" ] \
+    && [ "${FMLIST_SCAN_DAB}" != "OFF" ]; then
+    if [ "${FM_BACKEND}" = "tef6686" ]; then
+      # TEF + RTL-DAB is independent and can safely run in parallel.
+      CAN_PARALLEL_FM_DAB="1"
+    elif [ -n "${FMLIST_FM_RTLSDR_DEV}" ] \
+      && [ -n "${FMLIST_DAB_RTLSDR_DEV}" ] \
+      && [ "${FMLIST_FM_RTLSDR_DEV}" != "${FMLIST_DAB_RTLSDR_DEV}" ]; then
+      # RTL FM + RTL DAB can run in parallel only with explicit different devices.
+      CAN_PARALLEL_FM_DAB="1"
+    fi
   fi
 
-  scanDAB.sh
+  if [ "${CAN_PARALLEL_FM_DAB}" = "1" ]; then
+    DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
+    echo "${DTF}: scanLoop: running FM and DAB in parallel (FMLIST_SCAN_PARALLEL_FM_DAB=1, FM_BACKEND=${FM_BACKEND})" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+
+    scanDAB.sh &
+    DABPID=$!
+    scanFM.sh
+    FMRC=$?
+    wait ${DABPID}
+    DABRC=$?
+
+    if [ ${FMRC} -ne 0 ] || [ ${DABRC} -ne 0 ]; then
+      DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
+      echo "${DTF}: scanLoop: parallel scan return codes FM=${FMRC} DAB=${DABRC}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+    fi
+  else
+    scanFM.sh
+    if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
+      break
+    fi
+
+    scanDAB.sh
+  fi
+
   if [ -f "${FMLIST_SCAN_RAM_DIR}/stopScanLoop" ]; then
     break
   fi
