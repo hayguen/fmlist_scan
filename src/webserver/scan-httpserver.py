@@ -906,6 +906,7 @@ class RequestHandler(BaseHTTPRequestHandler):
               ("FMLIST_SCAN_AUTO_CONFIG",  "permit configuration from fmlist.org in MyURDS"),
               ("FMLIST_SCAN_FM",           "scan UKW/FM stations - requires restart of scanner"),
               ("FMLIST_SCAN_DAB",          "scan DAB stations - requires restart of scanner"),
+              ("FMLIST_SCAN_PARALLEL_FM_DAB", "run FM and DAB in parallel when hardware is independent (TEF+RTL or two different RTL serials)"),
               ("FMLIST_ALWAYS_FAST_MODE",  "deactivates verbose scan when GPS not connected"),
               ("FMLIST_SPORADIC_E_MODE",   "deactivates DAB scan, uses special scan parameters in FM for quick scan") ],
               cfg_dict, cc_config )
@@ -1088,6 +1089,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             replace_export_value(cc_config, "FMLIST_SCAN_GPS_COORDS", v )
             replace_export_value(cc_config, "FMLIST_SCAN_FM",            "1" if "cfg_scan_fm" in d            else "0")
             replace_export_value(cc_config, "FMLIST_SCAN_DAB",           "1" if "cfg_scan_dab" in d           else "0")
+            replace_export_value(cc_config, "FMLIST_SCAN_PARALLEL_FM_DAB", "1" if "cfg_scan_parallel_fm_dab" in d else "0")
             replace_export_value(cc_config, "FMLIST_ALWAYS_FAST_MODE",   "1" if "cfg_always_fast_mode" in d   else "0")
             replace_export_value(cc_config, "FMLIST_SPORADIC_E_MODE",    "1" if "cfg_sporadic_e_mode" in d    else "0")
 
