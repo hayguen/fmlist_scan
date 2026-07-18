@@ -25,6 +25,7 @@ if [ ! -z "${LATEST_FM_DIR}" ]; then
       ps = (NF >= 15 ? $15 : "")
       gsub(/"/, "", pi)
       gsub(/"/, "", ps)
+      if (ps == "________") ps = "        "
       sub(/^0x/, "", pi)
       printf "%012d\t  FM %-10s", ts, freq " MHz"
       if (pi != "") printf " %s", pi
@@ -112,12 +113,25 @@ fi
         sub(/0000$/, "", freq)
         freq = substr(freq, 1, length(freq)-2) "." substr(freq, length(freq)-1)
         printf "  FM %-10s", freq " MHz"
+        start_i = 3
         if (NF >= 3) {
-          pi = $3
-          sub(/^0x/, "", pi)
-          printf " %s", pi
+          v3 = $3
+          v3n = v3
+          sub(/^0x/, "", v3n)
+          if (v3n ~ /^[0-9A-Fa-f]{4}$/) {
+            printf " %s", toupper(v3n)
+            start_i = 4
+          } else {
+            if (v3 == "________") v3 = "        "
+            printf " %s", v3
+            start_i = 4
+          }
         }
-        for (i = 4; i <= NF; i++) printf " %s", $i
+        for (i = start_i; i <= NF; i++) {
+          v = $i
+          if (v == "________") v = "        "
+          printf " %s", v
+        }
         printf "\n"
       } else if ($1 ~ /^DAB_/) {
         sub(/^DAB_/, "DAB ", $1)
@@ -136,7 +150,12 @@ fi
     sed -e 's/0000$//g' -e 's/\([0-9][0-9]\)$/.\1 MHz/g' -e 's/^DAB_/DAB /' LAST | tr -d '\n'
     if [ -f LAST.info ]; then
       echo -n " "
-      cat LAST.info
+      awk '{
+        for (i = 1; i <= NF; i++) {
+          if ($i == "________") $i = "        "
+        }
+        print
+      }' LAST.info
     else
       echo ""
     fi

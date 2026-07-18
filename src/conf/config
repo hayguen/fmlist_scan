@@ -83,6 +83,12 @@ export FMLIST_TEF_TCP_HOST="${FMLIST_TEF_TCP_HOST}"              # TEF TCP host/
 export FMLIST_TEF_TCP_PORT="${FMLIST_TEF_TCP_PORT}"              # TEF TCP port
 export FMLIST_TEF_TCP_AUTH="${FMLIST_TEF_TCP_AUTH}"              # TCP auth: "none" (default) or "xdr" (salt+SHA1)
 export FMLIST_TEF_TCP_PASSWORD="${FMLIST_TEF_TCP_PASSWORD}"      # password used only when FMLIST_TEF_TCP_AUTH="xdr"
+export FMLIST_TEF_UDP_ENABLE="${FMLIST_TEF_UDP_ENABLE}"          # "1" to enable UDP RDS capture, "0" to disable
+export FMLIST_TEF_UDP_BIND="${FMLIST_TEF_UDP_BIND}"              # local bind IP for UDP listener, usually 0.0.0.0
+export FMLIST_TEF_UDP_PORT_9030="${FMLIST_TEF_UDP_PORT_9030}"    # TEF UDP RDS event port (PS/RT/AF/ECC/...)
+export FMLIST_TEF_UDP_PORT_9100="${FMLIST_TEF_UDP_PORT_9100}"    # TEF UDP logbook row port (contains frequency)
+export FMLIST_TEF_UDP_SETTLE_SEC="${FMLIST_TEF_UDP_SETTLE_SEC}"  # per-frequency wait for delayed UDP packets
+export FMLIST_TEF_UDP_MAX_AGE_SEC="${FMLIST_TEF_UDP_MAX_AGE_SEC}"# max accepted packet age for matching frequency
 export FMLIST_TEF_SCAN_THRESHOLD_DB="${FMLIST_TEF_SCAN_THRESHOLD_DB}"    # min signal level: "auto" (default) or fixed dB value; auto = noise floor (25th pct) + margin
 export FMLIST_TEF_SCAN_THRESHOLD_MARGIN_DB="${FMLIST_TEF_SCAN_THRESHOLD_MARGIN_DB}"  # margin above noise floor for auto threshold (default: 15 dB)
 export FMLIST_TEF_DWELL_MOBILE_SEC="6"      # per-frequency dwell for mobile scans
