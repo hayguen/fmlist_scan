@@ -4,6 +4,7 @@ import os
 import re
 import signal
 import socket
+import select
 import sys
 import time
 import subprocess
@@ -250,12 +251,242 @@ def parse_rds_fields(lines):
 
     m_ps = re.search(r'"ps"\s*:\s*"([^\"]+)"', txt)
     if m_ps:
-        ps = m_ps.group(1)
-        # Replace commas and each whitespace char with underscores while preserving PS length.
-        ps = ps.replace(",", "_")
-        ps = re.sub(r"\s", "_", ps)
+        ps = collapse_empty_ps(normalize_ps_text(m_ps.group(1)))
 
     return pi, ps
+
+
+def normalize_ps_text(ps):
+    if ps is None:
+        return ""
+    v = str(ps).replace(",", " ")
+    # PS is always 8 chars; pad before replacing spaces so trailing blanks become underscores too.
+    v = v[:8].ljust(8)
+    return v.replace(" ", "_")
+
+
+def collapse_empty_ps(ps):
+    """Treat all-blank PS marker as empty so no-RDS frequencies do not persist ________."""
+    return "" if ps == "________" else ps
+
+
+def _decode_udp_hex_ascii(hex_str):
+    raw = (hex_str or "").strip()
+    if not raw:
+        return ""
+    if len(raw) % 2 == 1:
+        raw = raw[:-1]
+    out = []
+    for i in range(0, len(raw), 2):
+        try:
+            b = int(raw[i:i + 2], 16)
+        except Exception:
+            continue
+        if b == 0:
+            continue
+        out.append(chr(b if 32 <= b <= 126 else 32))
+    return "".join(out)
+
+
+def _decode_udp_af_hex(hex_str):
+    raw = (hex_str or "").strip()
+    if not raw:
+        return ""
+    if len(raw) % 2 == 1:
+        raw = raw[:-1]
+    out = []
+    for i in range(0, len(raw), 2):
+        try:
+            code = int(raw[i:i + 2], 16)
+        except Exception:
+            continue
+        if code <= 0:
+            continue
+        f10 = 8750 + (code * 10)
+        out.append(f"{f10 / 100.0:.1f}")
+    return ";".join(out)
+
+
+def _parse_udp_freq_to_hz(freq_txt):
+    txt = (freq_txt or "").strip()
+    if not txt:
+        return None
+    txt = txt.replace("MHz", "").replace("mhz", "").strip()
+    try:
+        if "." in txt:
+            return int(round(float(txt) * 1_000_000.0))
+        v = int(txt)
+        if v < 1000:
+            return int(v * 1_000_000)
+        if v < 100000:
+            return int(v * 10_000)
+        if v < 1_000_000:
+            return int(v * 1_000)
+        return v
+    except Exception:
+        return None
+
+
+class UdpRdsCollector:
+    def __init__(self):
+        self.enabled = env("FMLIST_TEF_UDP_ENABLE", "1") != "0"
+        self.bind_host = env("FMLIST_TEF_UDP_BIND", "0.0.0.0")
+        self.port_9030 = int(env("FMLIST_TEF_UDP_PORT_9030", "9030"))
+        self.port_9100 = int(env("FMLIST_TEF_UDP_PORT_9100", "9100"))
+        self.socks = []
+        self.by_freq = {}
+        self.last_line_by_freq = {}
+
+    def open(self):
+        if not self.enabled:
+            return
+        for port in (self.port_9030, self.port_9100):
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind((self.bind_host, port))
+                s.setblocking(False)
+                self.socks.append(s)
+            except Exception:
+                continue
+
+    def close(self):
+        for s in self.socks:
+            try:
+                s.close()
+            except Exception:
+                pass
+        self.socks = []
+
+    def poll(self, seconds=0.0):
+        if not self.socks:
+            return
+        end = time.time() + max(0.0, float(seconds))
+        while True:
+            timeout = 0.0
+            if seconds > 0.0:
+                timeout = max(0.0, end - time.time())
+                if timeout <= 0.0:
+                    break
+            try:
+                ready, _, _ = select.select(self.socks, [], [], timeout)
+            except Exception:
+                break
+            if not ready:
+                break
+            for s in ready:
+                while True:
+                    try:
+                        payload, _addr = s.recvfrom(4096)
+                    except BlockingIOError:
+                        break
+                    except Exception:
+                        break
+                    txt = payload.decode("utf-8", errors="ignore").strip()
+                    if not txt:
+                        continue
+                    self._ingest(txt, s.getsockname()[1])
+            if seconds <= 0.0:
+                break
+
+    def _merge(self, freq_hz, update):
+        if freq_hz is None:
+            return
+        cur = self.by_freq.get(freq_hz, {})
+        for k, v in update.items():
+            if v:
+                cur[k] = v
+        cur["ts"] = time.time()
+        self.by_freq[freq_hz] = cur
+
+    def _remember_last_line(self, freq_hz, line, local_port):
+        if freq_hz is None:
+            return
+        self.last_line_by_freq[freq_hz] = {
+            "ts": time.time(),
+            "port": local_port,
+            "line": line,
+        }
+
+    def _ingest(self, txt, local_port):
+        if local_port == self.port_9100:
+            self._ingest_9100(txt)
+            return
+        self._ingest_9030(txt)
+
+    def _ingest_9100(self, txt):
+        # UDP 9100 row: CHIP,VERSION,SCANMODE,DATE,TIME,UTC,FREQ,PI,SIGNAL,...,PS,RT,AF,...
+        parts = [p.strip() for p in txt.split(",")]
+        if len(parts) < 12:
+            return
+
+        freq_idx = -1
+        freq_hz = None
+        for i in range(4, min(len(parts), 11)):
+            cand = _parse_udp_freq_to_hz(parts[i])
+            if cand is not None and 60_000_000 <= cand <= 200_000_000:
+                freq_hz = cand
+                freq_idx = i
+                break
+        if freq_hz is None:
+            return
+
+        ps_idx = freq_idx + 10
+        rt_idx = freq_idx + 11
+        af_idx = freq_idx + 12
+        ps = collapse_empty_ps(normalize_ps_text(parts[ps_idx])) if len(parts) > ps_idx else ""
+        rt = parts[rt_idx] if len(parts) > rt_idx else ""
+        af = parts[af_idx] if len(parts) > af_idx else ""
+        self._merge(freq_hz, {"ps": ps, "rt": rt, "af": af, "src": "udp9100"})
+        self._remember_last_line(freq_hz, txt, self.port_9100)
+
+    def _ingest_9030(self, txt):
+        if ";" not in txt or "=" not in txt:
+            return
+        fields = {}
+        for part in txt.split(";"):
+            if "=" not in part:
+                continue
+            k, v = part.split("=", 1)
+            fields[k.strip().upper()] = v.strip()
+
+        freq_hz = None
+        for key in ("FREQ", "FREQUENCY", "FRQ"):
+            if key in fields:
+                freq_hz = _parse_udp_freq_to_hz(fields.get(key))
+                if freq_hz is not None:
+                    break
+        if freq_hz is None:
+            return
+
+        ps = ""
+        if "PS" in fields:
+            ps = collapse_empty_ps(normalize_ps_text(_decode_udp_hex_ascii(fields.get("PS", ""))))
+        rt = ""
+        if "RT1" in fields:
+            rt = _decode_udp_hex_ascii(fields.get("RT1", ""))
+        af = ""
+        if "AF" in fields:
+            af = _decode_udp_af_hex(fields.get("AF", ""))
+
+        self._merge(freq_hz, {"ps": ps, "rt": rt, "af": af, "src": "udp9030"})
+        self._remember_last_line(freq_hz, txt, self.port_9030)
+
+    def get_for_freq(self, freq_hz, max_age_sec):
+        if freq_hz not in self.by_freq:
+            return {}
+        rec = self.by_freq.get(freq_hz, {})
+        if (time.time() - rec.get("ts", 0)) > max_age_sec:
+            return {}
+        return dict(rec)
+
+    def pop_last_line_for_freq(self, freq_hz, max_age_sec):
+        rec = self.last_line_by_freq.pop(freq_hz, None)
+        if not rec:
+            return None
+        if (time.time() - rec.get("ts", 0)) > max_age_sec:
+            return None
+        return rec
 
 
 def read_rdscols_from_redsea_txt(redsea_txt_path):
@@ -311,6 +542,193 @@ def normalize_rdscols_width(rdscols, expected_fields=22):
         parts.extend([""] * (expected_fields - len(parts)))
     elif len(parts) > expected_fields:
         parts = parts[:expected_fields]
+    return ",".join(parts)
+
+
+def csv_quote_field(value):
+    txt = "" if value is None else str(value)
+    if txt == "":
+        return ""
+    if len(txt) >= 2 and txt[0] == '"' and txt[-1] == '"':
+        txt = txt[1:-1]
+    txt = txt.replace('"', '""')
+    return f'"{txt}"'
+
+
+def csv_quote_alnum_field(value):
+    txt = "" if value is None else str(value).strip()
+    if txt == "":
+        return ""
+    if re.fullmatch(r"[+-]?\d+(?:\.\d+)?", txt):
+        return txt
+    return csv_quote_field(txt)
+
+
+def format_semicolon_mixed_field(value):
+    """Quote alnum tokens in ; separated payload, keep numeric and empty tokens raw."""
+    txt = "" if value is None else str(value).strip()
+    if txt == "":
+        return ""
+    out = []
+    for tok in txt.split(";"):
+        t = tok.strip()
+        if t == "":
+            out.append("")
+        elif re.fullmatch(r"[+-]?\d+(?:\.\d+)?", t):
+            out.append(t)
+        else:
+            out.append(csv_quote_field(t))
+    return ";".join(out)
+
+
+def format_eon_field(value):
+    """Format EON payload (PI;PS;MF1;MF2;MF3 groups), keeping PI unquoted."""
+    txt = "" if value is None else str(value).strip()
+    if txt == "":
+        return ""
+    toks = txt.split(";")
+    out = []
+    for i, tok in enumerate(toks):
+        t = tok.strip()
+        if t == "":
+            out.append("")
+            continue
+        # First token of each 5-field EON group is PI; keep it unquoted.
+        if (i % 5) == 0:
+            out.append(t)
+            continue
+        if re.fullmatch(r"[+-]?\d+(?:\.\d+)?", t):
+            out.append(t)
+        else:
+            out.append(csv_quote_field(t))
+    return ";".join(out)
+
+
+def normalize_eon_ps_tokens(value):
+    """EON payload groups are PI;PS;MF1;MF2;MF3. Normalize PS tokens only."""
+    txt = "" if value is None else str(value).strip()
+    if txt == "":
+        return ""
+    toks = txt.split(";")
+    for i in range(len(toks)):
+        # In each 5-token EON group, token index 1 is PS.
+        if (i % 5) == 1 and toks[i] != "":
+            toks[i] = normalize_ps_text(toks[i])
+    return ";".join(toks)
+
+
+def _csv_part(parts, idx):
+    if idx < 0 or idx >= len(parts):
+        return ""
+    return parts[idx].strip()
+
+
+def format_udp_last_row(epoch, freq_hz, udp_last, include_raw_line=False):
+    port = udp_last.get("port", "")
+    line = (udp_last.get("line", "") or "").replace("\r", " ").replace("\n", " ")
+
+    # Structured parse for TEF UDP 9100 rows.
+    if port == 9100:
+        parts = [p.strip() for p in line.split(",")]
+        freq_idx = -1
+        for i in range(4, min(len(parts), 11)):
+            cand = _parse_udp_freq_to_hz(parts[i])
+            if cand is not None and 60_000_000 <= cand <= 200_000_000:
+                freq_idx = i
+                break
+
+        if freq_idx >= 0:
+            # TEF 9100 shape after freq is:
+            # PI,SIGNAL,STEREO,TA,TP,TMC,PTY,ECC,LIC,PS,RT,AF,EON,RTPLUS
+            # RT may contain commas, so parse AF/EON/RTPLUS from the right.
+            n = len(parts)
+            if n < (freq_idx + 15):
+                pass
+            else:
+                chip = _csv_part(parts, 0)
+                version = _csv_part(parts, 1)
+                scandx = _csv_part(parts, 2)
+                date = _csv_part(parts, 3)
+                tim = _csv_part(parts, 4)
+                utc = _csv_part(parts, 5)
+                freq_txt = _csv_part(parts, freq_idx)
+                pi = _csv_part(parts, freq_idx + 1)
+                signal = _csv_part(parts, freq_idx + 2)
+                stereo = _csv_part(parts, freq_idx + 3)
+                ta = _csv_part(parts, freq_idx + 4)
+                tp = _csv_part(parts, freq_idx + 5)
+                tmc = _csv_part(parts, freq_idx + 6)
+                pty = _csv_part(parts, freq_idx + 7)
+                ecc = _csv_part(parts, freq_idx + 8)
+                lic = _csv_part(parts, freq_idx + 9)
+                ps = _csv_part(parts, freq_idx + 10)
+
+                eon = _csv_part(parts, n - 2)
+                af = _csv_part(parts, n - 3)
+                rt_start = freq_idx + 11
+                rt_end = n - 3
+                rt = ""
+                if rt_end > rt_start:
+                    rt = ",".join([p.strip() for p in parts[rt_start:rt_end]])
+
+                cols = [
+                    str(epoch),
+                    "freq",
+                    str(freq_hz),
+                    str(port),
+                    csv_quote_alnum_field(chip),
+                    csv_quote_alnum_field(version),
+                    scandx,
+                    date,
+                    tim,
+                    utc,
+                    freq_txt,
+                    pi,
+                    csv_quote_alnum_field(signal),
+                    stereo,
+                    ta,
+                    tp,
+                    tmc,
+                    pty,
+                    csv_quote_alnum_field(ecc),
+                    csv_quote_alnum_field(lic),
+                    csv_quote_field(ps) if ps != "" else "",
+                    csv_quote_alnum_field(rt),
+                    csv_quote_field(af) if af != "" else "",
+                    format_eon_field(normalize_eon_ps_tokens(eon)),
+                ]
+                if include_raw_line:
+                    cols.append(csv_quote_field(line))
+                return ",".join(cols)
+
+    # Fallback/raw rows (e.g. 9030): keep payload in udp_line column.
+    cols = [
+        str(epoch), "freq", str(freq_hz), str(port),
+        "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+    ]
+    if include_raw_line:
+        cols.append(csv_quote_field(line))
+    return ",".join(cols)
+
+
+def merge_udp_into_rdscols(rdscols, pi, ps, af, rt):
+    merged = normalize_rdscols_width(rdscols)
+    parts = merged.split(",")
+
+    # Keep text-field parity with redsea style: PS/RT should be quoted in CSV when present.
+    if parts[2] != "":
+        parts[2] = csv_quote_field(parts[2])
+    if parts[19] != "":
+        parts[19] = csv_quote_field(parts[19])
+
+    if pi:
+        parts[0] = pi
+    if ps:
+        parts[2] = csv_quote_field(ps)
+    if af:
+        parts[18] = af
+    if rt:
+        parts[19] = csv_quote_field(rt)
     return ",".join(parts)
 
 
@@ -482,9 +900,11 @@ def main():
 
     conn = TefConn()
     _tef_conn_global = conn
+    udp = UdpRdsCollector()
     try:
         conn.open()
         conn.handshake()
+        udp.open()
     except Exception as ex:
         append_line(os.path.join(ram_dir, "scanner.log"), f"FM scan failed to initialize TEF: {ex}")
         print(f"FM scan failed to initialize TEF: {ex}")
@@ -571,6 +991,13 @@ def main():
             append_line(os.path.join(rec_path, "scan_duration.txt"), 
                        f"Top 10 selected: {first_10}")
 
+        udp_last_file = os.path.join(rec_path, "udp_last_by_freq.csv")
+        udp_include_raw = env("FMLIST_TEF_UDP_LOG_RAW_LINE", "0") == "1"
+        if udp_include_raw:
+            append_line(udp_last_file, "epoch,kind,freq_hz,udp_port,chip,version,scandxmode,date,time,utc,freq,pi,signal,stereo,ta,tp,tmc,pty,ecc,lic,ps,rt,af,eon,udp_line")
+        else:
+            append_line(udp_last_file, "epoch,kind,freq_hz,udp_port,chip,version,scandxmode,date,time,utc,freq,pi,signal,stereo,ta,tp,tmc,pty,ecc,lic,ps,rt,af,eon")
+
         for (freq_hz, power) in selected:
             dt = now_iso()
             epoch = utc_epoch()
@@ -579,6 +1006,13 @@ def main():
             conn.write(f"T{freq_khz}")
             tef_lines = conn.read_lines(float(dwell))
             tef_lines = trim_to_current_tune(tef_lines, freq_khz)
+            # Drain UDP 9030/9100 after tune; frequency filtering below rejects delayed packets from prior channels.
+            udp.poll(float(env("FMLIST_TEF_UDP_SETTLE_SEC", "1.2")))
+            udp_max_age_sec = float(env("FMLIST_TEF_UDP_MAX_AGE_SEC", "6.0"))
+            udp_rec = udp.get_for_freq(freq_hz, udp_max_age_sec)
+            udp_last = udp.pop_last_line_for_freq(freq_hz, udp_max_age_sec)
+            if udp_last is not None:
+                append_line(udp_last_file, format_udp_last_row(epoch, freq_hz, udp_last, include_raw_line=udp_include_raw))
 
             redsea_spy_lines, redsea_lines = decode_rds_with_redsea(tef_lines, float(dwell))
 
@@ -603,21 +1037,29 @@ def main():
             append_line(carrier_csv, f"{epoch},freq,{freq_hz},0,{int(round(power))},{int(round(power))},{dt},{gps_cols}")
 
             pi, ps = parse_rds_fields(redsea_lines)
-            if has_rds_json:
+            udp_ps = normalize_ps_text(udp_rec.get("ps", "")) if udp_rec else ""
+            udp_af = udp_rec.get("af", "") if udp_rec else ""
+            udp_rt = udp_rec.get("rt", "") if udp_rec else ""
+            if udp_ps:
+                ps = udp_ps
+
+            should_write_rds = has_rds_json or bool(udp_ps or udp_af or udp_rt)
+            if should_write_rds:
                 rds_csv = os.path.join(rec_path, f"fm_rds.{freq_hz}.csv")
                 rdscols = read_rdscols_from_redsea_txt(redsea_txt)
                 if rdscols:
-                    rdscols = normalize_rdscols_width(rdscols)
+                    rdscols = merge_udp_into_rdscols(rdscols, pi, ps, udp_af, udp_rt)
                     append_line(rds_csv, f"{epoch},freq,{freq_hz},1,{int(round(power))},{int(round(power))},{dt},{gps_cols},{rdscols}")
                 else:
                     # Fallback with full RDSCOLS width to preserve RTL CSV schema.
                     fallback_rdscols = build_rdscols_fallback(pi, ps)
-                    fallback_rdscols = normalize_rdscols_width(fallback_rdscols)
+                    fallback_rdscols = merge_udp_into_rdscols(fallback_rdscols, pi, ps, udp_af, udp_rt)
                     append_line(rds_csv, f"{epoch},freq,{freq_hz},1,{int(round(power))},{int(round(power))},{dt},{gps_cols},{fallback_rdscols}")
 
             write_last(ram_dir, freq_hz, pi, ps)
 
     finally:
+        udp.close()
         conn.close()
 
     num_rds = len([x for x in os.listdir(rec_path) if x.startswith("fm_rds.") and x.endswith(".csv")])
