@@ -133,7 +133,7 @@ while /bin/true; do
   # test RTL dongle for FM
   TESTED_FIRST_DEV="0"
   TESTED_FM_DEV="0"
-  if [ "${FMLIST_SCAN_FM}" != "0" ] || [ "${FMLIST_SCAN_TEST}" != "0" ]; then
+  if [ "${FMLIST_SCAN_FM}" != "0" ] && [ "${FMLIST_SCAN_FM}" != "OFF" ] && [ "${FMLIST_SCAN_TEST}" != "0" ]; then
     if [ "${FM_BACKEND}" = "tef6686" ]; then
       TESTED_FM_DEV="1"
       if [ -z "${FMLIST_TEF_TRANSPORT}" ]; then

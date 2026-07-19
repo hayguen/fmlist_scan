@@ -964,6 +964,14 @@ class RequestHandler(BaseHTTPRequestHandler):
             form_cont = form_cont + read_and_gen_check_form_from_cfg( [
               ("FMLIST_DAB_DEV_R820T",     "DAB device has R820T/2 tuner?") ],
               cfg_dict, cc_config )
+            form_cont = form_cont + read_and_gen_check_form_from_cfg( [
+                            ("FMLIST_SCAN_DAB_ANALYZE_FROM_RAW", "DAB: always discover with dab-rtlsdr (no audio analysis); only new multiplexes are captured to /dev/shm and analyzed via dab-raw") ],
+              cfg_dict, cc_config )
+            form_cont = form_cont + read_and_gen_number_form_from_cfg( [
+                            ("FMLIST_SCAN_DAB_RAW_DURATION_SEC", "DAB: raw IQ capture duration in seconds for a new multiplex"),
+                                                        ("FMLIST_SCAN_DAB_RAW_INIT_MS",      "DAB: dab-raw init/wait time (-W) in milliseconds for new multiplex analysis"),
+                                                        ("FMLIST_SCAN_DAB_RAW_PARALLEL_JOBS", "DAB: legacy parallel raw-analysis setting (kept for compatibility)") ],
+              cfg_dict, cc_config, 1, 60000 )
 
 
             # ********************
@@ -1139,6 +1147,16 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             v = d["cfg_dab_rtlsdr_dev"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
             replace_export_value(cc_config, "FMLIST_DAB_RTLSDR_DEV", v )
+            replace_export_value(cc_config, "FMLIST_SCAN_DAB_ANALYZE_FROM_RAW", "1" if "cfg_scan_dab_analyze_from_raw" in d else "0")
+
+            v = d["cfg_scan_dab_raw_duration_sec"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_SCAN_DAB_RAW_DURATION_SEC", v )
+
+            v = d["cfg_scan_dab_raw_init_ms"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_SCAN_DAB_RAW_INIT_MS", v )
+
+            v = d["cfg_scan_dab_raw_parallel_jobs"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_SCAN_DAB_RAW_PARALLEL_JOBS", v )
 
             # group
 
@@ -1556,5 +1574,6 @@ def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     run(handler_class=RequestHandler)
+
 
 

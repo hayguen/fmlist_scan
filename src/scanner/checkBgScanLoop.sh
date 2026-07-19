@@ -102,6 +102,7 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
     pkill scanFM.sh
     pkill scanDAB.sh
     pkill -9 dab-rtlsdr
+    pkill -9 dab-raw
     pkill -9 rtl_test
     pkill -9 rtl_sdr
     pkill redsea
@@ -120,6 +121,7 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
     pkill scanFM.sh
     pkill scanDAB.sh
     pkill -9 dab-rtlsdr
+    pkill -9 dab-raw
     pkill -9 rtl_test
     pkill -9 rtl_sdr
     pkill redsea

@@ -39,7 +39,17 @@ if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_files ]; then
 fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_files
-cmake ../${GITPROJ}/example-10 -DWAVFILES=ON -DRAWFILES=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+cmake ../${GITPROJ}/example-10 -DWAVFILES=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+make
+
+
+# raw 8 bit 2048kSps
+if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw ]; then
+  mkdir -p ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw
+fi
+
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw
+cmake ../${GITPROJ}/example-10 -DRAWFILES=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 make
 
 

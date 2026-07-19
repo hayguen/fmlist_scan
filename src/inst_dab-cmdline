@@ -13,5 +13,9 @@ cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_files
 sudo -u ${FMLIST_SCAN_USER} make install
 ldconfig
 
+cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw
+sudo -u ${FMLIST_SCAN_USER} make install
+ldconfig
+
 cd ${BASE}
 
