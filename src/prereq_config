@@ -75,6 +75,67 @@ cat conf/config \
   | envsubst \
   | sed 's/$%/$/g' \
   > /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/config
+
+REF_DAB_ENS_FILE="/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/${FMLIST_QTH_PREFIX}_dab_ensembles.csv"
+REF_DAB_ENS_README="${REF_DAB_ENS_FILE}.README"
+REF_DAB_PRG_FILE="/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/${FMLIST_QTH_PREFIX}_dab_programs.csv"
+REF_DAB_PRG_README="${REF_DAB_PRG_FILE}.README"
+REF_FM_PRG_FILE="/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/${FMLIST_QTH_PREFIX}_fm_programs.csv"
+REF_FM_PRG_README="${REF_FM_PRG_FILE}.README"
+
+if [ ! -f "${REF_DAB_ENS_FILE}" ]; then
+  : >"${REF_DAB_ENS_FILE}"
+fi
+
+if [ ! -f "${REF_DAB_ENS_README}" ]; then
+  cat >"${REF_DAB_ENS_README}" <<EOF
+these ensembles are already known for the ${FMLIST_QTH_PREFIX} QTH
+
+put one ensemble key per line in this form:
+0xa101,"DAB+ Austria    "
+
+notes:
+- keep ${FMLIST_QTH_PREFIX}_dab_ensembles.csv machine-readable; do not add comments there
+- key format is EId + ensemble name (channel-independent)
+- string fields are quoted exactly as emitted by dab-rtlsdr/dab-raw CSV output
+- if you edit the CSV manually, keep lines sorted
+- the scanner will add newly discovered ensembles automatically
+EOF
+fi
+
+if [ ! -f "${REF_DAB_PRG_FILE}" ]; then
+  : >"${REF_DAB_PRG_FILE}"
+fi
+
+if [ ! -f "${REF_DAB_PRG_README}" ]; then
+  cat >"${REF_DAB_PRG_README}" <<EOF
+these DAB programs are already known for the ${FMLIST_QTH_PREFIX} QTH
+
+copy lines from scanEval output or from a recorded dab_programs.csv file.
+
+notes:
+- keep ${FMLIST_QTH_PREFIX}_dab_programs.csv machine-readable; do not add comments there
+- keep lines sorted if you edit the file manually
+- this file is compared with comm in scanEvalSummary.sh
+EOF
+fi
+
+if [ ! -f "${REF_FM_PRG_FILE}" ]; then
+  : >"${REF_FM_PRG_FILE}"
+fi
+
+if [ ! -f "${REF_FM_PRG_README}" ]; then
+  cat >"${REF_FM_PRG_README}" <<EOF
+these FM programs are already known for the ${FMLIST_QTH_PREFIX} QTH
+
+copy lines from scanEval output or from a recorded fm_programs.csv file.
+
+notes:
+- keep ${FMLIST_QTH_PREFIX}_fm_programs.csv machine-readable; do not add comments there
+- keep lines sorted if you edit the file manually
+- this file is compared with comm in scanEvalSummary.sh
+EOF
+fi
 )
 
 cat conf/fmscan.inc       >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/fmscan.inc
@@ -88,7 +149,25 @@ if [ ! -f /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_SUN_TIMES.inc ]; t
   cat conf/local_SUN_TIMES.inc     >/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/local_SUN_TIMES.inc
 fi
 
+CFG_FILE="/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/config"
+QTH_PREFIX_FOR_FILES="$(sed -n 's/^export FMLIST_QTH_PREFIX="\(.*\)".*/\1/p' "${CFG_FILE}" | head -n1)"
+if [ -z "${QTH_PREFIX_FOR_FILES}" ]; then
+  QTH_PREFIX_FOR_FILES="local"
+fi
+
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/config
+for f in \
+  "/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/${QTH_PREFIX_FOR_FILES}_dab_ensembles.csv" \
+  "/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/${QTH_PREFIX_FOR_FILES}_dab_ensembles.csv.README" \
+  "/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/${QTH_PREFIX_FOR_FILES}_dab_programs.csv" \
+  "/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/${QTH_PREFIX_FOR_FILES}_dab_programs.csv.README" \
+  "/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/${QTH_PREFIX_FOR_FILES}_fm_programs.csv" \
+  "/home/${FMLIST_SCAN_USER}/.config/fmlist_scan/${QTH_PREFIX_FOR_FILES}_fm_programs.csv.README"
+do
+  if [ -f "${f}" ]; then
+    chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} "${f}"
+  fi
+done
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/fmscan.inc
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/dabscan.inc
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/.config/fmlist_scan/dab_chanlist.txt

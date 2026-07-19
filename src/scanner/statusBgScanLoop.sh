@@ -41,6 +41,7 @@ if [ ! -z "${LATEST_DAB_DIR}" ]; then
     for dablog in $(ls -1t "${LATEST_DAB_DIR}"/DAB_*_stderr.log 2>/dev/null | head -n 20); do
       CH="$(basename "${dablog}" | sed -n 's/^DAB_\(.*\)_stderr\.log$/\1/p')"
       ENS="$(grep "ensemblenameHandler:" "${dablog}" | head -n1 | sed "s/.*ensemblenameHandler: \('[^']*'\).*\((EId [^)]*)\).*/\1 \2/")"
+      ENS="$(echo "${ENS}" | sed "s/'\([^']*[^ ]\) *' (EId/'\1' (EId/")"
       if [ ! -z "${CH}" ] && [ ! -z "${ENS}" ]; then
         echo "  DAB ${CH} ${ENS}"
       fi
@@ -74,13 +75,74 @@ fi
     echo "${CPUSTATUS}"
   fi
   # Always show current scanning band edges if available
+  if pgrep -x prescanDAB >/dev/null 2>&1; then
+    PRESCAN_LINE=""
+    if [ -f scanner.log ]; then
+      PRESCAN_LINE=$(grep "running prescanDAB " scanner.log | tail -n1)
+    fi
+    PRESCAN_CHS=""
+    PRESCAN_NUM=""
+    if [ ! -z "${PRESCAN_LINE}" ]; then
+      PRESCAN_CHS=$(echo "${PRESCAN_LINE}" | sed -n 's/.* -L \([^ ]*\) \.\./\1/p')
+      if [ ! -z "${PRESCAN_CHS}" ]; then
+        PRESCAN_NUM=$[ $(echo "${PRESCAN_CHS}" | tr -cd ',' | wc -c) + 1 ]
+      fi
+    fi
+    if [ ! -z "${PRESCAN_NUM}" ]; then
+      echo -e "\nprescanning DAB channels [${PRESCAN_NUM}]"
+    else
+      echo -e "\nprescanning DAB channels"
+    fi
+  fi
+
   if [ -f scanner.log ]; then
-    CHECK_LINE=$(grep -E "rtl_sdr -s |dab-rtlsdr -C " scanner.log | tail -n1)
+    CHECK_LINE=$(grep -E "rtl_sdr .*DAB_.*sec\.raw|dab-rtlsdr -C |dab-raw -C " scanner.log | tail -n1)
     if [ ! -z "${CHECK_LINE}" ]; then
       DAB_CH=$(echo "${CHECK_LINE}" | sed -n 's/.*dab-rtlsdr -C \([^ ]*\).*/\1/p')
+      if [ -z "${DAB_CH}" ]; then
+        DAB_CH=$(echo "${CHECK_LINE}" | sed -n 's/.*dab-raw -C \([^ ]*\).*/\1/p')
+      fi
       if [ ! -z "${DAB_CH}" ]; then
-        echo -e "\nchecking DAB ${DAB_CH}"
+        if echo "${CHECK_LINE}" | grep -q "dab-raw -C "; then
+          echo -e "\nanalysing DAB ${DAB_CH}"
+        else
+          echo -e "\nchecking DAB ${DAB_CH}"
+        fi
       else
+        DAB_REC_CH=$(echo "${CHECK_LINE}" | sed -n 's#.*DAB_\([^_ ]*\)_[^ ]*sec\.raw.*#\1#p')
+        if [ ! -z "${DAB_REC_CH}" ]; then
+          DAB_REC_FILE=$(echo "${CHECK_LINE}" | awk '{ print $NF }')
+          DAB_REC_DUR=$(echo "${DAB_REC_FILE}" | sed -n 's#.*_\([0-9][0-9]*\)sec\.raw#\1#p')
+          if [ -z "${DAB_REC_DUR}" ]; then
+            DAB_REC_DUR="${FMLIST_SCAN_DAB_RAW_DURATION_SEC}"
+          fi
+          DAB_REC_BYTES_EXP=$[ ${DAB_REC_DUR} * 4096000 ]
+          DAB_REC_BYTES_ACT="0"
+          if [ -f "${DAB_REC_FILE}" ]; then
+            DAB_REC_BYTES_ACT=$(stat -c %s "${DAB_REC_FILE}" 2>/dev/null)
+          fi
+          if [ -z "${DAB_REC_BYTES_ACT}" ]; then
+            DAB_REC_BYTES_ACT="0"
+          fi
+          DAB_REC_SEC_ACT=$[ ${DAB_REC_BYTES_ACT} / 4096000 ]
+          if [ ${DAB_REC_SEC_ACT} -gt ${DAB_REC_DUR} ]; then
+            DAB_REC_SEC_ACT=${DAB_REC_DUR}
+          fi
+          if [ ${DAB_REC_BYTES_EXP} -gt 0 ]; then
+            DAB_REC_PCT=$[ ${DAB_REC_BYTES_ACT} * 100 / ${DAB_REC_BYTES_EXP} ]
+          else
+            DAB_REC_PCT="0"
+          fi
+          if [ ${DAB_REC_PCT} -gt 100 ]; then
+            DAB_REC_PCT="100"
+          fi
+          DAB_REC_BAR=$(awk -v p="${DAB_REC_PCT}" 'BEGIN { n=20; f=int((p*n)/100); if (f>n) f=n; for (i=0; i<n; ++i) s = s ((i<f) ? "#" : "-"); print s }')
+          echo -e "\nrecording DAB ${DAB_REC_CH} [${DAB_REC_BAR}] ${DAB_REC_SEC_ACT}/${DAB_REC_DUR} sec"
+          CHECK_LINE=""
+        fi
+      fi
+
+      if [ ! -z "${CHECK_LINE}" ] && [ -z "${DAB_CH}" ]; then
         CENTER=$(echo "${CHECK_LINE}" | sed -n 's/.*-f \([0-9][0-9]*\).*/\1/p')
         BW=$(echo "${CHECK_LINE}" | sed -n 's/.*-w \([0-9][0-9]*\).*/\1/p')
         if [ -z "${BW}" ]; then
@@ -163,6 +225,20 @@ fi
     :
   fi
 
+  QTH_PREFIX_SHOW="${FMLIST_QTH_PREFIX}"
+  if [ -z "${QTH_PREFIX_SHOW}" ]; then
+    QTH_PREFIX_SHOW="local"
+  fi
+  REF_DAB_ENS_FILE="${HOME}/.config/fmlist_scan/${QTH_PREFIX_SHOW}_dab_ensembles.csv"
+  LAST_NEW_ENS_MSG_FILE="${HOME}/.config/fmlist_scan/${QTH_PREFIX_SHOW}_last_new_ensemble.txt"
+  if [ -f "${REF_DAB_ENS_FILE}" ]; then
+    if [ -f "${LAST_NEW_ENS_MSG_FILE}" ] && [ -s "${LAST_NEW_ENS_MSG_FILE}" ]; then
+      echo ""
+      cat "${LAST_NEW_ENS_MSG_FILE}"
+      echo ""
+    fi
+  fi
+
   # Always show delta time when LAST file exists
   if [ -f ${FMLIST_SCAN_RAM_DIR}/LAST ] && [ -s ${FMLIST_SCAN_RAM_DIR}/LAST ]; then
     CURR="$(date -u +%s)"
@@ -178,9 +254,11 @@ fi
   fi
 
   echo ""
-  tail -n 10 checkBgScanLoop.log | grep -v "Delta from LAST to CURR"
+  tail -n 10 checkBgScanLoop.log 2>/dev/null \
+    | grep -v "Delta from LAST to CURR" \
+    | grep -v "No LAST scan results. Setting to CURR - FMLIST_SCAN_DEAD_TIME"
 
   echo ""
-  ( echo "uniq (incl. dupl.), #DAB Ens., #DAB prg, #FM prg" ; SKIP_SCANNED=1 SKIP_MISSING=1 SKIP_ADD=1 scanEvalSummary.sh | awk -F, '{ OFS=","; print $1, $3, $5, $7; }' ) \
+  ( echo "uniq (incl. dupl.), #DAB Ens., #DAB prg, #FM prg" ; SKIP_SCANNED=1 SKIP_MISSING=1 SKIP_ADD=1 scanEvalSummary.sh 2>/dev/null | awk -F, '{ OFS=","; print $1, $3, $5, $7; }' ) \
     | sed 's/^40,/scanned,/g' |sed 's/^41,/missed,/g' |sed 's/^42,/additional,/g' |sed 's/^43,/refs,/g' \
     | column -s , -t

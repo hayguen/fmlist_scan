@@ -12,15 +12,15 @@ if [ ! -d /dev/shm/scanEval ]; then
 fi
 
 # based on scanEvalDABens.sh
-cat scan_*_dab_ensemble.csv \
- | awk -F, '{ OFS=","; print $7,$8,$9; }' \
+cat scan_*_dab_ensemble.csv 2>/dev/null \
+ | awk -F, '{ OFS=","; print $8,$9; }' \
  | sort \
  | uniq \
  > /dev/shm/scanEval/dab_ensembles.csv
 
 
 # based on scanEvalDABprogs.sh
-cat scan_*_dab_audio.csv scan_*_dab_packet.csv \
+cat scan_*_dab_audio.csv scan_*_dab_packet.csv 2>/dev/null \
  | awk -F, '{ OFS=","; print $7,$8,$9,$10,$11; }' \
  | sort \
  | uniq \
@@ -28,14 +28,14 @@ cat scan_*_dab_audio.csv scan_*_dab_packet.csv \
 
 
 # based on scanEvalFMcmpPI.sh
-cat scan_*_fm_rds.csv \
+cat scan_*_fm_rds.csv 2>/dev/null \
  | awk -F, '{ OFS=","; print $3,$13; }' \
  | sort \
  | uniq \
  > /dev/shm/scanEval/fm_programs.csv
 
 NUM_DAB_ENS=$( cat /dev/shm/scanEval/dab_ensembles.csv | wc -l )
-NUM_DAB_ENS_UNIQ=$( awk -F',' '{ $1=""; sub(/^,/, ""); print }' /dev/shm/scanEval/dab_ensembles.csv | sort | uniq | wc -l )
+NUM_DAB_ENS_UNIQ=$( cat /dev/shm/scanEval/dab_ensembles.csv | wc -l )
 NUM_DAB_PRG=$( cat /dev/shm/scanEval/dab_programs.csv  | wc -l )
 NUM_DAB_PRG_UNIQ=$(awk -F',' '{ print $4 "," $5 }' /dev/shm/scanEval/dab_programs.csv | sort | uniq | wc -l)
 NUM_FM_PRG=$( cat /dev/shm/scanEval/fm_programs.csv   | wc -l )
