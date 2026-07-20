@@ -1,5 +1,8 @@
 #!/bin/bash
 
+SCRIPT=$(realpath -s "$0")
+SCRIPTPATH=$(dirname "${SCRIPT}")
+
 if [ -z "${FMLIST_SCAN_RAM_DIR}" ]; then
   source $HOME/.config/fmlist_scan/config
   if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
@@ -279,6 +282,6 @@ fi
     | grep -v "No LAST scan results. Setting to CURR - FMLIST_SCAN_DEAD_TIME"
 
   echo ""
-  ( echo "uniq (incl. dupl.), #DAB Ens., #DAB prg, #FM prg" ; SKIP_SCANNED=1 SKIP_MISSING=1 SKIP_ADD=1 scanEvalSummary.sh 2>/dev/null | awk -F, '{ OFS=","; print $1, $3, $5, $7; }' ) \
+  ( echo "uniq (incl. dupl.), #DAB Ens., #DAB prg, #FM prg" ; SKIP_SCANNED=1 SKIP_MISSING=1 SKIP_ADD=1 "${SCRIPTPATH}/scanEvalSummary.sh" 2>/dev/null | awk -F, '{ OFS=","; print $1, $3, $5, $7; }' ) \
     | sed 's/^40,/scanned,/g' |sed 's/^41,/missed,/g' |sed 's/^42,/additional,/g' |sed 's/^43,/refs,/g' \
     | column -s , -t

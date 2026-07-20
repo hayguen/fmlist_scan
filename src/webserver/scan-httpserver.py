@@ -26,6 +26,7 @@ HOST_PORT = 8000
 HOST_ADDRESS = ""
 LOGIN_EXPIRATION_SECS = 60*10  # 10 min
 VERBOSE_LOG = False
+STATUS_PAGE_TIMEOUT_SECS = 8
 config_fn_rel_to_home = "/.config/fmlist_scan/config"
 list_info_sites = ["/list_fm_pi", "/list_fm_ps", "/list_dab_ens", "/list_dab_ens_tii", "/list_dab_progs"]
 
@@ -1313,7 +1314,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         if ps=="/status":
             self.wfile.write(str.encode( webhdr() ))
             self.wfile.write(str.encode("<hr>"))
-            out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", timeout_val_in_sec=3)
+            out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", timeout_val_in_sec=STATUS_PAGE_TIMEOUT_SECS)
+            self.wfile.write(str.encode(out_html))
+            out_html, err_at_exec = run_and_get_output(True, "get_throttled.sh", timeout_val_in_sec=2)
             self.wfile.write(str.encode(out_html))
             self.wfile.write(str.encode("<hr>"))
             self.wfile.write(str.encode(f'<p><a href="/status.html?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
@@ -1381,7 +1384,9 @@ class RequestHandler(BaseHTTPRequestHandler):
             elif ps=="/status":
                 self.wfile.write(str.encode( webhdr() ))
                 self.wfile.write(str.encode("<hr>"))
-                out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", timeout_val_in_sec=3)
+                out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", timeout_val_in_sec=STATUS_PAGE_TIMEOUT_SECS)
+                self.wfile.write(str.encode(out_html))
+                out_html, err_at_exec = run_and_get_output(True, "get_throttled.sh", timeout_val_in_sec=2)
                 self.wfile.write(str.encode(out_html))
                 self.wfile.write(str.encode("<hr>"))
                 self.wfile.write(str.encode(f'<br><p><a href="/status.html?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))

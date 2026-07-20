@@ -10,6 +10,10 @@ cp webserver/scannerPrepareWifiConfig.sh   /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerFinalizeWifiConfig.sh  /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerResetWifiConfig.sh     /home/${FMLIST_SCAN_USER}/bin/
 cp webserver/scannerReconfigWifi.sh        /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/statusBgScanLoop.sh             /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/get_throttled.sh                /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanEvalSummary.sh              /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanEval.inc                    /home/${FMLIST_SCAN_USER}/bin/
 
 # normalize line endings from potential Windows checkouts and ensure scripts are executable
 sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scan-httpserver.py
@@ -17,11 +21,19 @@ sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scannerPrepareWifiConfig.sh
 sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scannerFinalizeWifiConfig.sh
 sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scannerResetWifiConfig.sh
 sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scannerReconfigWifi.sh
+sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/statusBgScanLoop.sh
+sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/get_throttled.sh
+sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scanEvalSummary.sh
+sed -i 's/\r$//' /home/${FMLIST_SCAN_USER}/bin/scanEval.inc
 chmod 755 /home/${FMLIST_SCAN_USER}/bin/scan-httpserver.py
 chmod 755 /home/${FMLIST_SCAN_USER}/bin/scannerPrepareWifiConfig.sh
 chmod 755 /home/${FMLIST_SCAN_USER}/bin/scannerFinalizeWifiConfig.sh
 chmod 755 /home/${FMLIST_SCAN_USER}/bin/scannerResetWifiConfig.sh
 chmod 755 /home/${FMLIST_SCAN_USER}/bin/scannerReconfigWifi.sh
+chmod 755 /home/${FMLIST_SCAN_USER}/bin/statusBgScanLoop.sh
+chmod 755 /home/${FMLIST_SCAN_USER}/bin/get_throttled.sh
+chmod 755 /home/${FMLIST_SCAN_USER}/bin/scanEvalSummary.sh
+chmod 644 /home/${FMLIST_SCAN_USER}/bin/scanEval.inc
 
 chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*scan*.sh
 
@@ -29,6 +41,10 @@ chown ${FMLIST_SCAN_USER}:${FMLIST_SCAN_USER} /home/${FMLIST_SCAN_USER}/bin/*sca
 # ( cd ~/bin ; ls -1 *.sh *.py | grep -v 'scan.*\.sh' | grep -v 'Scan.*\.sh' | grep -v 'gpstime.sh' | grep -v 'kal.sh' | grep -v 'rpi3b_led_' )
 CHOWNLIST=( \
   "scan-httpserver.py"
+  "statusBgScanLoop.sh"
+  "get_throttled.sh"
+  "scanEvalSummary.sh"
+  "scanEval.inc"
 )
 
 for FN in "${CHOWNLIST[@]}" ; do
