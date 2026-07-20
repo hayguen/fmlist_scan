@@ -71,7 +71,8 @@ rm -f "${FMLIST_SCAN_RAM_DIR}/LAST.info"
 
 #
 
-echo -e "\\nSTARTING_SCANNER\\n\\n" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+# Truncate scanner.log on restart so monitor doesn't show stale progress from previous run
+echo -e "\\nSTARTING_SCANNER\\n\\n" >${FMLIST_SCAN_RAM_DIR}/scanner.log
 
 
 echo -e "\\nhostnamectl" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
