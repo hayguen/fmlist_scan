@@ -67,9 +67,9 @@ fi
   
   # Add position mode (fixed/mobile) on same line
   if [ ! -z "${FMLIST_UP_POSITION}" ]; then
-    if [ "${FMLIST_UP_POSITION}" = "fixed" ] || [ "${FMLIST_UP_POSITION}" = "0" ]; then
+    if [ "${FMLIST_UP_POSITION}" = "fixed" ]; then
       echo " / fixed position"
-    elif [ "${FMLIST_UP_POSITION}" = "mobile" ] || [ "${FMLIST_UP_POSITION}" = "1" ]; then
+    elif [ "${FMLIST_UP_POSITION}" = "mobile" ]; then
       echo " / mobile position"
     else
       echo ""
@@ -93,7 +93,9 @@ fi
     echo "${CPUSTATUS}"
   fi
   # Always show current scanning band edges if available
+  PRESCAN_ACTIVE="0"
   if pgrep -x prescanDAB >/dev/null 2>&1; then
+    PRESCAN_ACTIVE="1"
     PRESCAN_LINE=""
     if [ -f scanner.log ]; then
       PRESCAN_LINE=$(grep "running prescanDAB " scanner.log | tail -n1)
@@ -113,19 +115,18 @@ fi
     fi
   fi
 
-  if [ -f scanner.log ]; then
-    CHECK_LINE=$(grep -E "rtl_sdr -s [0-9]+ -n [0-9]+ -f |rtl_sdr .*DAB_.*sec\.raw|dab-rtlsdr -C |dab-raw -C " scanner.log | tail -n1)
+  if [ -f scanner.log ] && [ "${PRESCAN_ACTIVE}" = "0" ]; then
+    CHECK_LINE=$(grep -E "rtl_sdr -s [0-9]+ -n [0-9]+ -f |rtl_sdr .*DAB_.*sec\.raw|dab-rtlsdr -C |dab-raw -F " scanner.log | tail -n1)
     if [ ! -z "${CHECK_LINE}" ]; then
       DAB_CH=$(echo "${CHECK_LINE}" | sed -n 's/.*dab-rtlsdr -C \([^ ]*\).*/\1/p')
-      if [ -z "${DAB_CH}" ]; then
-        DAB_CH=$(echo "${CHECK_LINE}" | sed -n 's/.*dab-raw -C \([^ ]*\).*/\1/p')
+      DAB_RAW_CH=""
+      if echo "${CHECK_LINE}" | grep -q "dab-raw -F "; then
+        DAB_RAW_CH=$(echo "${CHECK_LINE}" | sed -n 's#.*DAB_\([^_]*\)_.*#\1#p')
       fi
       if [ ! -z "${DAB_CH}" ]; then
-        if echo "${CHECK_LINE}" | grep -q "dab-raw -C "; then
-          echo -e "\nanalysing DAB ${DAB_CH}"
-        else
-          echo -e "\nchecking DAB ${DAB_CH}"
-        fi
+        echo -e "\nchecking DAB ${DAB_CH}"
+      elif [ ! -z "${DAB_RAW_CH}" ]; then
+        echo -e "\nanalysing DAB ${DAB_RAW_CH}"
       else
         DAB_REC_CH=$(echo "${CHECK_LINE}" | sed -n 's#.*DAB_\([^_ ]*\)_[^ ]*sec\.raw.*#\1#p')
         if [ ! -z "${DAB_REC_CH}" ]; then
@@ -160,7 +161,8 @@ fi
         fi
       fi
 
-      if [ ! -z "${CHECK_LINE}" ] && [ -z "${DAB_CH}" ]; then
+      # Only display FM checking if FM scanning is enabled (not "0" or "OFF")
+      if [ ! -z "${CHECK_LINE}" ] && [ -z "${DAB_CH}" ] && [ -z "${DAB_RAW_CH}" ] && [ "${FMLIST_SCAN_FM}" != "0" ] && [ "${FMLIST_SCAN_FM}" != "OFF" ]; then
         CENTER=$(echo "${CHECK_LINE}" | sed -n 's/.*-f \([0-9][0-9]*\).*/\1/p')
         BW=$(echo "${CHECK_LINE}" | sed -n 's/.*-w \([0-9][0-9]*\).*/\1/p')
         if [ -z "${BW}" ]; then

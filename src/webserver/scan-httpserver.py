@@ -988,8 +988,6 @@ class RequestHandler(BaseHTTPRequestHandler):
               ("FMLIST_SCAN_SAVE_LEDPLAY",  "Toggle LEDs after saving results per scan iteration") ],
               cfg_dict, cc_config )
 
-            form_cont = form_cont + f'<tr><td></td><td>1</td><td>Wiring Pi Number for Buzzer<br>wPi Pin 1 is Physical Pin 12.<br>see output of command "gpio readall"</td></tr>'
-
             form_cont = form_cont + read_and_gen_check_form_from_cfg( [
               ("FMLIST_SCAN_FOUND_PWMTONE", "Play tones for every detected carrier?"),
               ("FMLIST_SCAN_SAVE_PWMTONE",  "Play tones after saving results per scan iteration"),
@@ -1009,7 +1007,7 @@ class RequestHandler(BaseHTTPRequestHandler):
               ("FMLIST_UP_COMMENT", "Upload Comments shown in URDS table") ],
               cfg_dict, cc_config, 3, 40 )
             form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
-              ("FMLIST_UP_POSITION", "Position for next upload<br>mobile scans are faster; fixed enables detailed DAB audio analysis") ],
+                            ("FMLIST_UP_POSITION", "Position for next upload<br>mobile: fast discovery, detailed DAB only for new ensembles<br>fixed: always raw-file DAB analysis with detailed audio (5s for known, 15s for new ensembles)") ],
               cfg_dict, cc_config, [ ("fixed", "fixed position"), ("mobile", "mobile") ] )
 
             form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
