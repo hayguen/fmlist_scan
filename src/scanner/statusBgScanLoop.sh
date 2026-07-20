@@ -5,6 +5,9 @@ if [ -z "${FMLIST_SCAN_RAM_DIR}" ]; then
   if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
     mkdir -p "${FMLIST_SCAN_RAM_DIR}"
   fi
+else
+  # Ensure FMLIST_UP_POSITION is available even if FMLIST_SCAN_RAM_DIR was already set
+  source $HOME/.config/fmlist_scan/config 2>/dev/null
 fi
 
 export LC_ALL=C
@@ -59,7 +62,22 @@ ${DAB_FROM_RAM}"
   fi
 fi
 
-  cat gpscoor.log
+  GPS_DISPLAY="$(cat gpscoor.log | sed 's/\.[0-9]*Z/Z/g')"
+  echo -n "${GPS_DISPLAY}"
+  
+  # Add position mode (fixed/mobile) on same line
+  if [ ! -z "${FMLIST_UP_POSITION}" ]; then
+    if [ "${FMLIST_UP_POSITION}" = "fixed" ] || [ "${FMLIST_UP_POSITION}" = "0" ]; then
+      echo " / fixed position"
+    elif [ "${FMLIST_UP_POSITION}" = "mobile" ] || [ "${FMLIST_UP_POSITION}" = "1" ]; then
+      echo " / mobile position"
+    else
+      echo ""
+    fi
+  else
+    echo ""
+  fi
+  
   if [ -d /sys/class/thermal/thermal_zone0 ]; then
     #CPUTEMPS=$(cat /sys/class/thermal/thermal_zone*/temp 2>/dev/null | sed -e 's/\([0-9][0-9][0-9]\)$/.\1/g' | tr '\n' ' ')
     CPUTEMPS=$(cat /sys/class/thermal/thermal_zone*/temp 2>/dev/null | sed -e 's/\([0-9]\)\([0-9][0-9]\)$/.\1/g' | tr '\n' ' ')
@@ -96,7 +114,7 @@ fi
   fi
 
   if [ -f scanner.log ]; then
-    CHECK_LINE=$(grep -E "rtl_sdr .*DAB_.*sec\.raw|dab-rtlsdr -C |dab-raw -C " scanner.log | tail -n1)
+    CHECK_LINE=$(grep -E "rtl_sdr -s [0-9]+ -n [0-9]+ -f |rtl_sdr .*DAB_.*sec\.raw|dab-rtlsdr -C |dab-raw -C " scanner.log | tail -n1)
     if [ ! -z "${CHECK_LINE}" ]; then
       DAB_CH=$(echo "${CHECK_LINE}" | sed -n 's/.*dab-rtlsdr -C \([^ ]*\).*/\1/p')
       if [ -z "${DAB_CH}" ]; then

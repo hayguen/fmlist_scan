@@ -342,6 +342,7 @@ for chunkfreq in $( echo $chunkfrqs EOL ) ; do
     GPSV_ACT="$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )"
     DTF_ACT="$(date -u "+%Y-%m-%dT%T.%N Z")"
     echo "recording frequency $chunkfreq in background. last gps ${GPS_ACT}. now ${DTF_ACT}: rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw"
+    echo "rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     if [ -d /sys/class/thermal/thermal_zone0 ]; then
       echo -e "\\n$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before rtl_sdr -f ${chunkfreq}: $(cat /sys/class/thermal/thermal_zone*/temp | tr '\n' ' ')" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone*/temp | tr '\n' ' ')" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
