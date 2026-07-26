@@ -712,6 +712,34 @@ function togglePasswordVisibility(inputId) {
         button.textContent = 'Show';
     }
 }
+
+function openGpsMapPicker(session, latId, lonId, prefixId, altId) {
+    const latInput = document.getElementById(latId);
+    const lonInput = document.getElementById(lonId);
+    const prefixInput = document.getElementById(prefixId);
+    const altInput = document.getElementById(altId);
+    const lat = latInput ? latInput.value : '';
+    const lon = lonInput ? lonInput.value : '';
+    const prefix = prefixInput ? prefixInput.value : '';
+    const alt = altInput ? altInput.value : '';
+    const pickerUrl = '/map_picker.html?session=' + encodeURIComponent(session) + '&lat=' + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lon) + '&prefix=' + encodeURIComponent(prefix) + '&alt=' + encodeURIComponent(alt);
+    const popup = window.open(pickerUrl, 'fmlist_map_picker', 'width=980,height=760');
+    if (popup) {
+        popup.focus();
+    }
+    return false;
+}
+
+function setGpsCoordinates(lat, lon) {
+    const latInput = document.getElementById('cfg_gps_lat');
+    const lonInput = document.getElementById('cfg_gps_lon');
+    if (latInput) {
+        latInput.value = lat;
+    }
+    if (lonInput) {
+        lonInput.value = lon;
+    }
+}
 </script>
 """
 
@@ -900,6 +928,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             form_cont = form_cont + f'<tr><td>SCAN_GPS_LAT</td><td><input type="text" id="cfg_gps_lat" name="cfg_gps_lat" value="{str(gps_lat)}"> </td><td>decimal latitude, e.g. 48.885582 </td></tr>'
             form_cont = form_cont + f'<tr><td>SCAN_GPS_LON</td><td><input type="text" id="cfg_gps_lon" name="cfg_gps_lon" value="{str(gps_lon)}"> </td><td>decimal longitude, e.g. 8.702656 </td></tr>'
             form_cont = form_cont + f'<tr><td>SCAN_GPS_ALT</td><td><input type="text" id="cfg_gps_alt" name="cfg_gps_alt" value="{str(gps_alt)}"> </td><td>decimal altitude, e.g. 307 </td></tr>'
+            form_cont = form_cont + f'<tr><td>Map picker</td><td><button type="button" onclick="return openGpsMapPicker({session!r}, \'cfg_gps_lat\', \'cfg_gps_lon\', \'cfg_qth_prefix\', \'cfg_gps_alt\')">Open OpenStreetMap</button></td><td>Click a point in the popup to save latitude and longitude immediately.</td></tr>'
 
             form_cont = form_cont + read_and_gen_check_form_from_cfg( [
               ("FMLIST_SCAN_AUTOSTART",    "autostart scanner in background, when booting"),
@@ -1091,6 +1120,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             replace_export_value(cc_config, "FMLIST_SCAN_AUTOSTART",     "1" if "cfg_scan_autostart" in d     else "0")
             replace_export_value(cc_config, "FMLIST_SCAN_AUTO_IP_INFO",  "1" if "cfg_scan_auto_ip_info" in d  else "0")
+
             replace_export_value(cc_config, "FMLIST_SCAN_AUTO_CONFIG",   "1" if "cfg_scan_auto_config" in d   else "0")
             v = d["cfg_scan_gps_coords"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
             replace_export_value(cc_config, "FMLIST_SCAN_GPS_COORDS", v )
@@ -1217,6 +1247,136 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             break
 
+    def GET_map_picker(self, session, d):
+        def parse_coord(name, default_value):
+            try:
+                return float(d.get(name, default_value))
+            except:
+                return default_value
+
+        lat = parse_coord("lat", 48.0)
+        lon = parse_coord("lon", 8.0)
+        prefix = d.get("prefix", "")
+        alt = d.get("alt", "")
+
+        self.wfile.write(str.encode('<h1>Pick location on map</h1>\n'))
+        self.wfile.write(str.encode('<p>Click on the map to save the coordinates and copy them back into the config form.</p>\n'))
+        self.wfile.write(str.encode(f'<p>Current selection: <span id="selected_coords">{lat:.6f}, {lon:.6f}</span></p>\n'))
+        self.wfile.write(str.encode('<div id="save_status" style="margin: 0.4rem 0 0.8rem 0; font-weight: 700;"></div>\n'))
+        self.wfile.write(str.encode('<div id="map" style="height: 620px; width: 100%; border: 1px solid #b8cbc0; border-radius: 12px;"></div>\n'))
+        self.wfile.write(str.encode(f'<input type="hidden" id="start_lat" value="{lat:.6f}">\n'))
+        self.wfile.write(str.encode(f'<input type="hidden" id="start_lon" value="{lon:.6f}">\n'))
+        self.wfile.write(str.encode(f'<input type="hidden" id="start_prefix" value="{prefix}">\n'))
+        self.wfile.write(str.encode(f'<input type="hidden" id="start_alt" value="{alt}">\n'))
+        self.wfile.write(str.encode(f'<input type="hidden" id="start_session" value="{session}">\n'))
+        self.wfile.write(str.encode('<p><button type="button" onclick="if (window.opener) { window.opener.setGpsCoordinates(currentLat.toFixed(6), currentLon.toFixed(6)); } window.close();">Use selected location</button></p>\n'))
+        self.wfile.write(str.encode('''<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script>
+let map;
+let marker;
+let currentLat = parseFloat(document.getElementById('start_lat').value);
+let currentLon = parseFloat(document.getElementById('start_lon').value);
+let currentPrefix = document.getElementById('start_prefix').value;
+let currentAlt = document.getElementById('start_alt').value;
+let currentSession = document.getElementById('start_session').value;
+
+function updateSelection(lat, lon) {
+    currentLat = lat;
+    currentLon = lon;
+    document.getElementById('selected_coords').textContent = lat.toFixed(6) + ', ' + lon.toFixed(6);
+    const status = document.getElementById('save_status');
+    if (status) {
+        status.textContent = 'Saving...';
+    }
+    const payload = 'prefix=' + encodeURIComponent(currentPrefix) + '&lat=' + encodeURIComponent(lat.toFixed(6)) + '&lon=' + encodeURIComponent(lon.toFixed(6)) + '&alt=' + encodeURIComponent(currentAlt);
+    fetch('/map_picker_save?session=' + encodeURIComponent(currentSession), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: payload
+    }).then(function(response) {
+        if (response.ok) {
+            if (status) {
+                status.textContent = 'Saved';
+            }
+            if (window.opener && !window.opener.closed) {
+                window.opener.setGpsCoordinates(lat.toFixed(6), lon.toFixed(6));
+            }
+        } else if (status) {
+            status.textContent = 'Save failed';
+        }
+    }).catch(function() {
+        if (status) {
+            status.textContent = 'Save failed';
+        }
+    });
+    if (window.opener && !window.opener.closed) {
+        window.opener.setGpsCoordinates(lat.toFixed(6), lon.toFixed(6));
+    }
+}
+
+function syncMarker(latlng) {
+    if (!marker) {
+        marker = L.marker(latlng, { draggable: true }).addTo(map);
+        marker.on('dragend', function() {
+            const pos = marker.getLatLng();
+            updateSelection(pos.lat, pos.lng);
+        });
+    } else {
+        marker.setLatLng(latlng);
+    }
+    updateSelection(latlng.lat, latlng.lng);
+}
+
+map = L.map('map').setView([currentLat, currentLon], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+syncMarker(L.latLng(currentLat, currentLon));
+
+map.on('click', function(ev) {
+    syncMarker(ev.latlng);
+});
+</script>'''))
+        self.wfile.write(str.encode('</body>\n</html>\n'))
+
+    def POST_map_picker_save(self, session, d):
+        home = os.getenv("HOME")
+        prefix = d.get("prefix", "")
+        prefix = prefix.replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','').replace('/','').replace('\\','')
+        lat = d.get("lat", "")
+        lon = d.get("lon", "")
+        alt = d.get("alt", "")
+        lat = lat.replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+        lon = lon.replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+        alt = alt.replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+
+        if len(prefix) == 0:
+            return ('<p>Error: missing GPS prefix.</p>', True)
+
+        cc_config = read_all_lines(home + config_fn_rel_to_home)
+        if cc_config is not None:
+            replace_export_value(cc_config, "FMLIST_SCAN_GPS_LAT", lat)
+            replace_export_value(cc_config, "FMLIST_SCAN_GPS_LON", lon)
+            write_all_lines(home + config_fn_rel_to_home, cc_config)
+
+        localFname = home + '/.config/fmlist_scan/' + prefix + '_GPS_COORDS.inc'
+        cc_gps = read_all_lines(localFname)
+        if cc_gps is None:
+            cc_gps = [
+                f'export FMLIST_SCAN_GPS_LAT="{lat}"\n',
+                f'export FMLIST_SCAN_GPS_LON="{lon}"\n',
+                f'export FMLIST_SCAN_GPS_ALT="{alt}"\n',
+            ]
+        else:
+            replace_export_value(cc_gps, "FMLIST_SCAN_GPS_LAT", lat)
+            replace_export_value(cc_gps, "FMLIST_SCAN_GPS_LON", lon)
+            replace_export_value(cc_gps, "FMLIST_SCAN_GPS_ALT", alt)
+
+        if write_all_lines(localFname, cc_gps):
+            return ('<p>Saved GPS coordinates.</p>', False)
+        return ('<p>Error saving GPS coordinates.</p>', True)
 
     def POST_wifi(self, d):
         out_html, err_at_exec = run_and_get_output(True, "scannerPrepareWifiConfig.sh", timeout_val_in_sec=3)
@@ -1394,6 +1554,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             elif ps=="/config":
                 self.GET_config(session)
 
+            elif ps=="/map_picker":
+                self.GET_map_picker(session, d)
+                return
+
             elif ps=="/test_tones":
                 self.GET_test_tones(session, d)
 
@@ -1463,6 +1627,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif ps=="/config":
             out_html, err_at_exec = self.POST_config(session, d)
+
+        elif ps=="/map_picker_save":
+            out_html, err_at_exec = self.POST_map_picker_save(session, d)
 
         elif ps=="/start_scanner":
             out_html, err_at_exec = run_in_background(True, "startBgScanLoop.sh", 1)
