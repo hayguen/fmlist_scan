@@ -19,26 +19,24 @@ fi
 
 touch "${FMLIST_SCAN_RAM_DIR}/stopScanLoop"
 
-# Kill any running TEF scan processes (Python) to interrupt scanning
-pgrep -f "python.*scanFM_tef" >/dev/null 2>&1 && {
-  echo "Sending SIGTERM to running scanFM_tef.py processes..."
-  pkill -TERM -f "python.*scanFM_tef" 2>/dev/null
-  sleep 0.5
-  # Force kill if still running
-  pgrep -f "python.*scanFM_tef" >/dev/null 2>&1 && {
-    echo "Force killing scanFM_tef.py processes..."
-    pkill -KILL -f "python.*scanFM_tef" 2>/dev/null
-  }
+kill_matching_processes() {
+  local pattern="$1"
+  local label="$2"
+  if pgrep -f "${pattern}" >/dev/null 2>&1; then
+    echo "Stopping ${label} ..."
+    pkill -TERM -f "${pattern}" 2>/dev/null || true
+    sleep 0.5
+    if pgrep -f "${pattern}" >/dev/null 2>&1; then
+      echo "Force killing ${label} ..."
+      pkill -KILL -f "${pattern}" 2>/dev/null || true
+    fi
+  fi
 }
 
-# Also kill any redsea processes that might be decoding RDS
-pgrep -f "redsea" >/dev/null 2>&1 && {
-  pkill -TERM -f "redsea" 2>/dev/null
-  sleep 0.2
-  pgrep -f "redsea" >/dev/null 2>&1 && {
-    pkill -KILL -f "redsea" 2>/dev/null
-  }
-}
+# Stop loop controller and all active scan/analyzer workers.
+kill_matching_processes "scanLoop.sh|scanDAB.sh|scanFM.sh|python.*scanFM_tef" "scan loop workers"
+kill_matching_processes "dab-raw|dab-rtlsdr|rtl_sdr|prescanDAB" "DAB analyzers/captures"
+kill_matching_processes "redsea|csdr|kal" "decoder helper processes"
 
 stopGpsLoop.sh silent
 
