@@ -1,4 +1,6 @@
 
+set -e
+
 BASE=$(pwd)
 
 
@@ -15,12 +17,22 @@ fi
 cd ${BASE}/git/${GITUSER}
 if [ -d ${GITPROJ} ]; then
   cd ${GITPROJ}
-  git pull --rebase
+  if git diff --quiet && git diff --cached --quiet; then
+    git pull --rebase
+  else
+    echo "warning: local changes in ${GITPROJ}; skipping git pull --rebase"
+  fi
 else
   git clone https://github.com/${GITUSER}/${GITPROJ}.git
 fi
 
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
+
+LTO_OPT="-DENABLE_LTO=ON"
+if [ "${FMLIST_SCAN_RASPI}" = "1" ] || [[ "$(uname -m)" =~ ^(arm|aarch64) ]]; then
+  LTO_OPT="-DENABLE_LTO=OFF"
+  echo "info: Raspberry/ARM target detected; building dab-cmdline with LTO disabled"
+fi
 
 
 # rtlsdr
@@ -29,7 +41,9 @@ if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr ]; then
 fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
-cmake ../${GITPROJ}/example-10 -DRTLSDR=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+cmake ../${GITPROJ}/example-10 \
+  -DRTLSDR=ON -DAIRSPY=OFF -DSDRPLAY=OFF -DWAVFILES=OFF -DRAWFILES=OFF -DRTL_TCP=OFF \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ${LTO_OPT} -Wno-dev
 make
 
 
@@ -39,7 +53,9 @@ if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_files ]; then
 fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_files
-cmake ../${GITPROJ}/example-10 -DWAVFILES=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+cmake ../${GITPROJ}/example-10 \
+  -DWAVFILES=ON -DRAWFILES=OFF -DRTLSDR=OFF -DAIRSPY=OFF -DSDRPLAY=OFF -DRTL_TCP=OFF \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ${LTO_OPT} -Wno-dev
 make
 
 
@@ -49,11 +65,13 @@ if [ ! -d ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw ]; then
 fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw
-cmake ../${GITPROJ}/example-10 -DRAWFILES=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+cmake ../${GITPROJ}/example-10 \
+  -DRAWFILES=ON -DWAVFILES=OFF -DRTLSDR=OFF -DAIRSPY=OFF -DSDRPLAY=OFF -DRTL_TCP=OFF \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ${LTO_OPT} -Wno-dev
 make
 
 
-echo "remaining todo: sudo make install"
+echo "build dab-cmdline variants completed"
 
 cd ${BASE}
 
