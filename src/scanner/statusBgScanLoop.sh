@@ -47,7 +47,6 @@ if [ ! -z "${LATEST_DAB_DIR}" ]; then
     for dablog in $(ls -1t "${LATEST_DAB_DIR}"/DAB_*_stderr.log 2>/dev/null | head -n 20); do
       CH="$(basename "${dablog}" | sed -n 's/^DAB_\(.*\)_stderr\.log$/\1/p')"
       ENS="$(grep "ensemblenameHandler:" "${dablog}" | head -n1 | sed "s/.*ensemblenameHandler: \('[^']*'\).*\((EId [^)]*)\).*/\1 \2/")"
-      ENS="$(echo "${ENS}" | sed "s/'\([^']*[^ ]\) *' (EId/'\1' (EId/")"
       if [ ! -z "${CH}" ] && [ ! -z "${ENS}" ]; then
         echo "  DAB ${CH} ${ENS}"
       fi
@@ -219,10 +218,9 @@ fi
         }
         printf "\n"
       } else if ($1 ~ /^DAB_/) {
-        sub(/^DAB_/, "DAB ", $1)
-        printf "  %s", $1
-        for (i = 2; i <= NF; i++) printf " %s", $i
-        printf "\n"
+        line = $0
+        sub(/^DAB_/, "DAB ", line)
+        print "  " line
       } else {
         print "  " $0
       }
