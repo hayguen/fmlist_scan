@@ -112,6 +112,11 @@ function filterDabOptForDiscovery() {
     local tok="${arr[$i]}"
     case "${tok}" in
       -D)
+        # strip -D (no detailed audio in discovery pass)
+        ;;
+      -O)
+        # strip -O <arg>: prevents raw-IQ dump to stdout which would corrupt the log file
+        i=$[ $i + 1 ]
         ;;
       *)
         out+=("${tok}")
@@ -215,6 +220,22 @@ function rerunMissingServiceDetailsWithD() {
   local RERUN_OPTS="${BASE_OPTS}"
   if [[ " ${RERUN_OPTS} " != *" -D "* ]]; then
     RERUN_OPTS="${RERUN_OPTS} -D"
+  fi
+  # Fix the analysis window for per-SID retries:
+  #  - Always use -A -1 (scan from beginning) so early audio frames are not skipped.
+  #  - Cap -W at FMLIST_SCAN_DAB_SID_RETRY_W_MS (default 8000 ms) to keep scan speed
+  #    reasonable; never exceed the actual clip length.
+  local _RAWBYTES _FULL_W_MS _SID_W_MS
+  _RAWBYTES=$(wc -c <"${RAWFILE}" 2>/dev/null || echo 0)
+  if [ "${_RAWBYTES:-0}" -gt 2048 ] 2>/dev/null; then
+    _FULL_W_MS=$(( _RAWBYTES / 2048 ))
+    _SID_W_MS="${FMLIST_SCAN_DAB_SID_RETRY_W_MS:-8000}"
+    if [ "${_SID_W_MS}" -gt "${_FULL_W_MS}" ] 2>/dev/null; then
+      _SID_W_MS="${_FULL_W_MS}"
+    fi
+    RERUN_OPTS=$(echo " ${RERUN_OPTS} " | \
+      sed -E "s/ -W [0-9]+ / -W ${_SID_W_MS} /g; s/ -A [0-9-]+ / -A -1 /g" | \
+      sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
   fi
 
   echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: missing/incomplete ${MISSING_COUNT}/${EXPECTED_COUNT} service SID(s); rerunning with strict -D -S for real values" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
@@ -591,6 +612,20 @@ fi
 if [ -z "${FMLIST_SCAN_DAB_RAW_POST_ENSEMBLE_MS}" ]; then
   FMLIST_SCAN_DAB_RAW_POST_ENSEMBLE_MS="2500"
 fi
+if [ -z "${FMLIST_SCAN_DAB_SID_RETRY_W_MS}" ]; then
+  # Max analysis window (ms) for per-SID retry passes in rerunMissingServiceDetailsWithD.
+  # Must be >= FMLIST_SCAN_DAB_RAW_INITIAL_SEC * 1000 so the retry analyses at least as
+  # much data as the initial full pass.  Using less would guarantee the same failure.
+  FMLIST_SCAN_DAB_SID_RETRY_W_MS="5000"
+fi
+if [ -z "${FMLIST_SCAN_DAB_RAW_INITIAL_SEC}" ]; then
+  # For fixed position, the first raw capture uses this shorter duration.
+  # If the ensemble row is decoded within this clip all services are recovered
+  # via per-SID retries without a second capture.  Only when the ensemble label
+  # did not arrive in time (services in FIC but no CSV_ENSEMBLE) will the scanner
+  # recapture using the full FMLIST_SCAN_DAB_RAW_DURATION_SEC.
+  FMLIST_SCAN_DAB_RAW_INITIAL_SEC="5"
+fi
 if [ -z "${FMLIST_SCAN_DAB_RAW_REWIND_PER_SERVICE}" ]; then
   FMLIST_SCAN_DAB_RAW_REWIND_PER_SERVICE="0"
 fi
@@ -762,12 +797,21 @@ function process_dab_channel_results() {
     ENS_EID=$(echo "${ENS_LINE}" | awk -F',' '{ print tolower($4) }')
     ENS_NAME=$(echo "${ENS_LINE}" | awk -F',' '{ print $5 }' | sed 's/^"//; s/"$//; s/[[:space:]]*$//')
     if [ "$(echo "${ENS_NAME}" | tr '[:upper:]' '[:lower:]')" = "unknown ensemble" ] && [ ! -z "${ENS_EID}" ]; then
-      KNOWN_NAME="${DISC_ENS_LONG}"
+      KNOWN_NAME=""
+      if [ "$(echo "${DISC_ENS_LONG}" | tr '[:upper:]' '[:lower:]')" != "unknown ensemble" ]; then
+        KNOWN_NAME="${DISC_ENS_LONG}"
+      fi
       if [ -z "${KNOWN_NAME}" ]; then
         KNOWN_NAME="$( getKnownEnsembleNameByEid "${ENS_EID}" )"
       fi
       if [ ! -z "${KNOWN_NAME}" ]; then
         ENS_LINE="$(echo "${ENS_LINE}" | awk -F',' -v OFS=',' -v n="${KNOWN_NAME}" '{$5="\"" n "\""; print }')"
+        ENS_NAME="${KNOWN_NAME}"
+        # Patch the log file so every CSV row (ENSEMBLE + AUDIO) carries the real name,
+        # which makes _ENS_NAME_FINAL guard work and keeps the bundled zip clean.
+        # ENS_EID is already lower-case from the awk extraction above.
+        _KNOWN_SED=$(printf '%s' "${KNOWN_NAME}" | sed 's/[\[\]\/&]/\\&/g')
+        sed -i "s/${ENS_EID},\"unknown ensemble\"/${ENS_EID},\"${_KNOWN_SED}\"/g" "${rec_path}/DAB_${CH}.log"
         echo "${DTF_LOCAL}: DAB ${CH}: replaced unknown ensemble by known name '${KNOWN_NAME}' for EId ${ENS_EID}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       fi
     fi
@@ -822,16 +866,37 @@ function process_dab_channel_results() {
     fi
   fi
 
-  grep ",CSV_GPSCOOR,"  "${rec_path}/DAB_${CH}.log" | sed "s#,CSV_GPSCOOR,#,${GPSCOLS},#g"  >>"${rec_path}/dab_gps.csv"
-  grep ",CSV_AUDIO,"    "${rec_path}/DAB_${CH}.log" | sed "s#,CSV_AUDIO,#,${GPSCOLS},#g"    >>"${rec_path}/dab_audio.csv"
-  grep ",CSV_PACKET,"   "${rec_path}/DAB_${CH}.log" | sed "s#,CSV_PACKET,#,${GPSCOLS},#g"   >>"${rec_path}/dab_packet.csv"
+  # Only write audio/packet rows when the ensemble identity is confirmed.
+  # If the ensemble name or EId is still unresolved, the rows are useless for upload.
+  local _ENS_NAME_FINAL _ENS_EID_FINAL
+  _ENS_NAME_FINAL=$(awk -F',' '$2=="CSV_ENSEMBLE" { n=$5; gsub(/^"|"$/, "", n); print tolower(n); exit }' \
+    "${rec_path}/DAB_${CH}.log" 2>/dev/null)
+  _ENS_EID_FINAL=$(awk -F',' '$2=="CSV_ENSEMBLE" { print tolower($4); exit }' \
+    "${rec_path}/DAB_${CH}.log" 2>/dev/null)
+  if [ "${_ENS_NAME_FINAL}" = "unknown ensemble" ] || [ -z "${_ENS_NAME_FINAL}" ] || \
+     [ "${_ENS_EID_FINAL}" = "0xffffffff" ] || [ -z "${_ENS_EID_FINAL}" ]; then
+    echo "${DTF_LOCAL}: DAB ${CH}: skipping audio/packet rows: ensemble identity unresolved (EId='${_ENS_EID_FINAL}' name='${_ENS_NAME_FINAL}')" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  else
+    grep ",CSV_GPSCOOR,"  "${rec_path}/DAB_${CH}.log" | sed "s#,CSV_GPSCOOR,#,${GPSCOLS},#g"  >>"${rec_path}/dab_gps.csv"
+    grep ",CSV_AUDIO,"    "${rec_path}/DAB_${CH}.log" | sed "s#,CSV_AUDIO,#,${GPSCOLS},#g"    >>"${rec_path}/dab_audio.csv"
+    grep ",CSV_PACKET,"   "${rec_path}/DAB_${CH}.log" | sed "s#,CSV_PACKET,#,${GPSCOLS},#g"   >>"${rec_path}/dab_packet.csv"
+  fi
 
   NP=$( cat "${rec_path}/DAB_${CH}_stderr.log" | grep " is part of the ensemble" | grep -c "^programnameHandler:" )
   NE=$( cat "${rec_path}/DAB_${CH}_stderr.log" | grep " is recognized" | grep -c "ensemblenameHandler:" )
   echo "DAB_ENSEMBLE=\"${NE}\"" >>"${rec_path}/DAB_channels.txt"
   echo "NUM_PROGRAMS=\"${NP}\"" >>"${rec_path}/DAB_channels.txt"
 
-  if [ $NP -eq 0 ] && [ "${ENS_CSV_CNT}" -eq 0 ] && [ $NE -eq 0 ]; then
+  if { [ $NP -eq 0 ] && [ "${ENS_CSV_CNT}" -eq 0 ] && [ $NE -eq 0 ]; } || \
+     { [ "${_ENS_EID_FINAL}" = "0xffffffff" ] || [ -z "${_ENS_EID_FINAL}" ]; } && \
+     { [ "$(echo "${_ENS_NAME_FINAL}" | tr '[:upper:]' '[:lower:]')" = "unknown ensemble" ] || \
+       [ -z "${_ENS_NAME_FINAL}" ]; }; then
+    # Determine which branch triggered to write an informative log entry.
+    if { [ "${_ENS_EID_FINAL}" = "0xffffffff" ] || [ -z "${_ENS_EID_FINAL}" ]; } && \
+       { [ "$(echo "${_ENS_NAME_FINAL}" | tr '[:upper:]' '[:lower:]')" = "unknown ensemble" ] || \
+         [ -z "${_ENS_NAME_FINAL}" ]; }; then
+      echo "${DTF_LOCAL}: DAB ${CH}: discarding data: EId=${_ENS_EID_FINAL} name='${_ENS_NAME_FINAL}' — unresolvable ensemble identity" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+    fi
     if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
       echo "${DTF_LOCAL}: DAB ${CH}: NO station" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       mv "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_no-station.log"
@@ -853,11 +918,15 @@ function process_dab_channel_results() {
       ENSNAME="'unknown ensemble'"
     fi
     if [ "${ENSNAME}" = "'unknown ensemble'" ]; then
-      if [ ! -z "${DISC_ENS_LONG}" ]; then
+      # Prefer the resolved name from processChannelData (ENS_NAME) over DISC_ENS_LONG
+      # because DISC_ENS_LONG may itself be 'unknown ensemble' for fixed-position scans
+      # where discovery was skipped.
+      if [ -n "${ENS_NAME}" ] && [ "$(echo "${ENS_NAME}" | tr '[:upper:]' '[:lower:]')" != "unknown ensemble" ]; then
+        ENSNAME="'${ENS_NAME}'"
+        [ ! -z "${LAST_EID}" ] && ENSNAME="${ENSNAME} (EId ${LAST_EID})"
+      elif [ ! -z "${DISC_ENS_LONG}" ] && [ "$(echo "${DISC_ENS_LONG}" | tr '[:upper:]' '[:lower:]')" != "unknown ensemble" ]; then
         ENSNAME="'${DISC_ENS_LONG}'"
-        if [ ! -z "${LAST_EID}" ]; then
-          ENSNAME="${ENSNAME} (EId ${LAST_EID})"
-        fi
+        [ ! -z "${LAST_EID}" ] && ENSNAME="${ENSNAME} (EId ${LAST_EID})"
       elif [ ! -z "${LAST_EID}" ]; then
         ENSNAME="'unknown ensemble' (EId ${LAST_EID})"
       fi
@@ -962,7 +1031,11 @@ for CH in $(echo "${dabchannels[@]}") ; do
       DABOPT_FALLBACK="$(echo " ${DABOPT_FALLBACK} " | sed -E 's/[[:space:]]-E[[:space:]]+[0-9-]+/ /g; s/^[[:space:]]+//; s/[[:space:]]+$//; s/[[:space:]]+/ /g')"
     fi
 
-    # Discovery pass: always use dab-rtlsdr without audio analysis (-D removed).
+    # Discovery pass: only needed for mobile/non-fixed-position to get the ensemble key
+    # before deciding whether to capture a raw clip.  For fixed position we always capture
+    # a raw clip and derive all metadata from the dab-raw analysis — skipping discovery
+    # saves ~5 s per channel (the full -W 5000 discovery window).
+    if [ "${IS_FIXED_POSITION}" != "1" ]; then
     "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_DISCOVERY} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
     rm -f "${rec_path}/DAB_${CH}_initial_ensemble.csv" 2>/dev/null
     rm -f "${rec_path}/DAB_${CH}_initial_stderr.log" 2>/dev/null
@@ -1019,7 +1092,33 @@ for CH in $(echo "${dabchannels[@]}") ; do
         DISC_ENS_LONG=$(echo "${DAB_ENS_KEY}" | awk -F',' '{print $2}' | sed 's/^"//; s/"$//; s/[[:space:]]*$//')
       fi
       echo "${DTF}: DAB ${CH}: retry discovery result key='${DAB_ENS_KEY}' program lines=${DISC_NUM_PROGRAMS} unique SIDs=${DISC_NUM_SIDS}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+    elif [ "${DISC_UNKNOWN_ENS}" = "1" ] && [ ${DISC_NUM_PROGRAMS} -gt 2 ]; then
+      # Channel has programs already but ensemble label was not received in time.
+      # Run a targeted name-only retry without overwriting the main log files so
+      # the already-discovered service list is preserved.
+      local _DISC_NAME_RETRY_STDERR="${rec_path}/.DAB_${CH}_name_retry_stderr.tmp"
+      DABOPT_DISCOVERY_RETRY="$( tuneDabOptForUnknownEnsembleRetry "${DABOPT_DISCOVERY}" )"
+      echo "${DTF}: DAB ${CH}: unknown ensemble name with ${DISC_NUM_PROGRAMS} programs; name-only retry: ${DABOPT_DISCOVERY_RETRY}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_DISCOVERY_RETRY} 1>/dev/null 2>"${_DISC_NAME_RETRY_STDERR}"
+      _RETRY_ENS_LONG=$( grep "ensemblenameHandler:" "${_DISC_NAME_RETRY_STDERR}" 2>/dev/null | head -n1 | sed -n "s/.*ensemblenameHandler: '\([^']*\)'.*/\1/p" | sed 's/[[:space:]]*$//' )
+      _RETRY_ENS_SHORT=$( grep "ensemblenameHandler:" "${_DISC_NAME_RETRY_STDERR}" 2>/dev/null | head -n1 | sed -n "s/.*\/ '\([^']*\)'.*/\1/p" | sed 's/[[:space:]]*$//' )
+      if [ -n "${_RETRY_ENS_LONG}" ] && [ "$(echo "${_RETRY_ENS_LONG}" | tr '[:upper:]' '[:lower:]')" != "unknown ensemble" ]; then
+        _RETRY_EID=$( grep "ensemblenameHandler:" "${_DISC_NAME_RETRY_STDERR}" 2>/dev/null | head -n1 | sed -n "s/.*(EId \([^)]*\)).*/\1/p" )
+        [ -z "${_RETRY_EID}" ] && _RETRY_EID=$(sed -n "s/.*ensembleIdHandler: ensemble (EId \([^)]*\)).*/\1/p" "${_DISC_NAME_RETRY_STDERR}" | head -n1)
+        if [ -n "${_RETRY_EID}" ]; then
+          _RETRY_EID_NORM=$(echo "${_RETRY_EID}" | sed 's/^0[xX]//' | tr '[:upper:]' '[:lower:]')
+          DAB_ENS_KEY="0x${_RETRY_EID_NORM},\"${_RETRY_ENS_LONG}\""
+        fi
+        DISC_ENS_LONG="${_RETRY_ENS_LONG}"
+        DISC_ENS_SHORT="${_RETRY_ENS_SHORT}"
+        DISC_UNKNOWN_ENS="0"
+        echo "${DTF}: DAB ${CH}: name-only retry resolved ensemble to '${_RETRY_ENS_LONG}' (key=${DAB_ENS_KEY})" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      else
+        echo "${DTF}: DAB ${CH}: name-only retry did not resolve ensemble name; keeping FIC data without name" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      fi
+      rm -f "${_DISC_NAME_RETRY_STDERR}" 2>/dev/null || true
     fi
+    fi # end IS_FIXED_POSITION != 1 (discovery pass)
 
     # Keep a final discovery snapshot before any detailed/raw analysis may overwrite logs.
     cp -f "${rec_path}/DAB_${CH}.log" "${DISCOVERY_LOG_SNAPSHOT}" 2>/dev/null || true
@@ -1097,18 +1196,33 @@ for CH in $(echo "${dabchannels[@]}") ; do
       SHOULD_RUN_DETAILED="1"
     fi
 
-    if [ "${SHOULD_RUN_DETAILED}" = "1" ] && [ ! -z "${DAB_ENS_KEY}" ]; then
-      if [[ " ${DABOPT_FALLBACK} " != *" -D "* ]]; then
+    # For fixed position, always proceed to raw capture even without a discovery key;
+    # the ensemble key will be derived from the dab-raw analysis output below.
+    if [ "${SHOULD_RUN_DETAILED}" = "1" ] && { [ "${IS_FIXED_POSITION}" = "1" ] || [ ! -z "${DAB_ENS_KEY}" ]; }; then
+      # For mobile mode, add -D to the fallback so live analysis can decode audio details.
+      # For fixed position, -D must NOT be added: the live fallback is only used as a
+      # last-resort ensemble-identity recovery after raw-file analysis failures.
+      # With -D on a 10-20 service ensemble the live fallback takes O(N) minutes —
+      # audio details can only ever come from raw capture for fixed-position scans anyway.
+      if [ "${IS_FIXED_POSITION}" != "1" ] && [[ " ${DABOPT_FALLBACK} " != *" -D "* ]]; then
         DABOPT_FALLBACK="${DABOPT_FALLBACK} -D"
       fi
       RAW_DURATION_SEC="${FMLIST_SCAN_DAB_RAW_DURATION_SEC}"
-      if [ "${IS_FIXED_POSITION}" = "1" ] && [ "${IS_NEW_ENS}" = "0" ]; then
-        RAW_DURATION_SEC="15"
+      # Fixed position: attempt a short clip first; extend to the full duration only
+      # when the ensemble label was not received in the short window.
+      if [ "${IS_FIXED_POSITION}" = "1" ] && \
+         [ "${FMLIST_SCAN_DAB_RAW_INITIAL_SEC:-0}" -gt 0 ] 2>/dev/null && \
+         [ "${FMLIST_SCAN_DAB_RAW_INITIAL_SEC}" -lt "${FMLIST_SCAN_DAB_RAW_DURATION_SEC}" ] 2>/dev/null; then
+        RAW_DURATION_SEC="${FMLIST_SCAN_DAB_RAW_INITIAL_SEC}"
       fi
       CH_FREQ="$( chanFreq "${CH}" )"
       DTFRAW="$(date -u "+%Y%m%dT%H%M%SZ")"
       DAB_EID="$( getDabEnsembleIdFromStderr "${rec_path}/DAB_${CH}_stderr.log" )"
-      CH_RAW="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW}_${RAW_DURATION_SEC}sec.raw"
+      if [ "${DAB_EID}" = "unknown" ]; then
+        CH_RAW="${rec_path}/DAB_${CH}_${DTFRAW}_${RAW_DURATION_SEC}sec.raw"
+      else
+        CH_RAW="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW}_${RAW_DURATION_SEC}sec.raw"
+      fi
       NSMP="$[ ${RAW_DURATION_SEC} * 2048000 ]"
 
       if [ -z "${CH_FREQ}" ]; then
@@ -1156,6 +1270,80 @@ for CH in $(echo "${dabchannels[@]}") ; do
           if [ -z "${DABRAW_LIST_LINES}" ]; then DABRAW_LIST_LINES=0; fi
           if grep -qi "terminate called without an active exception" "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null; then
             DABRAW_CRASHED="1"
+          fi
+
+          # Short-clip extension for fixed position: if services appear in FIC but the
+          # ensemble label (CSV_ENSEMBLE) was not decoded yet, recapture a full-length
+          # clip so FIG 1/0 has more time to arrive.  This only triggers when the initial
+          # clip was intentionally shorter than the full duration.
+          if [ "${IS_FIXED_POSITION}" = "1" ] && \
+             [ "${RAW_DURATION_SEC}" -lt "${FMLIST_SCAN_DAB_RAW_DURATION_SEC}" ] 2>/dev/null && \
+             [ "${DABRAW_CSV_ENS}" -eq 0 ] && [ "${DABRAW_CRASHED}" != "1" ]; then
+            _SHORT_PROG=$(grep -c "^programnameHandler:.* is part of the ensemble" "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || echo 0)
+            if [ "${_SHORT_PROG:-0}" -gt 0 ] 2>/dev/null; then
+              echo "${DTF}: DAB ${CH}: short ${RAW_DURATION_SEC}s clip found ${_SHORT_PROG} program(s) but no ensemble row; extending to ${FMLIST_SCAN_DAB_RAW_DURATION_SEC}s" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+              rm -f "${CH_RAW}" 2>/dev/null || true
+              RAW_DURATION_SEC="${FMLIST_SCAN_DAB_RAW_DURATION_SEC}"
+              NSMP=$((RAW_DURATION_SEC * 2048000))
+              DTFRAW2="$(date -u "+%Y%m%dT%H%M%SZ")"
+              CH_RAW="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW2}_${RAW_DURATION_SEC}sec.raw"
+              echo "rtl_sdr -f ${CH_FREQ} -s 2048000 -n ${NSMP} ${FMLIST_DAB_RTLSDR_OPT} ${CH_RAW}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+              timeout -s SIGTERM -k 2 $((RAW_DURATION_SEC + 3)) rtl_sdr -f "${CH_FREQ}" -s 2048000 -n "${NSMP}" ${FMLIST_DAB_RTLSDR_OPT} "${CH_RAW}" >"${rec_path}/DAB_${CH}_rtl.log" 2>&1
+              RTL_RC=$?
+              if { [ ${RTL_RC} -ne 0 ] && [ ${RTL_RC} -ne 124 ]; } || [ ! -s "${CH_RAW}" ]; then
+                echo "${DTF}: DAB ${CH}: extended capture failed (rc=${RTL_RC}); keeping short-clip result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+                CH_RAW=""
+                KEEP_RAW_FILE="0"
+              else
+                _RAW_W_MS=$((RAW_DURATION_SEC * 1000))
+                DABOPT_RAW_FOR_ANALYSIS=$(echo " ${DABOPT_RAW_FOR_ANALYSIS} " | sed -E "s/ -W [0-9]+ / -W ${_RAW_W_MS} /g" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
+                echo "${DTF}: DAB ${CH}: analyzing extended ${RAW_DURATION_SEC}s clip" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+                echo "${DAB_RAW_BIN} -F ${CH_RAW} ${DABOPT_RAW_FOR_ANALYSIS}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+                "${DAB_RAW_BIN}" -F "${CH_RAW}" ${DABOPT_RAW_FOR_ANALYSIS} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+                DABRAW_RC=$?
+                sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
+                DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
+                DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
+                DABRAW_TOO_WEAK_IN_CSV=$(grep -c ",CSV_AUDIO,.*too weak signal" "${rec_path}/DAB_${CH}.log" 2>/dev/null)
+                DABRAW_CSV_AUD_NONWEAK=$(grep ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null | grep -vc "too weak signal" || true)
+                DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
+                DABRAW_CRASHED="0"
+                if [ -z "${DABRAW_TOO_WEAK_IN_CSV}" ]; then DABRAW_TOO_WEAK_IN_CSV=0; fi
+                if [ -z "${DABRAW_CSV_AUD_NONWEAK}" ]; then DABRAW_CSV_AUD_NONWEAK=0; fi
+                if [ -z "${DABRAW_LIST_LINES}" ]; then DABRAW_LIST_LINES=0; fi
+                if grep -qi "terminate called without an active exception" "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null; then
+                  DABRAW_CRASHED="1"
+                fi
+                DABRAW_PARTIAL_AUDIO_FAIL="0"
+              fi
+            fi
+          fi
+
+          # Fixed position: derive ensemble key and SID count from raw analysis output
+          # (discovery was skipped; all metadata comes from dab-raw itself).
+          if [ "${IS_FIXED_POSITION}" = "1" ] && [ -z "${DAB_ENS_KEY}" ]; then
+            DAB_ENS_KEY="$( getDabEnsembleKeyFromLog "${CH}" "${rec_path}/DAB_${CH}.log" )"
+            if [ -z "${DAB_ENS_KEY}" ]; then
+              DAB_ENS_KEY="$( getDabEnsembleKeyFromStderr "${rec_path}/DAB_${CH}_stderr.log" )"
+              [ -n "${DAB_ENS_KEY}" ] && echo "${DTF}: DAB ${CH}: derived key from analysis stderr (${DAB_ENS_KEY})" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+            fi
+            if [ -n "${DAB_ENS_KEY}" ]; then
+              DISC_ENS_LONG=$( grep "ensemblenameHandler:" "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null | head -n1 | sed -n "s/.*ensemblenameHandler: '\([^']*\)'.*/\1/p" | sed 's/[[:space:]]*$//' )
+              [ -z "${DISC_ENS_LONG}" ] && DISC_ENS_LONG=$(echo "${DAB_ENS_KEY}" | awk -F',' '{print $2}' | sed 's/^"//; s/"$//; s/[[:space:]]*$//')
+              DISC_ENS_SHORT=$( grep "ensemblenameHandler:" "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null | head -n1 | sed -n "s/.*\/ '\([^']*\)'.*/\1/p" | sed 's/[[:space:]]*$//' )
+              if isUnknownEnsembleKey "${DAB_ENS_KEY}"; then
+                IS_UNKNOWN_ENS="1"
+                echo "${DTF}: DAB ${CH}: unknown ensemble key (${DAB_ENS_KEY})" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+              elif ! refEnsembleKeyExists "${DAB_ENS_KEY}" "${REF_DAB_ENS_FILE}"; then
+                IS_NEW_ENS="1"
+                KEEP_RAW_FILE="1"
+                SHOULD_REGISTER_NEW="1"
+                echo "${DTF}: DAB ${CH}: new multiplex detected post-analysis (${DAB_ENS_KEY})" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+              fi
+            fi
+            DISC_NUM_SIDS=$(grep "^programnameHandler:.* is part of the ensemble" "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null | sed -n "s/.*(SId \([0-9A-Fa-f]\+\)).*/\1/p" | tr '[:lower:]' '[:upper:]' | sort -u | wc -l | tr -d ' ')
+            [ -z "${DISC_NUM_SIDS}" ] && DISC_NUM_SIDS="0"
+            echo "${DTF}: DAB ${CH}: fixed-pos analysis: key='${DAB_ENS_KEY}' SIDs=${DISC_NUM_SIDS} new=${IS_NEW_ENS}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
           fi
 
           # Detect too-weak at channel level:
@@ -1236,6 +1424,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
                 DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
                 if [ ${DABRAW_CSV_ENS} -eq 0 ] && [ ${DABRAW_CSV_AUD} -eq 0 ]; then
                   echo "${DTF}: DAB ${CH}: longer-clip retry produced no CSV; keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+                  rm -f "${CH_RAW}" 2>/dev/null || true; CH_RAW=""; KEEP_RAW_FILE="0"
                   "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
                 else
                   DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
@@ -1253,6 +1442,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
               else
                 echo "${DTF}: DAB ${CH}: longer-clip capture failed (rc=${RTL_RETRY_RC}); keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
                 rm -f "${CH_RAW_RETRY}" 2>/dev/null
+                rm -f "${CH_RAW}" 2>/dev/null || true; CH_RAW=""; KEEP_RAW_FILE="0"
                 "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
               fi
             else
@@ -1280,6 +1470,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
               DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
               if [ ${DABRAW_CSV_ENS} -eq 0 ] && [ ${DABRAW_CSV_AUD} -eq 0 ]; then
                 echo "${DTF}: DAB ${CH}: longer-clip retry produced no CSV; keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+                rm -f "${CH_RAW}" 2>/dev/null || true; CH_RAW=""; KEEP_RAW_FILE="0"
                 "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
               else
                 DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
@@ -1297,6 +1488,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
             else
               echo "${DTF}: DAB ${CH}: longer-clip capture failed (rc=${RTL_RETRY_RC}); keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
               rm -f "${CH_RAW_RETRY}" 2>/dev/null
+              rm -f "${CH_RAW}" 2>/dev/null || true; CH_RAW=""; KEEP_RAW_FILE="0"
               "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
             fi
           elif [ "${DABRAW_TOO_WEAK}" = "1" ]; then
