@@ -18,6 +18,13 @@ cat scan_*_dab_ensemble.csv 2>/dev/null \
  | uniq \
  > /dev/shm/scanEval/dab_ensembles.csv
 
+# Count ensemble occurrences per channel (duplicates across channels are kept).
+cat scan_*_dab_ensemble.csv 2>/dev/null \
+ | awk -F, '{ OFS=","; print $7,$8,$9; }' \
+ | sort \
+ | uniq \
+ > /dev/shm/scanEval/dab_ensembles_all.csv
+
 
 # based on scanEvalDABprogs.sh
 cat scan_*_dab_audio.csv scan_*_dab_packet.csv 2>/dev/null \
@@ -34,7 +41,7 @@ cat scan_*_fm_rds.csv 2>/dev/null \
  | uniq \
  > /dev/shm/scanEval/fm_programs.csv
 
-NUM_DAB_ENS=$( cat /dev/shm/scanEval/dab_ensembles.csv | wc -l )
+NUM_DAB_ENS=$( cat /dev/shm/scanEval/dab_ensembles_all.csv | wc -l )
 NUM_DAB_ENS_UNIQ=$( cat /dev/shm/scanEval/dab_ensembles.csv | wc -l )
 NUM_DAB_PRG=$( cat /dev/shm/scanEval/dab_programs.csv  | wc -l )
 NUM_DAB_PRG_UNIQ=$(awk -F',' '{ print $4 "," $5 }' /dev/shm/scanEval/dab_programs.csv | sort | uniq | wc -l)

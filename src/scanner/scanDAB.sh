@@ -190,7 +190,7 @@ function rerunMissingServiceDetailsWithD() {
         if (kind=="CSV_AUDIO") {
           codec=$15;
           gsub(/^"|"$/, "", codec);
-          if (codec != "DAB+/audio" && codec != "DAB/audio") {
+          if (codec != "DAB+/audio" && codec != "DAB/audio" && codec != "DAB+/AAC-LC Mono 32kHz") {
             print toupper(sid);
           }
         }
@@ -265,7 +265,7 @@ function rerunMissingServiceDetailsWithD() {
           if ($2=="CSV_AUDIO") {
             sid=$6; gsub(/"/, "", sid); sid=tolower(sid);
             codec=$15; gsub(/^"|"$/, "", codec);
-            if (sid==sidWanted && (codec=="DAB+/audio" || codec=="DAB/audio")) next;
+            if (sid==sidWanted && (codec=="DAB+/audio" || codec=="DAB/audio" || codec=="DAB+/AAC-LC Mono 32kHz")) next;
           }
           print $0;
         }
@@ -279,10 +279,18 @@ function rerunMissingServiceDetailsWithD() {
       done <"${SID_ROWS}"
       echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: recovered details for SID 0x${SID_HEX_LOWER}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     else
-      # strict -D -S returned no rows. If a "DAB+/audio" placeholder exists for
-      # this SID (written by the initial ensemble scan), update its codec in-place
-      # to "too weak signal", preserving all FIC-derived values (bitrate, CU, etc.).
-      # Only if no placeholder is present, append a minimal synthesized fallback row.
+      # strict -D -S returned no rows.
+      # Only apply "too weak signal" when the per-SID retry stderr explicitly says so.
+      # If dab-raw produced no audio rows but did not say "too weak", the failure is
+      # simply that the 5-second clip didn't contain decodable audio for this subchannel
+      # (even though other services in the same multiplex decoded fine).  Mislabeling
+      # those as "too weak signal" is a false positive.  Keep the existing "DAB+/audio"
+      # placeholder instead; skip synthesis entirely when no placeholder exists.
+      local _SID_RETRY_TOO_WEAK="0"
+      if grep -qi "too weak" "${SID_ERR}" 2>/dev/null; then
+        _SID_RETRY_TOO_WEAK="1"
+      fi
+
       local _FOUND_PLACEHOLDER
       _FOUND_PLACEHOLDER=$(awk -F',' -v sidWanted="0x${SID_HEX_LOWER}" '
         $2=="CSV_AUDIO" { sid=$6; gsub(/"/, "", sid); sid=tolower(sid);
@@ -292,7 +300,14 @@ function rerunMissingServiceDetailsWithD() {
         END { print found+0 }
       ' "${MAIN_LOG}" 2>/dev/null)
 
-      if [ "${_FOUND_PLACEHOLDER:-0}" -gt 0 ] 2>/dev/null; then
+      if [ "${_SID_RETRY_TOO_WEAK}" != "1" ]; then
+        # Decoder did not confirm weak signal — keep placeholder or skip synthesis.
+        if [ "${_FOUND_PLACEHOLDER:-0}" -gt 0 ] 2>/dev/null; then
+          echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: keeping 'DAB+/audio' placeholder for SID 0x${SID_HEX_LOWER} (no audio in clip; no weak-signal indication from decoder)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+        else
+          echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: skipping fallback for SID 0x${SID_HEX_LOWER} (no audio in clip; no weak-signal indication from decoder)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+        fi
+      elif [ "${_FOUND_PLACEHOLDER:-0}" -gt 0 ] 2>/dev/null; then
         awk -F',' -v sidWanted="0x${SID_HEX_LOWER}" '
           $2=="CSV_AUDIO" {
             sid=$6; gsub(/"/, "", sid); sid=tolower(sid);
@@ -633,7 +648,9 @@ if [ -z "${FMLIST_SCAN_DAB_USE_EXTII}" ]; then
   FMLIST_SCAN_DAB_USE_EXTII="1"
 fi
 if [ -z "${FMLIST_SCAN_DAB_DETAILED_ALL}" ]; then
-  FMLIST_SCAN_DAB_DETAILED_ALL="1"
+  # Fixed position is already enabled below by IS_FIXED_POSITION. Keep the
+  # mobile default fast: capture/analyze only newly discovered ensembles.
+  FMLIST_SCAN_DAB_DETAILED_ALL="0"
 fi
 
 # fixed position uses detailed analysis and always runs through raw-file workflow
@@ -1261,7 +1278,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
           DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
           DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
           DABRAW_TOO_WEAK_IN_CSV=$(grep -c ",CSV_AUDIO,.*too weak signal" "${rec_path}/DAB_${CH}.log" 2>/dev/null)
-          DABRAW_CSV_AUD_NONWEAK=$(grep ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null | grep -vc "too weak signal" || true)
+          DABRAW_CSV_AUD_NONWEAK=$(grep ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null | grep -vcE '"DAB\+/audio"|"DAB/audio"|too weak signal' || true)
           DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
           DABRAW_CRASHED="0"
           DABRAW_PARTIAL_AUDIO_FAIL="0"
@@ -1305,7 +1322,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
                 DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
                 DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
                 DABRAW_TOO_WEAK_IN_CSV=$(grep -c ",CSV_AUDIO,.*too weak signal" "${rec_path}/DAB_${CH}.log" 2>/dev/null)
-                DABRAW_CSV_AUD_NONWEAK=$(grep ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null | grep -vc "too weak signal" || true)
+                DABRAW_CSV_AUD_NONWEAK=$(grep ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null | grep -vcE '"DAB\+/audio"|"DAB/audio"|too weak signal' || true)
                 DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
                 DABRAW_CRASHED="0"
                 if [ -z "${DABRAW_TOO_WEAK_IN_CSV}" ]; then DABRAW_TOO_WEAK_IN_CSV=0; fi
@@ -1386,7 +1403,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
             sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
             DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
             DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
-            DABRAW_CSV_AUD_NONWEAK=$(grep ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null | grep -vc "too weak signal" || true)
+            DABRAW_CSV_AUD_NONWEAK=$(grep ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null | grep -vcE '"DAB\+/audio"|"DAB/audio"|too weak signal' || true)
             DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
             DABRAW_CRASHED="0"
             if [ -z "${DABRAW_CSV_AUD_NONWEAK}" ]; then DABRAW_CSV_AUD_NONWEAK=0; fi
