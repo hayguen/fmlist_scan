@@ -95,11 +95,12 @@ ls -1 | grep ^scan_ | while read d ; do
 
       popd
     elif [ $(echo "$d" |grep -c "_DAB\$") -ne 0 ]; then
-      NRAW=$( ls -1 $d/*.raw 2>/dev/null | wc -l )
+      NRAW=$( ls -1 $d/*.raw 2>/dev/null | grep -v '_temp\.raw$' | wc -l )
       if [ ${NRAW} -gt 0 ]; then
         mkdir -p "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/dab_raw"
-        mv $d/*.raw "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/dab_raw/"
+        ls -1 $d/*.raw 2>/dev/null | grep -v '_temp\.raw$' | xargs -I{} mv {} "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/$S/dab_raw/"
       fi
+      ls -1 $d/*_temp.raw 2>/dev/null | xargs -r rm -f
 
       pushd $d
       rm -f ${FMLIST_SCAN_RAM_DIR}/dab_audio.csv

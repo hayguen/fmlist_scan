@@ -127,6 +127,19 @@ function filterDabOptForDiscovery() {
   printf '%s\n' "${out[*]}"
 }
 
+function runDabRaw() {
+  local STDOUT_FILE="$1"
+  local STDERR_FILE="$2"
+  shift 2
+
+  timeout -s SIGTERM -k 5 "${FMLIST_SCAN_DAB_RAW_TIMEOUT_SEC}" "${DAB_RAW_BIN}" "$@" 1>"${STDOUT_FILE}" 2>"${STDERR_FILE}"
+  local RAW_RC=$?
+  if [ ${RAW_RC} -eq 124 ]; then
+    echo "$(date -u "+%Y-%m-%dT%T.%N Z"): dab-raw timed out after ${FMLIST_SCAN_DAB_RAW_TIMEOUT_SEC}s; continuing with recovery" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  fi
+  return ${RAW_RC}
+}
+
 function tuneDabOptForUnknownEnsembleRetry() {
   local in="$1"
   local out=""
@@ -246,7 +259,7 @@ function rerunMissingServiceDetailsWithD() {
     SID_HEX_LOWER=$(echo "${SID_HEX}" | tr '[:upper:]' '[:lower:]')
 
     echo "${DAB_RAW_BIN} -F ${RAWFILE} ${RERUN_OPTS} -S ${SID_HEX}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-    "${DAB_RAW_BIN}" -F "${RAWFILE}" ${RERUN_OPTS} -S "${SID_HEX}" 1>"${SID_LOG}" 2>"${SID_ERR}"
+    runDabRaw "${SID_LOG}" "${SID_ERR}" -F "${RAWFILE}" ${RERUN_OPTS} -S "${SID_HEX}"
     sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${SID_LOG}"
 
     awk -F',' -v sidWanted="0x${SID_HEX_LOWER}" '
@@ -502,7 +515,7 @@ function refEnsembleKeyExists() {
         cand_eid = tolower($1)
         cand_name = normname($2)
       }
-      if (cand_eid == key_eid && cand_name == key_name) {
+      if (cand_eid == key_eid) {
         found = 1
         exit
       }
@@ -619,6 +632,9 @@ if [ -z "${FMLIST_SCAN_DAB_ANALYZE_FROM_RAW}" ]; then
 fi
 if [ -z "${FMLIST_SCAN_DAB_RAW_DURATION_SEC}" ]; then
   FMLIST_SCAN_DAB_RAW_DURATION_SEC="15"
+fi
+if [ -z "${FMLIST_SCAN_DAB_RAW_TIMEOUT_SEC}" ]; then
+  FMLIST_SCAN_DAB_RAW_TIMEOUT_SEC="180"
 fi
 if [ -z "${FMLIST_SCAN_DAB_RAW_INIT_MS}" ]; then
   # This is overridden per-clip to RAW_DURATION_SEC*1000 at analysis time; keep as a safe fallback.
@@ -984,7 +1000,9 @@ function process_dab_channel_results() {
   if [ "${FMLIST_SCAN_DAB_ANALYZE_FROM_RAW}" = "1" ] && [ ! -z "${CH_RAW}" ]; then
     if [ -f "${CH_RAW}" ]; then
       if [ "${KEEP_RAW_FILE}" = "1" ]; then
-        echo "${DTF_LOCAL}: DAB ${CH}: keeping raw clip (first-time ensemble) ${CH_RAW}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+        CH_RAW_FINAL="${CH_RAW%_temp.raw}.raw"
+        mv -f "${CH_RAW}" "${CH_RAW_FINAL}"
+        echo "${DTF_LOCAL}: DAB ${CH}: keeping raw clip (first-time ensemble) ${CH_RAW_FINAL}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       else
         rm -f "${CH_RAW}"
         echo "${DTF_LOCAL}: DAB ${CH}: deleted raw clip ${CH_RAW}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
@@ -1236,9 +1254,9 @@ for CH in $(echo "${dabchannels[@]}") ; do
       DTFRAW="$(date -u "+%Y%m%dT%H%M%SZ")"
       DAB_EID="$( getDabEnsembleIdFromStderr "${rec_path}/DAB_${CH}_stderr.log" )"
       if [ "${DAB_EID}" = "unknown" ]; then
-        CH_RAW="${rec_path}/DAB_${CH}_${DTFRAW}_${RAW_DURATION_SEC}sec.raw"
+        CH_RAW="${rec_path}/DAB_${CH}_${DTFRAW}_${RAW_DURATION_SEC}sec_temp.raw"
       else
-        CH_RAW="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW}_${RAW_DURATION_SEC}sec.raw"
+        CH_RAW="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW}_${RAW_DURATION_SEC}sec_temp.raw"
       fi
       NSMP="$[ ${RAW_DURATION_SEC} * 2048000 ]"
 
@@ -1271,7 +1289,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
           DABOPT_RAW_FOR_ANALYSIS=$(echo " ${DABOPT_RAW_FOR_ANALYSIS} " | sed -E 's/ -A [0-9]+ / -A -1 /g')
           echo "${DTF}: DAB ${CH}: dab-raw detailed audio analysis enabled" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
           echo "${DAB_RAW_BIN} -F ${CH_RAW} ${DABOPT_RAW_FOR_ANALYSIS}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-          "${DAB_RAW_BIN}" -F "${CH_RAW}" ${DABOPT_RAW_FOR_ANALYSIS} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+          runDabRaw "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -F "${CH_RAW}" ${DABOPT_RAW_FOR_ANALYSIS}
           DABRAW_RC=$?
           # Fix channel label in CSV output: dab-raw without -C writes internal sub-channel ID instead of band channel (e.g. "11C" instead of "6A")
           sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
@@ -1303,7 +1321,11 @@ for CH in $(echo "${dabchannels[@]}") ; do
               RAW_DURATION_SEC="${FMLIST_SCAN_DAB_RAW_DURATION_SEC}"
               NSMP=$((RAW_DURATION_SEC * 2048000))
               DTFRAW2="$(date -u "+%Y%m%dT%H%M%SZ")"
-              CH_RAW="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW2}_${RAW_DURATION_SEC}sec.raw"
+              if [ "${DAB_EID}" = "unknown" ]; then
+                CH_RAW="${rec_path}/DAB_${CH}_${DTFRAW2}_${RAW_DURATION_SEC}sec_temp.raw"
+              else
+                CH_RAW="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW2}_${RAW_DURATION_SEC}sec_temp.raw"
+              fi
               echo "rtl_sdr -f ${CH_FREQ} -s 2048000 -n ${NSMP} ${FMLIST_DAB_RTLSDR_OPT} ${CH_RAW}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
               timeout -s SIGTERM -k 2 $((RAW_DURATION_SEC + 3)) rtl_sdr -f "${CH_FREQ}" -s 2048000 -n "${NSMP}" ${FMLIST_DAB_RTLSDR_OPT} "${CH_RAW}" >"${rec_path}/DAB_${CH}_rtl.log" 2>&1
               RTL_RC=$?
@@ -1316,7 +1338,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
                 DABOPT_RAW_FOR_ANALYSIS=$(echo " ${DABOPT_RAW_FOR_ANALYSIS} " | sed -E "s/ -W [0-9]+ / -W ${_RAW_W_MS} /g" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
                 echo "${DTF}: DAB ${CH}: analyzing extended ${RAW_DURATION_SEC}s clip" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
                 echo "${DAB_RAW_BIN} -F ${CH_RAW} ${DABOPT_RAW_FOR_ANALYSIS}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-                "${DAB_RAW_BIN}" -F "${CH_RAW}" ${DABOPT_RAW_FOR_ANALYSIS} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+                runDabRaw "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -F "${CH_RAW}" ${DABOPT_RAW_FOR_ANALYSIS}
                 DABRAW_RC=$?
                 sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
                 DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
@@ -1398,7 +1420,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
             DABOPT_RAW_NOREWIND="$(echo " ${DABOPT_RAW_FOR_ANALYSIS} " | sed -E "s/[[:space:]]-X([[:space:]]|$)/ /g; s/[[:space:]]-Y([[:space:]]|$)/ /g; s/[[:space:]]-E[[:space:]]+[0-9]+/ -E 0/g; s/[[:space:]]-W [0-9]+/ -W ${_NOREWIND_W}/g; s/^[[:space:]]+//; s/[[:space:]]+$//; s/[[:space:]]+/ /g")"
             echo "${DTF}: DAB ${CH}: partial audio listing after crash; retrying existing clip without rewind first" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
             echo "${DAB_RAW_BIN} -F ${CH_RAW} ${DABOPT_RAW_NOREWIND}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-            "${DAB_RAW_BIN}" -F "${CH_RAW}" ${DABOPT_RAW_NOREWIND} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+            runDabRaw "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -F "${CH_RAW}" ${DABOPT_RAW_NOREWIND}
             DABRAW_RC=$?
             sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
             DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
@@ -1424,7 +1446,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
               RETRY_RAW_DURATION="${FMLIST_SCAN_DAB_RAW_DURATION_SEC}"
               _RETRY_W_MS=$((RETRY_RAW_DURATION * 1000))
               DTFRAW_RETRY="$(date -u "+%Y%m%dT%H%M%SZ")"
-              CH_RAW_RETRY="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW_RETRY}_${RETRY_RAW_DURATION}sec.raw"
+              CH_RAW_RETRY="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW_RETRY}_${RETRY_RAW_DURATION}sec_temp.raw"
               NSMP_RETRY=$[ ${RETRY_RAW_DURATION} * 2048000 ]
               DABOPT_RAW_NOREWIND="$(echo " ${DABOPT_RAW_FOR_ANALYSIS} " | sed -E "s/[[:space:]]-X([[:space:]]|$)/ /g; s/[[:space:]]-Y([[:space:]]|$)/ /g; s/[[:space:]]-E[[:space:]]+[0-9]+/ -E 0/g; s/[[:space:]]-W [0-9]+/ -W ${_RETRY_W_MS}/g; s/[[:space:]]-A [0-9-]+/ -A -1/g; s/^[[:space:]]+//; s/[[:space:]]+$//; s/[[:space:]]+/ /g")"
               echo "${DTF}: DAB ${CH}: still incomplete after no-rewind retry; recapturing ${RETRY_RAW_DURATION}s" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
@@ -1435,7 +1457,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
                 rm -f "${CH_RAW}" 2>/dev/null
                 CH_RAW="${CH_RAW_RETRY}"
                 echo "${DAB_RAW_BIN} -F ${CH_RAW} ${DABOPT_RAW_NOREWIND}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-                "${DAB_RAW_BIN}" -F "${CH_RAW}" ${DABOPT_RAW_NOREWIND} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+                runDabRaw "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -F "${CH_RAW}" ${DABOPT_RAW_NOREWIND}
                 sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
                 DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
                 DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
@@ -1470,7 +1492,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
             RETRY_RAW_DURATION="${FMLIST_SCAN_DAB_RAW_DURATION_SEC}"
             DTFRAW_RETRY="$(date -u "+%Y%m%dT%H%M%SZ")"
             _RETRY_W_MS=$((RETRY_RAW_DURATION * 1000))
-            CH_RAW_RETRY="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW_RETRY}_${RETRY_RAW_DURATION}sec.raw"
+            CH_RAW_RETRY="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW_RETRY}_${RETRY_RAW_DURATION}sec_temp.raw"
             NSMP_RETRY=$[ ${RETRY_RAW_DURATION} * 2048000 ]
             DABOPT_RAW_NOREWIND="$(echo " ${DABOPT_RAW_FOR_ANALYSIS} " | sed -E "s/[[:space:]]-X([[:space:]]|$)/ /g; s/[[:space:]]-Y([[:space:]]|$)/ /g; s/[[:space:]]-E[[:space:]]+[0-9]+/ -E 0/g; s/[[:space:]]-W [0-9]+/ -W ${_RETRY_W_MS}/g; s/[[:space:]]-A [0-9-]+/ -A -1/g; s/^[[:space:]]+//; s/[[:space:]]+$//; s/[[:space:]]+/ /g")"  
             echo "${DTF}: DAB ${CH}: too weak signal; recapturing ${RETRY_RAW_DURATION}s and retrying without rewind" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
@@ -1481,7 +1503,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
               rm -f "${CH_RAW}" 2>/dev/null
               CH_RAW="${CH_RAW_RETRY}"
               echo "${DAB_RAW_BIN} -F ${CH_RAW} ${DABOPT_RAW_NOREWIND}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-              "${DAB_RAW_BIN}" -F "${CH_RAW}" ${DABOPT_RAW_NOREWIND} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+              runDabRaw "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -F "${CH_RAW}" ${DABOPT_RAW_NOREWIND}
               sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
               DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
               DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
@@ -1514,7 +1536,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
             DABOPT_RAW_NOREWIND="$(echo " ${DABOPT_RAW_FOR_ANALYSIS} " | sed -E "s/[[:space:]]-X([[:space:]]|$)/ /g; s/[[:space:]]-Y([[:space:]]|$)/ /g; s/[[:space:]]-E[[:space:]]+[0-9]+/ -E 0/g; s/[[:space:]]-W [0-9]+/ -W ${_NOREWIND_W}/g; s/^[[:space:]]+//; s/[[:space:]]+$//; s/[[:space:]]+/ /g")"
             echo "${DTF}: DAB ${CH}: too weak signal; retrying without rewind on existing clip" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
             echo "${DAB_RAW_BIN} -F ${CH_RAW} ${DABOPT_RAW_NOREWIND}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-            "${DAB_RAW_BIN}" -F "${CH_RAW}" ${DABOPT_RAW_NOREWIND} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+            runDabRaw "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -F "${CH_RAW}" ${DABOPT_RAW_NOREWIND}
             sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
             DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
             DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
@@ -1533,7 +1555,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
             if [ ${RETRY_RAW_DURATION} -gt 60 ]; then RETRY_RAW_DURATION=60; fi
             _RETRY_W_MS=$((RETRY_RAW_DURATION * 1000))
             DTFRAW_RETRY="$(date -u "+%Y%m%dT%H%M%SZ")"
-            CH_RAW_RETRY="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW_RETRY}_${RETRY_RAW_DURATION}sec.raw"
+            CH_RAW_RETRY="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW_RETRY}_${RETRY_RAW_DURATION}sec_temp.raw"
             NSMP_RETRY=$[ ${RETRY_RAW_DURATION} * 2048000 ]
             DABOPT_RAW_RETRY="$(echo " ${DABOPT_RAW_FOR_ANALYSIS} " | sed -E "s/[[:space:]]-X([[:space:]]|$)/ /g; s/[[:space:]]-Y([[:space:]]|$)/ /g; s/[[:space:]]-E[[:space:]]+[0-9]+/ -E 0/g; s/[[:space:]]-W [0-9]+/ -W ${_RETRY_W_MS}/g; s/[[:space:]]-A [0-9-]+/ -A -1/g; s/^[[:space:]]+//; s/[[:space:]]+$//; s/[[:space:]]+/ /g")"
             echo "${DTF}: DAB ${CH}: incomplete (${DABRAW_LIST_LINES}/${DISC_NUM_SIDS} services); recapturing ${RETRY_RAW_DURATION}s for more FIC coverage" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
@@ -1544,13 +1566,14 @@ for CH in $(echo "${dabchannels[@]}") ; do
               rm -f "${CH_RAW}" 2>/dev/null
               CH_RAW="${CH_RAW_RETRY}"
               echo "${DAB_RAW_BIN} -F ${CH_RAW} ${DABOPT_RAW_RETRY}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-              "${DAB_RAW_BIN}" -F "${CH_RAW}" ${DABOPT_RAW_RETRY} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+              runDabRaw "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -F "${CH_RAW}" ${DABOPT_RAW_RETRY}
               DABRAW_RC=$?
               sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
               DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
               DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
               if [ ${DABRAW_CSV_ENS} -eq 0 ] && [ ${DABRAW_CSV_AUD} -eq 0 ]; then
                 echo "${DTF}: DAB ${CH}: longer retry produced no CSV; keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+                rm -f "${CH_RAW}" 2>/dev/null || true; CH_RAW=""; KEEP_RAW_FILE="0"
                 "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
               else
                 DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
