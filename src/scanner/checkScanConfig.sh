@@ -20,6 +20,7 @@
     "FMLIST_SCAN_AUTOSTART"          \
     "FMLIST_SCAN_FM"                 \
     "FMLIST_SCAN_DAB"                \
+    "FMLIST_SCAN_PARALLEL_FM_DAB"    \
     "FMLIST_ALWAYS_FAST_MODE"        \
     "FMLIST_SPORADIC_E_MODE"         \
     "FMLIST_SCAN_TEST"               \

@@ -39,6 +39,7 @@ export FMLIST_SCAN_AUTO_CONFIG="${FMLIST_SCAN_AUTO_CONFIG}"              # recon
 export FMLIST_SCAN_AUTOSTART="${FMLIST_SCAN_AUTOSTART}"                # default is "1": autostart scanner in background
 export FMLIST_SCAN_FM="${FMLIST_SCAN_FM}"                       # "0" or "1"; default is "1" for active UKW/FM scan
 export FMLIST_SCAN_DAB="${FMLIST_SCAN_DAB}"                      # "0" or "1"; default is "1" for active DAB scan
+export FMLIST_SCAN_PARALLEL_FM_DAB="0"          # "0" or "1"; default is "0". set "1" to run TEF/FM and DAB in parallel when possible
 export FMLIST_FM_BACKEND="${FMLIST_FM_BACKEND}"                # FM backend: "rtl"/"rtlsdr" or "tef6686"
 export FMLIST_ALWAYS_FAST_MODE="${FMLIST_ALWAYS_FAST_MODE}"              # deactivates verbose scan when GPS not connected, default is "0"
 export FMLIST_SPORADIC_E_MODE="${FMLIST_SPORADIC_E_MODE}"               # deactivates DAB scan, uses special scan parameters in FM for quick scan
