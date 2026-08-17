@@ -140,7 +140,7 @@ class TefConn:
         """Stop active spectrum scan on the TEF6686."""
         try:
             self.write("E")
-            self.read_lines(0.5)
+            self.read_lines(0.15)
         except Exception:
             pass
 
@@ -915,44 +915,47 @@ def main():
         stop_khz = end_hz // 1000
         step_khz = step_hz // 1000
 
-        conn.write(f"Sa{start_khz}")
-        conn.write(f"Sb{stop_khz}")
-        conn.write(f"Sc{step_khz}")
-        conn.write("Sw560")
-        conn.write("S")
-        
-        # Read scan output until short silence to capture complete spectrum without extra wait.
-        scan_lines = conn.read_lines(12.0, idle_break_after_data_sec=0.8)
+        sweep_ms = int(env("FMLIST_TEF_SWEEP_MS", "10"))
+        n_steps = (stop_khz - start_khz) // step_khz + 1
+        # Timeout: full sweep duration + 3 s overhead, minimum 12 s.
+        sweep_timeout = max(12.0, n_steps * sweep_ms / 1000.0 + 3.0)
 
-        # Only create the output directory after spectrum scan data has been received
-        os.makedirs(rec_path, exist_ok=True)
-        append_line(os.path.join(rec_path, "scan_duration.txt"), f"FM scan started at {dt_start}")
-        append_line(os.path.join(rec_path, "scan_duration.txt"),
-                   f"Scan returned {len(scan_lines)} lines")
+        # Retry the spectrum sweep until we receive the expected number of frequency/power
+        # pairs.  The TEF can output Sm/Ss (signal-meter / seek) lines instead of the
+        # U-prefixed scan lines when it hasn't yet processed the Sa/Sb/Sc/Sw parameters
+        # (e.g. due to buffered output from the previous tune).  In that case pairs will
+        # be empty or incomplete and we simply restart the sweep.
+        MAX_SWEEP_TRIES = 3
+        pairs = []
+        scan_lines = []
+        for sweep_try in range(1, MAX_SWEEP_TRIES + 1):
+            conn.stop_scan()
+            conn.clear_input()
 
-        # Debug-only: save a sample of raw TEF scan output
-        if debug_enabled:
-            raw_scan_file = os.path.join(rec_path, "scan_raw.txt")
-            with open(raw_scan_file, "w", encoding="utf-8") as f:
-                for i, ln in enumerate(scan_lines[:20]):
-                    f.write(f"Line {i}: {repr(ln)}\n")
+            conn.write(f"Sa{start_khz}")
+            conn.write(f"Sb{stop_khz}")
+            conn.write(f"Sc{step_khz}")
+            conn.write(f"Sw{sweep_ms}")
+            conn.write("S")
 
-        pairs = parse_scan_pairs(scan_lines)
-        append_line(os.path.join(rec_path, "scan_duration.txt"), 
-                   f"Parsed {len(pairs)} frequency/power pairs from scan")
-        
-        # Debug-only: write full spectrum to file
-        if debug_enabled and pairs:
-            pairs_sorted = sorted(pairs, key=lambda x: x[1], reverse=True)
-            spectrum_file = os.path.join(rec_path, "spectrum_full.csv")
-            with open(spectrum_file, "w", encoding="utf-8") as f:
-                f.write("freq_mhz,power_db\n")
-                for (freq_hz, power) in pairs_sorted:
-                    f.write(f"{freq_hz/1e6:.1f},{power:.1f}\n")
-            top_20 = ", ".join([f"{f/1e6:.1f}({p:.1f}dB)" for (f, p) in pairs_sorted[:20]])
-            append_line(os.path.join(rec_path, "scan_duration.txt"), 
-                       f"Top 20 by power: {top_20}")
-        
+            # Read until a short idle period — the full sweep completes well within
+            # sweep_timeout; idle_break avoids unnecessary waiting after the last line.
+            scan_lines = conn.read_lines(sweep_timeout, idle_break_after_data_sec=0.3)
+
+            # Stop continuous scan loop so the TEF returns to normal tuner mode.
+            conn.stop_scan()
+
+            pairs = parse_scan_pairs(scan_lines)
+            if len(pairs) >= n_steps:
+                # Full spectrum received.
+                break
+            # Incomplete — log and retry after a short settle delay.
+            if sweep_try < MAX_SWEEP_TRIES:
+                append_line(os.path.join(ram_dir, "scanner.log"),
+                            f"Spectrum sweep incomplete (try {sweep_try}/{MAX_SWEEP_TRIES}): "
+                            f"got {len(pairs)}/{n_steps} pairs — retrying")
+                time.sleep(1.0)
+
         if not pairs:
             # Fallback: tune over raster and infer rough level from any numeric replies.
             pairs = []
@@ -970,11 +973,49 @@ def main():
             threshold = auto_threshold(pairs, threshold_margin)
             powers = sorted(p for (_, p) in pairs)
             noise_floor = powers[max(0, len(powers) // 4 - 1)] if powers else 0
-            append_line(os.path.join(rec_path, "scan_duration.txt"),
-                       f"Auto threshold: noise floor ~{noise_floor:.1f}dB + {threshold_margin:.0f}dB margin = {threshold:.1f}dB")
 
         selected = [(f, p) for (f, p) in pairs if p >= threshold and f >= beg_hz and f <= end_hz]
         selected.sort(key=lambda x: x[0])
+
+        # Tune to the first selected frequency BEFORE doing any file I/O so the TEF
+        # is already receiving while we write debug files.  TCP buffers the dwell data.
+        first_tune_sent = False
+        if selected:
+            conn.clear_input()
+            conn.write(f"T{selected[0][0] // 1000}")
+            first_tune_sent = True
+
+        # --- file I/O (TEF already tuning in background) ---
+        os.makedirs(rec_path, exist_ok=True)
+        append_line(os.path.join(rec_path, "scan_duration.txt"), f"FM scan started at {dt_start}")
+        append_line(os.path.join(rec_path, "scan_duration.txt"),
+                   f"Scan returned {len(scan_lines)} lines (sweep attempt {sweep_try}/{MAX_SWEEP_TRIES})")
+
+        # Debug-only: save a sample of raw TEF scan output
+        if debug_enabled:
+            raw_scan_file = os.path.join(rec_path, "scan_raw.txt")
+            with open(raw_scan_file, "w", encoding="utf-8") as f:
+                for i, ln in enumerate(scan_lines[:20]):
+                    f.write(f"Line {i}: {repr(ln)}\n")
+
+        append_line(os.path.join(rec_path, "scan_duration.txt"),
+                   f"Parsed {len(pairs)} frequency/power pairs from scan")
+
+        # Debug-only: write full spectrum to file
+        if debug_enabled and pairs:
+            pairs_sorted = sorted(pairs, key=lambda x: x[1], reverse=True)
+            spectrum_file = os.path.join(rec_path, "spectrum_full.csv")
+            with open(spectrum_file, "w", encoding="utf-8") as f:
+                f.write("freq_mhz,power_db\n")
+                for (freq_hz, power) in pairs_sorted:
+                    f.write(f"{freq_hz/1e6:.1f},{power:.1f}\n")
+            top_20 = ", ".join([f"{f/1e6:.1f}({p:.1f}dB)" for (f, p) in pairs_sorted[:20]])
+            append_line(os.path.join(rec_path, "scan_duration.txt"),
+                       f"Top 20 by power: {top_20}")
+
+        if auto_threshold_mode:
+            append_line(os.path.join(rec_path, "scan_duration.txt"),
+                       f"Auto threshold: noise floor ~{noise_floor:.1f}dB + {threshold_margin:.0f}dB margin = {threshold:.1f}dB")
 
         # Show what was filtered
         filtered_out = [(f, p) for (f, p) in pairs if p < threshold and f >= beg_hz and f <= end_hz]
@@ -988,7 +1029,7 @@ def main():
                    f"Threshold {threshold:.1f}dB: selected {len(selected)} frequencies from {beg_hz/1e6:.1f}\u2013{end_hz/1e6:.1f} MHz")
         if selected:
             first_10 = ", ".join([f"{f/1e6:.1f}({p:.1f}dB)" for (f, p) in selected[:10]])
-            append_line(os.path.join(rec_path, "scan_duration.txt"), 
+            append_line(os.path.join(rec_path, "scan_duration.txt"),
                        f"Top 10 selected: {first_10}")
 
         udp_last_file = os.path.join(rec_path, "udp_last_by_freq.csv")
@@ -998,12 +1039,17 @@ def main():
         else:
             append_line(udp_last_file, "epoch,kind,freq_hz,udp_port,chip,version,scandxmode,date,time,utc,freq,pi,signal,stereo,ta,tp,tmc,pty,ecc,lic,ps,rt,af,eon")
 
-        for (freq_hz, power) in selected:
+        for i, (freq_hz, power) in enumerate(selected):
             dt = now_iso()
             epoch = utc_epoch()
             freq_khz = freq_hz // 1000
-            conn.clear_input()
-            conn.write(f"T{freq_khz}")
+            if i == 0 and first_tune_sent:
+                # T was already sent before file I/O; TCP has buffered the dwell data.
+                # Do NOT call clear_input here — that would discard the buffered lines.
+                pass
+            else:
+                conn.clear_input()
+                conn.write(f"T{freq_khz}")
             tef_lines = conn.read_lines(float(dwell))
             tef_lines = trim_to_current_tune(tef_lines, freq_khz)
             # Drain UDP 9030/9100 after tune; frequency filtering below rejects delayed packets from prior channels.
