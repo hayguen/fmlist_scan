@@ -118,11 +118,11 @@ fi
   fi
 
   if [ -f scanner.log ] && [ "${PRESCAN_ACTIVE}" = "0" ]; then
-    CHECK_LINE=$(grep -E "rtl_sdr -s [0-9]+ -n [0-9]+ -f |rtl_sdr .*DAB_.*sec\.raw|dab-rtlsdr -C |dab-raw -F " scanner.log | tail -n1)
+    CHECK_LINE=$(grep -E "rtl_sdr -s [0-9]+ -n [0-9]+ -f |rtl_sdr .*DAB_.*sec[^ ]*\.raw|abra-rtlsdr -C |dab-rtlsdr -C |abra-raw -F |dab-raw -F " scanner.log | tail -n1)
     if [ ! -z "${CHECK_LINE}" ]; then
-      DAB_CH=$(echo "${CHECK_LINE}" | sed -n 's/.*dab-rtlsdr -C \([^ ]*\).*/\1/p')
+      DAB_CH=$(echo "${CHECK_LINE}" | sed -n 's/.*\(abra-rtlsdr\|dab-rtlsdr\) -C \([^ ]*\).*/\2/p')
       DAB_RAW_CH=""
-      if echo "${CHECK_LINE}" | grep -q "dab-raw -F "; then
+      if echo "${CHECK_LINE}" | grep -Eq "abra-raw -F |dab-raw -F "; then
         DAB_RAW_CH=$(echo "${CHECK_LINE}" | sed -n 's#.*DAB_\([^_]*\)_.*#\1#p')
       fi
       if [ ! -z "${DAB_CH}" ]; then
@@ -130,10 +130,10 @@ fi
       elif [ ! -z "${DAB_RAW_CH}" ]; then
         echo -e "\nanalysing DAB ${DAB_RAW_CH}"
       else
-        DAB_REC_CH=$(echo "${CHECK_LINE}" | sed -n 's#.*DAB_\([^_ ]*\)_[^ ]*sec\.raw.*#\1#p')
+        DAB_REC_CH=$(echo "${CHECK_LINE}" | sed -n 's#.*DAB_\([^_ ]*\)_[^ ]*sec[^ ]*\.raw.*#\1#p')
         if [ ! -z "${DAB_REC_CH}" ]; then
           DAB_REC_FILE=$(echo "${CHECK_LINE}" | awk '{ print $NF }')
-          DAB_REC_DUR=$(echo "${DAB_REC_FILE}" | sed -n 's#.*_\([0-9][0-9]*\)sec\.raw#\1#p')
+          DAB_REC_DUR=$(echo "${DAB_REC_FILE}" | sed -n 's#.*_\([0-9][0-9]*\)sec[^ ]*\.raw#\1#p')
           if [ -z "${DAB_REC_DUR}" ]; then
             DAB_REC_DUR="${FMLIST_SCAN_DAB_RAW_DURATION_SEC}"
           fi

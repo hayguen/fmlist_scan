@@ -11,12 +11,20 @@ if [ $( echo "$LD_LIBRARY_PATH" | grep -c "$HOME/.local/lib" ) -eq 0 ]; then
   export LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"
 fi
 
+DAB_RTLSDR_BIN="${HOME}/.local/bin/abra-rtlsdr"
+if [ ! -x "${DAB_RTLSDR_BIN}" ]; then
+  DAB_RTLSDR_BIN="${HOME}/.local/bin/dab-rtlsdr"
+fi
+if [ ! -x "${DAB_RTLSDR_BIN}" ]; then
+  DAB_RTLSDR_BIN="abra-rtlsdr"
+fi
+
 chan="$1"
 
 if [ -z "${chan}" ] || [ "${chan}" = "-h" ] || [ "${chan}" = "--help" ]; then
-  echo "usage: $0 <channel> [<additional options to dab-rtlsdr>]"
-  echo " additional options - as in dab-rtlsdr:"
-  dab-rtlsdr -h
+  echo "usage: $0 <channel> [<additional options to ${DAB_RTLSDR_BIN##*/}>]"
+  echo " additional options - as in ${DAB_RTLSDR_BIN##*/}:"
+  "${DAB_RTLSDR_BIN}" -h
   exit 0
 fi
 
@@ -31,10 +39,10 @@ if [ -z "${chan}" ]; then
 fi
 
 echo "control volume with amixer set <control> 90%"
-echo "starting   dab-rtlsdr ${DABLISTENOPT} -P Dlf -C $@ | aplay -r 48000 -f S16_LE -t raw -c 2 .."
+echo "starting   ${DAB_RTLSDR_BIN##*/} ${DABLISTENOPT} -P Dlf -C $@ | aplay -r 48000 -f S16_LE -t raw -c 2 .."
 
 # save DAB images in RAM
 cd "${FMLIST_SCAN_RAM_DIR}"
 
-# dab-rtlsdr -Q -W 5000 -A 6000 -c -t 5 -a 0.8 -r 5 -x -P Dlf -C "$@" | aplay -r 48000 -f S16_LE -t raw -c 2
-dab-rtlsdr ${DABLISTENOPT} -P Dlf -C "$@" | aplay -r 48000 -f S16_LE -t raw -c 2
+# ${DAB_RTLSDR_BIN##*/} -Q -W 5000 -A 6000 -c -t 5 -a 0.8 -r 5 -x -P Dlf -C "$@" | aplay -r 48000 -f S16_LE -t raw -c 2
+"${DAB_RTLSDR_BIN}" ${DABLISTENOPT} -P Dlf -C "$@" | aplay -r 48000 -f S16_LE -t raw -c 2
