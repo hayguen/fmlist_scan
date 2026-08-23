@@ -35,7 +35,7 @@ kill_matching_processes() {
 
 # Stop loop controller and all active scan/analyzer workers.
 kill_matching_processes "scanLoop.sh|scanDAB.sh|scanFM.sh|python.*scanFM_tef" "scan loop workers"
-kill_matching_processes "dab-raw|dab-rtlsdr|rtl_sdr|prescanDAB" "DAB analyzers/captures"
+kill_matching_processes "abra-raw|abra-rtlsdr|dab-raw|dab-rtlsdr|rtl_sdr|prescanDAB" "DAB analyzers/captures"
 kill_matching_processes "redsea|csdr|kal" "decoder helper processes"
 
 stopGpsLoop.sh silent

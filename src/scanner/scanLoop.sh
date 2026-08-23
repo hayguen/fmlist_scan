@@ -306,6 +306,9 @@ while /bin/true; do
       break
     fi
 
+    # Save FM results to disk before starting DAB so a DAB hang/reboot cannot lose them.
+    saveScanResults.sh
+
     scanDAB.sh
   fi
 

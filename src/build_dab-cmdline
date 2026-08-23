@@ -28,6 +28,125 @@ fi
 
 cd ${BASE}/git/${GITUSER}/${GITPROJ}
 
+ABRA_REPO="KejPi/AbracaDABra"
+ABRA_SDK_TAG_REQ="${ABRACADABRA_SDK_TAG:-latest}"
+ABRA_SDK_TAG_FILE="${BASE}/git/${GITUSER}/${GITPROJ}/third_party/abracadabra/lib/.abracadabra_sdk_tag"
+ABRA_SDK_LIB_ROOT="${BASE}/git/${GITUSER}/${GITPROJ}/third_party/abracadabra/lib"
+ABRA_SDK_PLATFORM="linux_x86_64"
+if [[ "$(uname -m)" =~ ^(arm|aarch64) ]]; then
+  ABRA_SDK_PLATFORM="linux_aarch64"
+fi
+
+resolve_abra_tag() {
+  local req="$1"
+  if [ "${req}" != "latest" ]; then
+    echo "${req}"
+    return 0
+  fi
+
+  local api_url="https://api.github.com/repos/${ABRA_REPO}/releases/latest"
+  local tag=""
+  if command -v curl >/dev/null 2>&1; then
+    tag=$(curl -fsSL "${api_url}" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)
+  elif command -v wget >/dev/null 2>&1; then
+    tag=$(wget -qO- "${api_url}" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n1)
+  else
+    echo "error: neither curl nor wget is available to resolve latest ${ABRA_REPO} release" >&2
+    exit 1
+  fi
+
+  if [ -z "${tag}" ]; then
+    echo "error: failed to resolve latest release tag from ${api_url}" >&2
+    exit 1
+  fi
+  echo "${tag}"
+}
+
+version_gt() {
+  local a="${1#v}"
+  local b="${2#v}"
+  [ "$(printf '%s\n' "${b}" "${a}" | sort -V | tail -n1)" = "${a}" ] && [ "${a}" != "${b}" ]
+}
+
+should_refresh_abra_sdk() {
+  local target_tag="$1"
+  local current_tag=""
+
+  if [ ! -d "${ABRA_SDK_LIB_ROOT}/${ABRA_SDK_PLATFORM}" ]; then
+    return 0
+  fi
+  if [ ! -f "${ABRA_SDK_LIB_ROOT}/${ABRA_SDK_PLATFORM}/cmake/dabsdr.cmake" ]; then
+    return 0
+  fi
+  if [ ! -f "${ABRA_SDK_LIB_ROOT}/${ABRA_SDK_PLATFORM}/libdabsdr.so.4" ] && [ ! -f "${ABRA_SDK_LIB_ROOT}/${ABRA_SDK_PLATFORM}/libdabsdr.so.4.0.1" ]; then
+    return 0
+  fi
+
+  if [ -f "${ABRA_SDK_TAG_FILE}" ]; then
+    current_tag=$(cat "${ABRA_SDK_TAG_FILE}" 2>/dev/null || true)
+  fi
+
+  if [ -z "${current_tag}" ]; then
+    return 0
+  fi
+
+  if [ "${current_tag}" = "${target_tag}" ]; then
+    return 1
+  fi
+
+  if version_gt "${target_tag}" "${current_tag}"; then
+    return 0
+  fi
+
+  # Different tag but not newer: keep existing unless forced.
+  return 1
+}
+
+download_abra_sdk() {
+  local tag="$1"
+  local tmp_dir="${BASE}/git/${GITUSER}/.tmp_abracadabra_${tag}_$$"
+  local tar_file="${BASE}/git/${GITUSER}/.tmp_abracadabra_${tag}.tar.gz"
+  local url="https://github.com/${ABRA_REPO}/archive/refs/tags/${tag}.tar.gz"
+
+  echo "info: downloading AbracaDABra SDK ${tag} from ${url}"
+  rm -rf "${tmp_dir}"
+  mkdir -p "${tmp_dir}"
+
+  if command -v curl >/dev/null 2>&1; then
+    curl -fL "${url}" -o "${tar_file}"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -O "${tar_file}" "${url}"
+  else
+    echo "error: neither curl nor wget is available to download ${url}" >&2
+    exit 1
+  fi
+
+  tar -xzf "${tar_file}" -C "${tmp_dir}"
+  local src_root
+  src_root=$(find "${tmp_dir}" -mindepth 1 -maxdepth 1 -type d | head -n1)
+  if [ -z "${src_root}" ] || [ ! -d "${src_root}/lib/${ABRA_SDK_PLATFORM}" ]; then
+    echo "error: downloaded archive does not contain lib/${ABRA_SDK_PLATFORM}" >&2
+    rm -rf "${tmp_dir}" "${tar_file}"
+    exit 1
+  fi
+
+  mkdir -p "${ABRA_SDK_LIB_ROOT}"
+  rm -rf "${ABRA_SDK_LIB_ROOT:?}/${ABRA_SDK_PLATFORM}"
+  cp -a "${src_root}/lib/${ABRA_SDK_PLATFORM}" "${ABRA_SDK_LIB_ROOT}/${ABRA_SDK_PLATFORM}"
+  echo "${tag}" >"${ABRA_SDK_TAG_FILE}"
+
+  rm -rf "${tmp_dir}" "${tar_file}"
+  echo "info: AbracaDABra SDK ${tag} installed for ${ABRA_SDK_PLATFORM}"
+}
+
+ABRA_SDK_TAG="$(resolve_abra_tag "${ABRA_SDK_TAG_REQ}")"
+ABRA_FORCE_REFRESH="${ABRACADABRA_SDK_FORCE_REFRESH:-0}"
+if [ "${ABRA_FORCE_REFRESH}" = "1" ] || should_refresh_abra_sdk "${ABRA_SDK_TAG}"; then
+  download_abra_sdk "${ABRA_SDK_TAG}"
+else
+  echo "info: AbracaDABra SDK already present and up-to-date for ${ABRA_SDK_PLATFORM} (tag ${ABRA_SDK_TAG})"
+fi
+
 LTO_OPT="-DENABLE_LTO=ON"
 if [ "${FMLIST_SCAN_RASPI}" = "1" ] || [[ "$(uname -m)" =~ ^(arm|aarch64) ]]; then
   LTO_OPT="-DENABLE_LTO=OFF"
@@ -42,9 +161,11 @@ fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_rtlsdr
 cmake ../${GITPROJ}/example-10 \
-  -DRTLSDR=ON -DAIRSPY=OFF -DSDRPLAY=OFF -DWAVFILES=OFF -DRAWFILES=OFF -DRTL_TCP=OFF \
+  -DRTLSDR=OFF -DAIRSPY=OFF -DSDRPLAY=OFF -DWAVFILES=OFF -DRAWFILES=OFF -DRTL_TCP=OFF \
+  -DABRA_RTLSDR=ON -DABRA_RAW=OFF -DABRA_DABSDR_PROBE=OFF \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ${LTO_OPT} -Wno-dev
 make
+make install
 
 
 # wav and raw 8 bit 2048kSps
@@ -66,9 +187,30 @@ fi
 
 cd ${BASE}/git/${GITUSER}/build_${GITPROJ}_raw
 cmake ../${GITPROJ}/example-10 \
-  -DRAWFILES=ON -DWAVFILES=OFF -DRTLSDR=OFF -DAIRSPY=OFF -DSDRPLAY=OFF -DRTL_TCP=OFF \
+  -DRAWFILES=OFF -DWAVFILES=OFF -DRTLSDR=OFF -DAIRSPY=OFF -DSDRPLAY=OFF -DRTL_TCP=OFF \
+  -DABRA_RAW=ON -DABRA_RTLSDR=OFF -DABRA_DABSDR_PROBE=OFF \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/.local -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ${LTO_OPT} -Wno-dev
 make
+make install
+
+# install ABRA runtime shared libraries for non-root user environment
+ABRA_LIB_SRC="${BASE}/git/${GITUSER}/${GITPROJ}/third_party/abracadabra/lib"
+ABRA_LIB_PLATFORM="${ABRA_SDK_PLATFORM}"
+mkdir -p "$HOME/.local/lib"
+if [ -d "${ABRA_LIB_SRC}/${ABRA_LIB_PLATFORM}" ]; then
+  cp -f "${ABRA_LIB_SRC}/${ABRA_LIB_PLATFORM}/libdabsdr.so."* "$HOME/.local/lib/" 2>/dev/null || true
+  cp -f "${ABRA_LIB_SRC}/${ABRA_LIB_PLATFORM}/libfmlistInterface.so."* "$HOME/.local/lib/" 2>/dev/null || true
+fi
+
+
+# keep legacy names for existing scanner scripts
+mkdir -p $HOME/.local/bin
+if [ -x "$HOME/.local/bin/abra-rtlsdr" ]; then
+  cp -f "$HOME/.local/bin/abra-rtlsdr" "$HOME/.local/bin/dab-rtlsdr"
+fi
+if [ -x "$HOME/.local/bin/abra-raw" ]; then
+  cp -f "$HOME/.local/bin/abra-raw" "$HOME/.local/bin/dab-raw"
+fi
 
 
 echo "build dab-cmdline variants completed"
