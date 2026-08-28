@@ -169,6 +169,28 @@ function tuneDabOptForUnknownEnsembleRetry() {
   printf '%s\n' "${out}"
 }
 
+function countCsvUniqueServiceSids() {
+  local LOGFILE="$1"
+  if [ -z "${LOGFILE}" ] || [ ! -f "${LOGFILE}" ]; then
+    echo 0
+    return 0
+  fi
+  awk -F',' '
+    ($2=="CSV_AUDIO" || $2=="CSV_PACKET") {
+      sid=$6;
+      gsub(/"/, "", sid);
+      sid=tolower(sid);
+      if (sid=="" || sid=="0x0000") next;
+      seen[sid]=1;
+    }
+    END {
+      n=0;
+      for (k in seen) n++;
+      print n+0;
+    }
+  ' "${LOGFILE}" 2>/dev/null
+}
+
 function rerunMissingServiceDetailsWithD() {
   local CH="$1"
   local RAWFILE="$2"
@@ -434,7 +456,7 @@ function rerunMissingServiceDetailsWithD() {
       if [ "${_REC_TYPE}" = "DAB+/audio" ] || [ "${_REC_TYPE}" = "DAB/audio" ]; then
         local _RETRY_PH_CODEC
         if [ "${_REAL_DECODED_AUDIO_COUNT:-0}" -gt 0 ] 2>/dev/null; then
-          _RETRY_PH_CODEC="DAB+/no audio"
+          _RETRY_PH_CODEC="DAB+/too weak or no audio"
         else
           _RETRY_PH_CODEC="DAB+/too weak signal"
         fi
@@ -448,26 +470,22 @@ function rerunMissingServiceDetailsWithD() {
           END { if (found) print "MARKED " found " row(s) for " s " as " c > "/dev/stderr" }
         ' "${MAIN_LOG}" >"${MAIN_LOG}.tmp" && mv "${MAIN_LOG}.tmp" "${MAIN_LOG}"
         echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: SID 0x${SID_HEX_LOWER}: retry returned placeholder, marked as ${_RETRY_PH_CODEC}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      elif [ "${_REC_TYPE}" = "DAB+/too weak audio" ] || [ "${_REC_TYPE}" = "DAB/too weak audio" ]; then
-        if [ "${_REAL_DECODED_AUDIO_COUNT:-0}" -gt 0 ] 2>/dev/null; then
-          awk -F',' -v OFS=',' -v s="0x${SID_HEX_LOWER}" '
-            $2=="CSV_AUDIO" {
-              sid=$6; gsub(/"/, "", sid); sid=tolower(sid)
-              if (sid==s) {
-                codec=$15; gsub(/^"|"$/, "", codec)
-                if (codec=="DAB+/too weak audio") {
-                  $15="\"DAB+/no audio\""
-                } else if (codec=="DAB/too weak audio") {
-                  $15="\"DAB/no audio\""
-                }
+      elif [ "${_REC_TYPE}" = "DAB+/too weak audio" ] || [ "${_REC_TYPE}" = "DAB/too weak audio" ] || [ "${_REC_TYPE}" = "DAB+/too weak or no audio" ] || [ "${_REC_TYPE}" = "DAB/too weak or no audio" ]; then
+        awk -F',' -v OFS=',' -v s="0x${SID_HEX_LOWER}" '
+          $2=="CSV_AUDIO" {
+            sid=$6; gsub(/"/, "", sid); sid=tolower(sid)
+            if (sid==s) {
+              codec=$15; gsub(/^"|"$/, "", codec)
+              if (codec=="DAB+/too weak audio" || codec=="DAB+/no audio" || codec=="DAB+/too weak or no audio") {
+                $15="\"DAB+/too weak or no audio\""
+              } else if (codec=="DAB/too weak audio" || codec=="DAB/no audio" || codec=="DAB/too weak or no audio") {
+                $15="\"DAB/too weak or no audio\""
               }
             }
-            { print }
-          ' "${MAIN_LOG}" >"${MAIN_LOG}.tmp" && mv "${MAIN_LOG}.tmp" "${MAIN_LOG}"
-          echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: SID 0x${SID_HEX_LOWER}: converted too-weak-audio to no-audio (other services decoded on same mux)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-        else
-          echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: SID 0x${SID_HEX_LOWER}: keeping too-weak-audio (no other real decoded audio services)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-        fi
+          }
+          { print }
+        ' "${MAIN_LOG}" >"${MAIN_LOG}.tmp" && mv "${MAIN_LOG}.tmp" "${MAIN_LOG}"
+        echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: SID 0x${SID_HEX_LOWER}: normalized unresolved-audio status" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       else
         # Retry returned a real codec.
         echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: recovered SID 0x${SID_HEX_LOWER}: ${_REC_TYPE:-no audio}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
@@ -496,7 +514,7 @@ function rerunMissingServiceDetailsWithD() {
 
       if [ "${_SID_RETRY_TOO_WEAK}" != "1" ]; then
         # Decoder did not confirm weak signal.
-        # If other services decode fine on this multiplex, mark the unresolved SID as no audio.
+        # If other services decode fine on this multiplex, mark the unresolved SID as too weak or no audio.
         if [ "${_FOUND_PLACEHOLDER:-0}" -gt 0 ] 2>/dev/null && [ "${_REAL_DECODED_AUDIO_COUNT:-0}" -gt 0 ] 2>/dev/null; then
           awk -F',' -v sidWanted="0x${SID_HEX_LOWER}" '
             $2=="CSV_AUDIO" {
@@ -505,12 +523,12 @@ function rerunMissingServiceDetailsWithD() {
                 codec=$15; gsub(/^"|"$/, "", codec);
                 if (codec=="DAB+/audio") {
                   old = "\"DAB+/audio\""
-                  new = "\"DAB+/no audio\""
+                  new = "\"DAB+/too weak or no audio\""
                   n = index($0, old)
                   if (n > 0) $0 = substr($0, 1, n-1) new substr($0, n+length(old))
                 } else if (codec=="DAB/audio") {
                   old = "\"DAB/audio\""
-                  new = "\"DAB/no audio\""
+                  new = "\"DAB/too weak or no audio\""
                   n = index($0, old)
                   if (n > 0) $0 = substr($0, 1, n-1) new substr($0, n+length(old))
                 }
@@ -518,7 +536,7 @@ function rerunMissingServiceDetailsWithD() {
             }
             { print }
           ' "${MAIN_LOG}" >"${MAIN_LOG}.tmp" && mv "${MAIN_LOG}.tmp" "${MAIN_LOG}"
-          echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: marked SID 0x${SID_HEX_LOWER} as no audio (other services decoded; no weak-signal indication)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+          echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: marked SID 0x${SID_HEX_LOWER} as too weak or no audio (other services decoded; no weak-signal indication)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         elif [ "${_FOUND_PLACEHOLDER:-0}" -gt 0 ] 2>/dev/null; then
           echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: keeping 'DAB+/audio' placeholder for SID 0x${SID_HEX_LOWER} (no weak-signal indication from decoder; no other decoded audio services)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         else
@@ -608,6 +626,7 @@ function normalizeServiceSpecificTooWeakAudio() {
       codec=$15; gsub(/^"|"$/, "", codec)
       low=tolower(codec)
       if (codec=="DAB+/audio" || codec=="DAB/audio") next
+      if (codec=="DAB+/AAC-LC Mono 32kHz" || codec=="DAB/AAC-LC Mono 32kHz") next
       if (index(low, "too weak")>0) next
       if (index(low, "no audio")>0) next
       real++
@@ -620,8 +639,9 @@ function normalizeServiceSpecificTooWeakAudio() {
     $2=="CSV_AUDIO" {
       codec=$15; gsub(/^"|"$/, "", codec)
       if (codec=="DAB+/too weak audio" || codec=="DAB/too weak audio" ||
-          codec=="DAB+/audio" || codec=="DAB/audio") n++
-      if (real==0 && (codec=="DAB+/no audio" || codec=="DAB/no audio")) n++
+          codec=="DAB+/audio" || codec=="DAB/audio" ||
+          codec=="DAB+/no audio" || codec=="DAB/no audio" ||
+          codec=="DAB+/AAC-LC Mono 32kHz" || codec=="DAB/AAC-LC Mono 32kHz") n++
     }
     END { print n+0 }
   ' "${MAIN_LOG}" 2>/dev/null)
@@ -630,35 +650,21 @@ function normalizeServiceSpecificTooWeakAudio() {
     return 0
   fi
 
-  awk -F',' -v OFS=',' -v realDecoded="${REAL_AUDIO_COUNT:-0}" '
+  awk -F',' -v OFS=',' '
     $2=="CSV_AUDIO" {
       codec=$15; gsub(/^"|"$/, "", codec)
-      if (codec=="DAB+/too weak audio") {
-        $15="\"DAB+/no audio\""
-      } else if (codec=="DAB/too weak audio") {
-        $15="\"DAB/no audio\""
-      } else if (codec=="DAB+/audio") {
-        $15="\"DAB+/too weak audio\""
-      } else if (codec=="DAB/audio") {
-        $15="\"DAB/too weak audio\""
-      } else if (realDecoded <= 0 && codec=="DAB+/no audio") {
-        $15="\"DAB+/too weak audio\""
-      } else if (realDecoded <= 0 && codec=="DAB/no audio") {
-        $15="\"DAB/too weak audio\""
-      } else if (realDecoded > 0 && codec=="DAB+/too weak audio") {
-        $15="\"DAB+/no audio\""
-      } else if (realDecoded > 0 && codec=="DAB/too weak audio") {
-        $15="\"DAB/no audio\""
+      if (codec=="DAB+/too weak audio" || codec=="DAB+/audio" ||
+          codec=="DAB+/no audio" || codec=="DAB+/AAC-LC Mono 32kHz") {
+        $15="\"DAB+/too weak or no audio\""
+      } else if (codec=="DAB/too weak audio" || codec=="DAB/audio" ||
+                 codec=="DAB/no audio" || codec=="DAB/AAC-LC Mono 32kHz") {
+        $15="\"DAB/too weak or no audio\""
       }
     }
     { print }
   ' "${MAIN_LOG}" >"${MAIN_LOG}.tmp" && mv "${MAIN_LOG}.tmp" "${MAIN_LOG}"
 
-  if [ "${REAL_AUDIO_COUNT:-0}" -le 0 ] 2>/dev/null; then
-    echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: normalized ${CHANGED_COUNT} unresolved service row(s) to too-weak-audio (no real decoded audio service on channel)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-  else
-    echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: normalized ${CHANGED_COUNT} unresolved service row(s) to no-audio (channel has ${REAL_AUDIO_COUNT} real decoded audio service(s))" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-  fi
+  echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: normalized ${CHANGED_COUNT} unresolved service row(s) to too-weak-or-no-audio (channel has ${REAL_AUDIO_COUNT} real decoded audio service(s))" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
 }
 
 function synthesizeWeakAudioRowsFromProgramList() {
@@ -675,6 +681,8 @@ function synthesizeWeakAudioRowsFromProgramList() {
   if [ "${AUDIO_CNT:-0}" -gt 0 ] 2>/dev/null; then
     return 0
   fi
+  local PACKET_CNT
+  PACKET_CNT=$(awk -F',' '$2=="CSV_PACKET"{n++} END{print n+0}' "${MAIN_LOG}" 2>/dev/null)
 
   local ENS_EID ENS_NAME ENS_NAME_SAFE
   ENS_EID=$(awk -F',' '$2=="CSV_ENSEMBLE" { print tolower($4); exit }' "${MAIN_LOG}" 2>/dev/null)
@@ -697,6 +705,10 @@ function synthesizeWeakAudioRowsFromProgramList() {
   local SID_CNT
   SID_CNT=$(wc -l <"${TMP_SIDS}" 2>/dev/null || echo 0)
   if [ "${SID_CNT:-0}" -le 0 ] 2>/dev/null; then
+    if [ "${PACKET_CNT:-0}" -eq 0 ] 2>/dev/null; then
+      echo "$(date -u +%s),CSV_AUDIO,\"${CH}\",${ENS_EID},\"${ENS_NAME_SAFE}\",0x0000,\"unknown service\",0,0,\"\",0,\"\",0,0,\"DAB+/too weak signal\",0x0,0x0,\"\",0,\"\",0,\"\",0,0,\"\",\"\",\"\"" >>"${MAIN_LOG}"
+      echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: synthesized anonymous weak-signal row (ensemble known, but no service names and no audio/packet rows)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+    fi
     rm -f "${TMP_SIDS}" 2>/dev/null || true
     return 0
   fi
@@ -713,7 +725,7 @@ function synthesizeWeakAudioRowsFromProgramList() {
       continue
     fi
 
-    echo "$(date -u +%s),CSV_AUDIO,\"${CH}\",${ENS_EID},\"${ENS_NAME_SAFE}\",0x${SID_L},\"${SID_NAME_SAFE}\",0,0,\"\",0,\"\",0,0,\"DAB+/too weak audio\",0x0,0x0,\"\",0,\"\",0,\"\",0,0,\"\",\"\",\"\"" >>"${MAIN_LOG}"
+    echo "$(date -u +%s),CSV_AUDIO,\"${CH}\",${ENS_EID},\"${ENS_NAME_SAFE}\",0x${SID_L},\"${SID_NAME_SAFE}\",0,0,\"\",0,\"\",0,0,\"DAB+/too weak or no audio\",0x0,0x0,\"\",0,\"\",0,\"\",0,0,\"\",\"\",\"\"" >>"${MAIN_LOG}"
   done <"${TMP_SIDS}"
 
   rm -f "${TMP_SIDS}" 2>/dev/null || true
@@ -1634,14 +1646,23 @@ for CH in $(echo "${dabchannels[@]}") ; do
           sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
           DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
           DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
+          DABRAW_CSV_PKT=$(grep -c ",CSV_PACKET," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
           DABRAW_TOO_WEAK_IN_CSV=$(grep -c ",CSV_AUDIO,.*too weak signal" "${rec_path}/DAB_${CH}.log" 2>/dev/null)
-          DABRAW_CSV_AUD_NONWEAK=$(grep ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null | grep -vcE '"DAB\+/audio"|"DAB/audio"|too weak signal' || true)
+          DABRAW_CSV_AUD_NONWEAK=$(grep ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null | grep -vcE '"DAB\+/audio"|"DAB/audio"|too weak signal|too weak or no audio|AAC-LC Mono 32kHz' || true)
           DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
+          DABRAW_CSV_SID_UNIQ=$(countCsvUniqueServiceSids "${rec_path}/DAB_${CH}.log")
+          DABRAW_SERVICE_EVIDENCE="${DABRAW_LIST_LINES}"
+          if [ "${DABRAW_CSV_SID_UNIQ:-0}" -gt "${DABRAW_SERVICE_EVIDENCE:-0}" ] 2>/dev/null; then
+            DABRAW_SERVICE_EVIDENCE="${DABRAW_CSV_SID_UNIQ}"
+          fi
           DABRAW_CRASHED="0"
           DABRAW_PARTIAL_AUDIO_FAIL="0"
           if [ -z "${DABRAW_TOO_WEAK_IN_CSV}" ]; then DABRAW_TOO_WEAK_IN_CSV=0; fi
           if [ -z "${DABRAW_CSV_AUD_NONWEAK}" ]; then DABRAW_CSV_AUD_NONWEAK=0; fi
           if [ -z "${DABRAW_LIST_LINES}" ]; then DABRAW_LIST_LINES=0; fi
+          if [ -z "${DABRAW_CSV_PKT}" ]; then DABRAW_CSV_PKT=0; fi
+          if [ -z "${DABRAW_CSV_SID_UNIQ}" ]; then DABRAW_CSV_SID_UNIQ=0; fi
+          if [ -z "${DABRAW_SERVICE_EVIDENCE}" ]; then DABRAW_SERVICE_EVIDENCE=0; fi
           if grep -qi "terminate called without an active exception" "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null; then
             DABRAW_CRASHED="1"
           fi
@@ -1681,6 +1702,11 @@ for CH in $(echo "${dabchannels[@]}") ; do
             if grep -qi "too weak" "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || grep -qi "too weak" "${rec_path}/DAB_${CH}.log" 2>/dev/null; then
               DABRAW_TOO_WEAK="1"
             fi
+          elif [ ${DABRAW_CSV_ENS} -gt 0 ] && [ ${DABRAW_CSV_AUD} -eq 0 ] && [ ${DABRAW_CSV_PKT} -eq 0 ] && [ ${DISC_NUM_SIDS:-0} -eq 0 ]; then
+            # Ensemble recognized but no services were decoded at all.
+            # Treat as weak-signal channel so fixed-position retry path can kick in.
+            DABRAW_TOO_WEAK="1"
+            echo "${DTF}: DAB ${CH}: ensemble decoded but no service/audio rows; treating as too weak signal" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
           elif [ ${DABRAW_CSV_AUD} -gt 0 ] && [ ${DABRAW_CSV_AUD_NONWEAK} -eq 0 ] && [ ${DABRAW_TOO_WEAK_IN_CSV} -gt 0 ]; then
             DABRAW_TOO_WEAK="1"
           fi
@@ -1698,7 +1724,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
             "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
             # The raw file is unusable (produced no output). Clear it so that the
             # per-SID rerun below does not re-analyse the same bad file and falsely
-            # mark every service as "DAB+/no audio".
+            # mark every service as "DAB+/too weak or no audio".
             rm -f "${CH_RAW}" 2>/dev/null || true
             CH_RAW=""
             KEEP_RAW_FILE="0"
@@ -1713,7 +1739,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
             sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
             DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
             DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
-            DABRAW_CSV_AUD_NONWEAK=$(grep ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null | grep -vcE '"DAB\+/audio"|"DAB/audio"|too weak signal' || true)
+            DABRAW_CSV_AUD_NONWEAK=$(grep ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null | grep -vcE '"DAB\+/audio"|"DAB/audio"|too weak signal|too weak or no audio|AAC-LC Mono 32kHz' || true)
             DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
             DABRAW_CRASHED="0"
             if [ -z "${DABRAW_CSV_AUD_NONWEAK}" ]; then DABRAW_CSV_AUD_NONWEAK=0; fi
@@ -1836,7 +1862,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
             fi
           elif [ "${IS_FIXED_POSITION}" = "1" ] && [ ${DABRAW_RC} -eq 0 ] && \
                [ ${DABRAW_CSV_AUD} -gt 0 ] && [ ${DISC_NUM_SIDS} -ge 3 ] && \
-               [ ${DABRAW_LIST_LINES} -lt ${DISC_NUM_SIDS} ] && [ ! -z "${CH_FREQ}" ]; then
+            [ ${DABRAW_SERVICE_EVIDENCE} -lt ${DISC_NUM_SIDS} ] && [ ! -z "${CH_FREQ}" ]; then
             # Succeeded but incomplete: some services lacked FIG 0/8 component links due to
             # weak FIC quality. Recapture a longer clip to collect more FIC block repetitions.
             RETRY_RAW_DURATION=$((RAW_DURATION_SEC * 2))
@@ -1846,7 +1872,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
             CH_RAW_RETRY="${rec_path}/DAB_${CH}_${DAB_EID}_${DTFRAW_RETRY}_${RETRY_RAW_DURATION}sec_temp.raw"
             NSMP_RETRY=$[ ${RETRY_RAW_DURATION} * 2048000 ]
             DABOPT_RAW_RETRY="$(echo " ${DABOPT_RAW_FOR_ANALYSIS} " | sed -E "s/[[:space:]]-X([[:space:]]|$)/ /g; s/[[:space:]]-Y([[:space:]]|$)/ /g; s/[[:space:]]-E[[:space:]]+[0-9]+/ -E 0/g; s/[[:space:]]-W [0-9]+/ -W ${_RETRY_W_MS}/g; s/[[:space:]]-A [0-9-]+/ -A -1/g; s/^[[:space:]]+//; s/[[:space:]]+$//; s/[[:space:]]+/ /g")"
-            echo "${DTF}: DAB ${CH}: incomplete (${DABRAW_LIST_LINES}/${DISC_NUM_SIDS} services); recapturing ${RETRY_RAW_DURATION}s for more FIC coverage" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+            echo "${DTF}: DAB ${CH}: incomplete (${DABRAW_SERVICE_EVIDENCE}/${DISC_NUM_SIDS} services; csv=${DABRAW_CSV_SID_UNIQ}, list=${DABRAW_LIST_LINES}); recapturing ${RETRY_RAW_DURATION}s for more FIC coverage" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
             rm -f "${CH_RAW}" 2>/dev/null || true
             echo "rtl_sdr -f ${CH_FREQ} -s 2048000 -n ${NSMP_RETRY} ${FMLIST_DAB_RTLSDR_OPT} ${CH_RAW_RETRY}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
             timeout -s SIGTERM -k 2 $[${RETRY_RAW_DURATION} + 3] rtl_sdr -f ${CH_FREQ} -s 2048000 -n ${NSMP_RETRY} ${FMLIST_DAB_RTLSDR_OPT} "${CH_RAW_RETRY}" >"${rec_path}/DAB_${CH}_rtl_retry.log" 2>&1
