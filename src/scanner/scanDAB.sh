@@ -1826,6 +1826,30 @@ for CH in $(echo "${dabchannels[@]}") ; do
                 rm -f "${CH_RAW}" 2>/dev/null || true; CH_RAW=""; KEEP_RAW_FILE="0"
                 "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
               else
+                DABRAW_CSV_PKT=$(grep -c ",CSV_PACKET," "${rec_path}/DAB_${CH}.log" 2>/dev/null || true)
+                if [ -z "${DABRAW_CSV_PKT}" ]; then DABRAW_CSV_PKT=0; fi
+
+                # Edge case recovery: ensemble-only CSV after weak-signal recapture can still
+                # miss all service rows. Try one extra pass on the same clip before accepting
+                # anonymous 0x0000 fallback rows later.
+                if [ "${IS_FIXED_POSITION}" = "1" ] && [ ${DABRAW_CSV_ENS} -gt 0 ] && [ ${DABRAW_CSV_AUD} -eq 0 ] && [ ${DABRAW_CSV_PKT} -eq 0 ]; then
+                  DABOPT_RAW_RECOVER_SERVICES="$(echo " ${DABOPT_RAW_FOR_ANALYSIS} " | sed -E "s/[[:space:]]-E[[:space:]]+[0-9]+/ -E 0/g; s/[[:space:]]-W [0-9]+/ -W ${_RETRY_W_MS}/g; s/[[:space:]]-A [0-9-]+/ -A -1/g; s/^[[:space:]]+//; s/[[:space:]]+$//; s/[[:space:]]+/ /g")"
+                  echo "${DTF}: DAB ${CH}: weak recapture returned ensemble-only CSV; retrying same 15s clip once for service recovery" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+                  echo "${DAB_RAW_BIN} -F ${CH_RAW} ${DABOPT_RAW_RECOVER_SERVICES}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+                  runDabRaw "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -F "${CH_RAW}" ${DABOPT_RAW_RECOVER_SERVICES}
+                  DABRAW_RC=$?
+                  sed -i -E "s/(,CSV_(AUDIO|ENSEMBLE|GPSCOOR|PACKET),\")[^\"]*(\")/\1${CH}\3/g" "${rec_path}/DAB_${CH}.log"
+                  DABRAW_CSV_ENS=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
+                  DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
+                  DABRAW_CSV_PKT=$(grep -c ",CSV_PACKET," "${rec_path}/DAB_${CH}.log" 2>/dev/null || true)
+                  if [ -z "${DABRAW_CSV_PKT}" ]; then DABRAW_CSV_PKT=0; fi
+                  if [ ${DABRAW_CSV_AUD} -gt 0 ] || [ ${DABRAW_CSV_PKT} -gt 0 ]; then
+                    echo "${DTF}: DAB ${CH}: service recovery retry succeeded (audio=${DABRAW_CSV_AUD}, packet=${DABRAW_CSV_PKT})" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+                  else
+                    echo "${DTF}: DAB ${CH}: service recovery retry still ensemble-only; will fall back to synthesized weak row" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+                  fi
+                fi
+
                 DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
                 if [ -z "${DABRAW_LIST_LINES}" ]; then DABRAW_LIST_LINES=0; fi
                 DABRAW_CRASHED="0"
