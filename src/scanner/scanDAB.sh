@@ -705,10 +705,7 @@ function synthesizeWeakAudioRowsFromProgramList() {
   local SID_CNT
   SID_CNT=$(wc -l <"${TMP_SIDS}" 2>/dev/null || echo 0)
   if [ "${SID_CNT:-0}" -le 0 ] 2>/dev/null; then
-    if [ "${PACKET_CNT:-0}" -eq 0 ] 2>/dev/null; then
-      echo "$(date -u +%s),CSV_AUDIO,\"${CH}\",${ENS_EID},\"${ENS_NAME_SAFE}\",0x0000,\"unknown service\",0,0,\"\",0,\"\",0,0,\"DAB+/too weak signal\",0x0,0x0,\"\",0,\"\",0,\"\",0,0,\"\",\"\",\"\"" >>"${MAIN_LOG}"
-      echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: synthesized anonymous weak-signal row (ensemble known, but no service names and no audio/packet rows)" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-    fi
+    echo "$(date -u "+%Y-%m-%dT%T.%N Z"): DAB ${CH}: no service list available; skipping anonymous weak-signal CSV_AUDIO synthesis" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     rm -f "${TMP_SIDS}" 2>/dev/null || true
     return 0
   fi
@@ -1169,6 +1166,29 @@ function process_dab_channel_results() {
   local ENS_LINE=""
   local ENS_NAME=""
   local ENS_EID=""
+  local NP_PRE=0
+  local PACKET_CSV_CNT_PRE=0
+  local AUDIO_NONZERO_SID_CNT_PRE=0
+  local NO_SERVICE_EVIDENCE=0
+
+  NP_PRE=$(grep " is part of the ensemble" "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null | grep -c "^programnameHandler:" || true)
+  PACKET_CSV_CNT_PRE=$(grep -c ",CSV_PACKET," "${rec_path}/DAB_${CH}.log" 2>/dev/null || true)
+  AUDIO_NONZERO_SID_CNT_PRE=$(awk -F',' '
+    $2=="CSV_AUDIO" {
+      sid=$6
+      gsub(/"/, "", sid)
+      sid=tolower(sid)
+      if (sid != "" && sid != "0x0000") n++
+    }
+    END { print n+0 }
+  ' "${rec_path}/DAB_${CH}.log" 2>/dev/null)
+  [ -z "${NP_PRE}" ] && NP_PRE=0
+  [ -z "${PACKET_CSV_CNT_PRE}" ] && PACKET_CSV_CNT_PRE=0
+  [ -z "${AUDIO_NONZERO_SID_CNT_PRE}" ] && AUDIO_NONZERO_SID_CNT_PRE=0
+  if [ "${NP_PRE}" -eq 0 ] && [ "${PACKET_CSV_CNT_PRE}" -eq 0 ] && [ "${AUDIO_NONZERO_SID_CNT_PRE}" -eq 0 ]; then
+    NO_SERVICE_EVIDENCE=1
+    echo "${DTF_LOCAL}: DAB ${CH}: ensemble-only decode without service evidence; suppressing CSV_ENSEMBLE/CSV_AUDIO export for this channel" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  fi
 
   ENS_CSV_CNT=$(grep -c ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
   ENS_LINE=$(grep ",CSV_ENSEMBLE," "${rec_path}/DAB_${CH}.log" 2>/dev/null | head -n1)
@@ -1204,8 +1224,10 @@ function process_dab_channel_results() {
     # Only write if EID and name are both valid (not unknown/ffffffff)
     ENS_EID_NORM=$(echo "${ENS_EID}" | tr '[:upper:]' '[:lower:]')
     ENS_NAME_NORM=$(echo "${ENS_NAME}" | tr '[:upper:]' '[:lower:]')
-    if [ "${ENS_EID_NORM}" != "0xffffffff" ] && [ "${ENS_NAME_NORM}" != "unknown ensemble" ]; then
+    if [ "${ENS_EID_NORM}" != "0xffffffff" ] && [ "${ENS_NAME_NORM}" != "unknown ensemble" ] && [ "${NO_SERVICE_EVIDENCE}" -eq 0 ]; then
       echo "${ENS_LINE}" | sed "s#,CSV_ENSEMBLE,#,${GPSCOLS},#g" >>"${rec_path}/dab_ensemble.csv"
+    elif [ "${NO_SERVICE_EVIDENCE}" -eq 1 ]; then
+      echo "${DTF_LOCAL}: DAB ${CH}: skipping CSV_ENSEMBLE export: no service evidence for this channel" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     else
       echo "${DTF_LOCAL}: DAB ${CH}: skipping CSV_ENSEMBLE: EId=${ENS_EID} name='${ENS_NAME}' not useful" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     fi
@@ -1236,9 +1258,11 @@ function process_dab_channel_results() {
           echo "${DTF_LOCAL}: DAB ${CH}: synthesized row used known name '${ENS_NAME}' for EId 0x${ENS_EID}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
         fi
       fi
-      if [ "$(echo "${ENS_NAME}" | tr '[:upper:]' '[:lower:]')" != "unknown ensemble" ]; then
+      if [ "$(echo "${ENS_NAME}" | tr '[:upper:]' '[:lower:]')" != "unknown ensemble" ] && [ "${NO_SERVICE_EVIDENCE}" -eq 0 ]; then
         echo "$(date -u +%s),${GPSCOLS},\"${CH}\",0x${ENS_EID},\"${ENS_NAME}\"" >>"${rec_path}/dab_ensemble.csv"
         echo "${DTF_LOCAL}: DAB ${CH}: synthesized CSV_ENSEMBLE row from stderr evidence (EId ${ENS_EID})" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+      elif [ "${NO_SERVICE_EVIDENCE}" -eq 1 ]; then
+        echo "${DTF_LOCAL}: DAB ${CH}: skipping synthesized CSV_ENSEMBLE export: no service evidence for this channel" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       else
         echo "${DTF_LOCAL}: DAB ${CH}: skipping CSV_ENSEMBLE synthesis: EId ${ENS_EID} but ensemble name unknown" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       fi
@@ -1252,7 +1276,9 @@ function process_dab_channel_results() {
     "${rec_path}/DAB_${CH}.log" 2>/dev/null)
   _ENS_EID_FINAL=$(awk -F',' '$2=="CSV_ENSEMBLE" { print tolower($4); exit }' \
     "${rec_path}/DAB_${CH}.log" 2>/dev/null)
-  if [ "${_ENS_NAME_FINAL}" = "unknown ensemble" ] || [ -z "${_ENS_NAME_FINAL}" ] || \
+  if [ "${NO_SERVICE_EVIDENCE}" -eq 1 ]; then
+    echo "${DTF_LOCAL}: DAB ${CH}: skipping audio/packet rows: no service evidence for this channel" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  elif [ "${_ENS_NAME_FINAL}" = "unknown ensemble" ] || [ -z "${_ENS_NAME_FINAL}" ] || \
      [ "${_ENS_EID_FINAL}" = "0xffffffff" ] || [ -z "${_ENS_EID_FINAL}" ]; then
     echo "${DTF_LOCAL}: DAB ${CH}: skipping audio/packet rows: ensemble identity unresolved (EId='${_ENS_EID_FINAL}' name='${_ENS_NAME_FINAL}')" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
   else
@@ -1400,6 +1426,8 @@ for CH in $(echo "${dabchannels[@]}") ; do
   if [ "${FMLIST_SCAN_DAB_ANALYZE_FROM_RAW}" = "1" ]; then
     IS_NEW_ENS="0"
     IS_UNKNOWN_ENS="0"
+    # Per-channel state: avoid reusing previous channel's key in fixed-position mode.
+    DAB_ENS_KEY=""
     DISC_UNKNOWN_ENS="0"
     DISC_ENS_LONG=""
     DISC_ENS_SHORT=""
