@@ -16,6 +16,11 @@ fi
 export LC_ALL=C
 cd "${FMLIST_SCAN_RAM_DIR}"
 
+SCANLOOP_RUNNING="0"
+if screen -list | grep -q "scanLoopBg" ; then
+  SCANLOOP_RUNNING="1"
+fi
+
 FM_FROM_RAM=""
 DAB_FROM_RAM=""
 LATEST_FM_DIR="$(ls -1dt scan_*_FM 2>/dev/null | head -n1)"
@@ -96,7 +101,7 @@ fi
   fi
   # Always show current scanning band edges if available
   PRESCAN_ACTIVE="0"
-  if pgrep -x prescanDAB >/dev/null 2>&1; then
+  if [ "${SCANLOOP_RUNNING}" = "1" ] && pgrep -x prescanDAB >/dev/null 2>&1; then
     PRESCAN_ACTIVE="1"
     PRESCAN_LINE=""
     if [ -f scanner.log ]; then
@@ -117,7 +122,7 @@ fi
     fi
   fi
 
-  if [ -f scanner.log ] && [ "${PRESCAN_ACTIVE}" = "0" ]; then
+  if [ "${SCANLOOP_RUNNING}" = "1" ] && [ -f scanner.log ] && [ "${PRESCAN_ACTIVE}" = "0" ]; then
     CHECK_LINE=$(grep -E "rtl_sdr -s [0-9]+ -n [0-9]+ -f |rtl_sdr .*DAB_.*sec[^ ]*\.raw|abra-rtlsdr -C |dab-rtlsdr -C |abra-raw -F |dab-raw -F " scanner.log | tail -n1)
     if [ ! -z "${CHECK_LINE}" ]; then
       DAB_CH=$(echo "${CHECK_LINE}" | sed -n 's/.*\(abra-rtlsdr\|dab-rtlsdr\) -C \([^ ]*\).*/\2/p')
@@ -268,7 +273,7 @@ fi
     echo "Delta from LAST to CURR = $D secs"
   fi
 
-  if screen -list |grep -q "scanLoopBg" ; then
+  if [ "${SCANLOOP_RUNNING}" = "1" ]; then
     echo "Scanner scanLoop is running in screen."
   else
     echo -e "Scanner scanLoop is \n===========\n   NOT  \n===========\nrunning in screen."
