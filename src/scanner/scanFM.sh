@@ -430,16 +430,30 @@ if [ \$NL -le 0 ]; then
   echo "processing freq \$f : no decode"
   echo "RDS=\"0\"" >>redsea.\${f}.inc
   RDS="0"
+  LAST_KEY="FM \${f}"
+  LAST_INFO=""
+  (
+    flock -x 214
+    echo "\${LAST_KEY}" >${FMLIST_SCAN_RAM_DIR}/LAST
+    : >${FMLIST_SCAN_RAM_DIR}/LAST.info
+    if [ -f ${FMLIST_SCAN_RAM_DIR}/LAST.history ]; then
+      awk -v k="\${LAST_KEY}" 'index($0, k " ") != 1 && $0 != k' ${FMLIST_SCAN_RAM_DIR}/LAST.history >${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+    else
+      : >${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+    fi
+    echo "\${LAST_KEY}" >>${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+    tail -n 50 ${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp >${FMLIST_SCAN_RAM_DIR}/LAST.history
+    rm -f ${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+  ) 214>${FMLIST_SCAN_RAM_DIR}/last.lock
+  echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_carrier.\${f}.csv
+  echo -n ",\$(printf "%.0f" \${carrier_pwr_ratioMin[\$1]}),\$(printf "%.0f" \${carrier_pwr_ratioMax[\$1]})" >>fm_carrier.\${f}.csv
+  echo ",${DTF_RDY},\${GPSCOLS}" >>fm_carrier.\${f}.csv
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
     echo "${DTF_RDY}: FM \${f}: NO RDS decode" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     mv redsea.\${f}.txt redsea.\${f}_noRDS.txt
     if [ -f redsea.\${f}.spy ]; then
       mv redsea.\${f}.spy redsea.\${f}_noRDS.spy
     fi
-
-    echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_carrier.\${f}.csv
-    echo -n ",\$(printf "%.0f" \${carrier_pwr_ratioMin[\$1]}),\$(printf "%.0f" \${carrier_pwr_ratioMax[\$1]})" >>fm_carrier.\${f}.csv
-    echo ",${DTF_RDY},\${GPSCOLS}" >>fm_carrier.\${f}.csv
 
   else
     rm -f redsea.\${f}.txt
