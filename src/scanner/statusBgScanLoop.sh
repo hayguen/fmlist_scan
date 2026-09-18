@@ -43,7 +43,7 @@ if [ ! -z "${LATEST_FM_DIR}" ]; then
       if (ps != "") printf " %s", ps
       printf "\n"
     }
-  ' "${LATEST_FM_DIR}"/fm_rds.*.csv 2>/dev/null | sort -n -k1,1 | cut -f2-)"
+  ' "${LATEST_FM_DIR}"/fm_*.csv 2>/dev/null | sort -n -k1,1 | cut -f2-)"
 fi
 
 LATEST_DAB_DIR="$(ls -1dt scan_*_DAB 2>/dev/null | head -n1)"
@@ -59,14 +59,10 @@ if [ ! -z "${LATEST_DAB_DIR}" ]; then
   } | tac)"
 fi
 
-RAM_STATIONS="${FM_FROM_RAM}"
-if [ ! -z "${DAB_FROM_RAM}" ]; then
-  if [ ! -z "${RAM_STATIONS}" ]; then
-    RAM_STATIONS="${RAM_STATIONS}
-${DAB_FROM_RAM}"
-  else
-    RAM_STATIONS="${DAB_FROM_RAM}"
-  fi
+if [ ! -z "${FM_FROM_RAM}" ]; then
+  RAM_STATIONS="${FM_FROM_RAM}"
+else
+  RAM_STATIONS="${DAB_FROM_RAM}"
 fi
 
   GPS_DISPLAY="$(awk -F' @ ' '
@@ -212,7 +208,7 @@ fi
     fi
   fi
   # Show found stations if any exist
-  if [ -f LAST.history ] && [ -s LAST.history ] && [ $(wc -l < LAST.history) -gt 1 ]; then
+  if [ -f LAST.history ] && [ -s LAST.history ]; then
     echo "Last found stations:"
     tail -n 3 LAST.history | awk '{
       if ($1 == "FM") {
