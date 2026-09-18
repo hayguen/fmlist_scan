@@ -6,14 +6,18 @@ if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
   mkdir -p "${FMLIST_SCAN_RAM_DIR}"
 fi
 
-DTF="$(date -u "+%Y-%m-%dT%T Z")"
-echo "checkBgScanLoop.sh: last start at ${DTF}" >${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
+if [ -s "${FMLIST_SCAN_RAM_DIR}/scanLoopBg.started" ]; then
+  DTF="$(cat "${FMLIST_SCAN_RAM_DIR}/scanLoopBg.started")"
+else
+  DTF="$(date -u "+%Y-%m-%dT%T Z")"
+fi
+echo "last start: ${DTF}" >${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
 
 if screen -list |grep -q "scanLoopBg" ; then
-  echo "scan Loop is running -> continue check"
+//  echo "scan Loop is running -> continue check"
   echo "scan Loop is running -> continue check" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
 else
-  echo "scan Loop not running -> no check"
+//  echo "scan Loop not running -> no check"
   echo "scan Loop not running -> no check" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
   exit 0
 fi

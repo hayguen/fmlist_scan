@@ -69,15 +69,33 @@ ${DAB_FROM_RAM}"
   fi
 fi
 
-  GPS_DISPLAY="$(cat gpscoor.log | sed 's/\.[0-9]*Z/Z/g')"
+  GPS_DISPLAY="$(awk -F' @ ' '
+    {
+      split($1, coord, " / ")
+      split($2, details, " / ")
+      sub(/^gpstime /, "", details[1])
+      sub(/^systime /, "", details[2])
+      sub(/^mode /, "", details[3])
+      split(details[1], gps_time, "T")
+      split(details[2], sys_time, "T")
+      split(details[3], mode, " ")
+      sub(/\..*/, "", gps_time[2])
+      sub(/\..*/, "", sys_time[2])
+      gsub(/-/, "", gps_time[1])
+      gsub(/-/, "", sys_time[1])
+      printf "%.2f/%.2f/%.1f @ gps %s %s / sys %s %s / mode %s %s", \
+        coord[1], coord[2], coord[3], gps_time[1], gps_time[2], \
+        sys_time[1], sys_time[2], mode[1], mode[2]
+    }
+  ' gpscoor.log 2>/dev/null)"
   echo -n "${GPS_DISPLAY}"
   
   # Add position mode (fixed/mobile) on same line
   if [ ! -z "${FMLIST_UP_POSITION}" ]; then
     if [ "${FMLIST_UP_POSITION}" = "fixed" ]; then
-      echo " / fixed position"
+      echo " / fixed"
     elif [ "${FMLIST_UP_POSITION}" = "mobile" ]; then
-      echo " / mobile position"
+      echo " / mobile"
     else
       echo ""
     fi
@@ -92,7 +110,7 @@ fi
     CPUFREQS=$(sudo cat /sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_cur_freq 2>/dev/null | sed -e 's/\([0-9][0-9][0-9]\)$//g' | tr '\n' ' ')
     CPUSTATUS=""
     if [ ! -z "${CPUTEMPS}" ]; then
-      CPUSTATUS="Temperature: ${CPUTEMPS}deg"
+      CPUSTATUS="Temp: ${CPUTEMPS}deg"
     fi
     if [ ! -z "${CPUFREQS}" ]; then
       CPUSTATUS="${CPUSTATUS}  CPU Freq(s): ${CPUFREQS}MHz"
@@ -282,9 +300,11 @@ fi
   echo ""
   tail -n 10 checkBgScanLoop.log 2>/dev/null \
     | grep -v "Delta from LAST to CURR" \
-    | grep -v "No LAST scan results. Setting to CURR - FMLIST_SCAN_DEAD_TIME"
+    | grep -v "No LAST scan results. Setting to CURR - FMLIST_SCAN_DEAD_TIME" \
+    | grep -v "scan Loop is running -> continue check" \
+    | grep -v "scan Loop not running -> no check"
 
   echo ""
-  ( echo "uniq (incl. dupl.), #DAB Ens., #DAB prg, #FM prg" ; SKIP_SCANNED=1 SKIP_MISSING=1 SKIP_ADD=1 "${SCRIPTPATH}/scanEvalSummary.sh" 2>/dev/null | awk -F, '{ OFS=","; print $1, $3, $5, $7; }' ) \
+  ( echo "uniq (total), #DAB Ens., #DAB prg, #FM prg" ; SKIP_SCANNED=1 SKIP_MISSING=1 SKIP_ADD=1 "${SCRIPTPATH}/scanEvalSummary.sh" 2>/dev/null | awk -F, '{ OFS=","; print $1, $3, $5, $7; }' ) \
     | sed 's/^40,/scanned,/g' |sed 's/^41,/missed,/g' |sed 's/^42,/additional,/g' |sed 's/^43,/refs,/g' \
     | column -s , -t
