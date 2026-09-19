@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import json
 import re
 import signal
 import socket
@@ -118,14 +119,18 @@ class TefConn:
     def handshake(self):
         """Send initialization sequence: 'x' command and wait for 'OK' response."""
         self.write("x")
-        lines = self.read_lines(1.0)
-        for ln in lines:
-            if "OK" in ln or ln == "OK":
-                return True
-        raise RuntimeError(f"TEF handshake failed: no 'OK' response after 'x' command")
+        timeout_sec = max(1.0, float(env("FMLIST_TEF_HANDSHAKE_TIMEOUT_SEC", "3")))
+        lines = self.read_lines(timeout_sec, idle_break_after_data_sec=0.2)
+        if any(ln == "OK" or "OK" in ln for ln in lines):
+            return True
+        response = ", ".join(repr(ln) for ln in lines[:5]) or "<no response>"
+        raise RuntimeError(
+            "TEF handshake failed: no 'OK' response after 'x' command; "
+            f"received {response}"
+        )
 
     def _tcp_auth_if_needed(self):
-        """Optional xdr-gtk TCP auth: recv salt, send sha1(salt+password)."""
+        """Optional xdr-gtk TCP auth: receive salt, then send sha1(salt+password)."""
         if self.sock is None:
             return
         mode = env("FMLIST_TEF_TCP_AUTH", "none").strip().lower()
@@ -144,10 +149,11 @@ class TefConn:
                 if not chunk:
                     break
                 salt += chunk
-            if len(salt) != 17:
-                raise RuntimeError("TCP auth failed: did not receive 17-byte salt line")
-            salt_raw = salt[:16]
-            digest = hashlib.sha1(salt_raw + password.encode("utf-8")).hexdigest()
+            if len(salt) != 17 or salt[16:17] != b"\n":
+                raise RuntimeError(
+                    f"TCP auth failed: invalid salt line {salt!r}"
+                )
+            digest = hashlib.sha1(salt[:16] + password.encode("utf-8")).hexdigest()
             self.sock.sendall((digest + "\n").encode("ascii"))
         finally:
             self.sock.settimeout(prev_timeout)
@@ -181,12 +187,16 @@ class TefConn:
         else:
             raise RuntimeError("TEF connection is not open")
 
-    def read_lines(self, seconds, idle_break_after_data_sec=None):
+    def read_lines(self, seconds, idle_break_after_data_sec=None,
+                   settle_when=None, settle_sec=0.3):
         end = time.time() + seconds
         buff = b""
         out = []
         last_data = time.time()
+        last_match = None
         while time.time() < end:
+            if last_match is not None and (time.time() - last_match) >= settle_sec:
+                break
             chunk = b""
             try:
                 if self.sock is not None:
@@ -207,6 +217,8 @@ class TefConn:
                 txt = ln.decode("utf-8", errors="ignore").strip()
                 if txt:
                     out.append(txt)
+                    if settle_when is not None and settle_when(txt):
+                        last_match = time.time()
         return out
 
     def clear_input(self):
@@ -256,19 +268,50 @@ def parse_scan_pairs(lines):
     return pairs
 
 
+def parse_tune_frequencies(lines):
+    """Parse TEF tune/seek responses such as T87500 or T87500,..."""
+    frequencies = []
+    for ln in lines:
+        match = re.match(r"^T(\d+)", ln.strip())
+        if match:
+            frequencies.append(int(match.group(1)) * 1000)
+    return frequencies
+
+
+def wait_for_tune(conn, freq_khz, timeout_sec=2.0):
+    """Wait until TEF confirms the requested starting frequency."""
+    marker = f"T{freq_khz}"
+    lines = conn.read_lines(timeout_sec, idle_break_after_data_sec=0.3)
+    return any(ln == marker or ln.startswith(marker + ",") for ln in lines)
+
+
 def parse_rds_fields(lines):
-    txt = "\n".join(lines)
-    pi = ""
-    ps = ""
+    pi_counts = {}
+    ps_counts = {}
+    for line in lines:
+        try:
+            record = json.loads(line)
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(record, dict):
+            continue
 
-    m_pi = re.search(r'"pi"\s*:\s*"?(0x[0-9A-Fa-f]+|[0-9A-Fa-f]{4})"?', txt)
-    if m_pi:
-        pi = m_pi.group(1).replace("0x", "").upper()
+        pi_value = record.get("pi")
+        if isinstance(pi_value, int):
+            pi = f"{pi_value & 0xFFFF:04X}"
+        else:
+            pi = str(pi_value or "").strip().upper().removeprefix("0X")
+        if re.fullmatch(r"[0-9A-F]{4}", pi):
+            pi_counts[pi] = pi_counts.get(pi, 0) + 1
 
-    m_ps = re.search(r'"ps"\s*:\s*"([^\"]+)"', txt)
-    if m_ps:
-        ps = collapse_empty_ps(normalize_ps_text(m_ps.group(1)))
+        ps_value = record.get("ps")
+        if isinstance(ps_value, str):
+            ps = collapse_empty_ps(normalize_ps_text(ps_value))
+            if ps:
+                ps_counts[ps] = ps_counts.get(ps, 0) + 1
 
+    pi = max(pi_counts, key=pi_counts.get) if pi_counts else ""
+    ps = max(ps_counts, key=ps_counts.get) if ps_counts else ""
     return pi, ps
 
 
@@ -928,6 +971,10 @@ def main():
     beg_hz = int(env("FMLIST_TEF_SCAN_SAVE_MINFREQ", env("FMLIST_SCAN_SAVE_MINFREQ", "87500000")))
     end_hz = int(env("FMLIST_TEF_SCAN_SAVE_MAXFREQ", env("FMLIST_SCAN_SAVE_MAXFREQ", "108000000")))
     step_hz = 100000
+    mobile_seek_command = env("FMLIST_TEF_MOBILE_SEEK_COMMAND", "C2").strip() or "C2"
+    mobile_seek_stop_command = env("FMLIST_TEF_MOBILE_SEEK_STOP_COMMAND", "C0").strip() or "C0"
+    mobile_seek_pulse = max(0.0, float(env("FMLIST_TEF_MOBILE_SEEK_PULSE_SEC", "0.15")))
+    mobile_seek_timeout = max(1.0, float(env("FMLIST_TEF_MOBILE_SEEK_TIMEOUT_SEC", "15")))
     debug_enabled = env("FMLIST_SCAN_DEBUG", "0") != "0"
 
     conn = TefConn()
@@ -957,6 +1004,52 @@ def main():
         stop_khz = end_hz // 1000
         step_khz = step_hz // 1000
 
+        if pos == "mobile":
+            # Seek and measure each station in turn. A single spectrum sweep
+            # would describe the location at the beginning of a long scan.
+            scan_lines = []
+            first_seek_freq = None
+            for seek_try in range(1, 4):
+                conn.clear_input()
+                conn.write(f"T{start_khz}")
+                if not wait_for_tune(conn, start_khz):
+                    append_line(
+                        os.path.join(ram_dir, "scanner.log"),
+                        f"Initial mobile FM seek retry {seek_try}/3: "
+                        f"tuner did not confirm T{start_khz}"
+                    )
+                    continue
+                conn.clear_input()
+                conn.write(mobile_seek_command)
+                time.sleep(mobile_seek_pulse)
+                conn.write(mobile_seek_stop_command)
+                scan_lines = conn.read_lines(
+                    mobile_seek_timeout,
+                    settle_when=lambda line: any(
+                        beg_hz <= candidate <= end_hz
+                        for candidate in parse_tune_frequencies([line])
+                    ),
+                )
+                scan_lines.extend(conn.read_lines(0.5, idle_break_after_data_sec=0.3))
+                seek_freqs = parse_tune_frequencies(scan_lines)
+                settled_freq = seek_freqs[-1] if seek_freqs else None
+                first_seek_freq = settled_freq if (
+                    settled_freq is not None and beg_hz <= settled_freq <= end_hz
+                ) else None
+                if first_seek_freq is not None:
+                    break
+                append_line(
+                    os.path.join(ram_dir, "scanner.log"),
+                    f"Initial mobile FM seek retry {seek_try}/3: "
+                    f"no T response; received {scan_lines[:5]}"
+                )
+            selected = [] if first_seek_freq is None else [(first_seek_freq, 0.0)]
+            pairs = []
+            sweep_try = 0
+            threshold = 0.0
+        else:
+            selected = None
+
         sweep_ms = int(env("FMLIST_TEF_SWEEP_MS", "10"))
         n_steps = (stop_khz - start_khz) // step_khz + 1
         # Timeout: full sweep duration + 3 s overhead, minimum 12 s.
@@ -968,9 +1061,9 @@ def main():
         # (e.g. due to buffered output from the previous tune).  In that case pairs will
         # be empty or incomplete and we simply restart the sweep.
         MAX_SWEEP_TRIES = 3
-        pairs = []
-        scan_lines = []
-        for sweep_try in range(1, MAX_SWEEP_TRIES + 1):
+        pairs = [] if selected is None else pairs
+        scan_lines = [] if selected is None else scan_lines
+        for sweep_try in range(1, MAX_SWEEP_TRIES + 1) if selected is None else []:
             conn.stop_scan()
             conn.clear_input()
 
@@ -998,7 +1091,7 @@ def main():
                             f"got {len(pairs)}/{n_steps} pairs — retrying")
                 time.sleep(1.0)
 
-        if not pairs:
+        if selected is None and not pairs:
             # Fallback: tune over raster and infer rough level from any numeric replies.
             pairs = []
             for f in range(beg_hz, end_hz + 1, step_hz):
@@ -1011,18 +1104,19 @@ def main():
                         p = float(nums[-1])
                 pairs.append((f, p))
 
-        if auto_threshold_mode:
+        if selected is None and auto_threshold_mode:
             threshold = auto_threshold(pairs, threshold_margin)
             powers = sorted(p for (_, p) in pairs)
             noise_floor = powers[max(0, len(powers) // 4 - 1)] if powers else 0
 
-        selected = [(f, p) for (f, p) in pairs if p >= threshold and f >= beg_hz and f <= end_hz]
-        selected.sort(key=lambda x: x[0])
+        if selected is None:
+            selected = [(f, p) for (f, p) in pairs if p >= threshold and f >= beg_hz and f <= end_hz]
+            selected.sort(key=lambda x: x[0])
 
         # Tune to the first selected frequency BEFORE doing any file I/O so the TEF
         # is already receiving while we write debug files.  TCP buffers the dwell data.
-        first_tune_sent = False
-        if selected:
+        first_tune_sent = pos == "mobile"
+        if selected and pos != "mobile":
             conn.clear_input()
             conn.write(f"T{selected[0][0] // 1000}")
             first_tune_sent = True
@@ -1055,7 +1149,7 @@ def main():
             append_line(os.path.join(rec_path, "scan_duration.txt"),
                        f"Top 20 by power: {top_20}")
 
-        if auto_threshold_mode:
+        if pos != "mobile" and auto_threshold_mode:
             append_line(os.path.join(rec_path, "scan_duration.txt"),
                        f"Auto threshold: noise floor ~{noise_floor:.1f}dB + {threshold_margin:.0f}dB margin = {threshold:.1f}dB")
 
@@ -1093,7 +1187,7 @@ def main():
                 gps.get("GPSALT", ""),
                 gps.get("GPSTIM", ""),
             ])
-            if i == 0 and first_tune_sent:
+            if first_tune_sent or pos == "mobile":
                 # T was already sent before file I/O; TCP has buffered the dwell data.
                 # Do NOT call clear_input here — that would discard the buffered lines.
                 pass
@@ -1156,6 +1250,45 @@ def main():
                 append_line(carrier_csv, f"{epoch},freq,{freq_hz},0,{int(round(power))},{int(round(power))},{dt},{gps_cols}")
 
             write_last(ram_dir, freq_hz, pi, ps)
+
+            if pos == "mobile" and freq_hz < end_hz:
+                # Discover the next station only after this one has been
+                # measured, so a long scan follows the current location.
+                next_freq = None
+                for seek_try in range(1, 4):
+                    conn.clear_input()
+                    conn.write(mobile_seek_command)
+                    time.sleep(mobile_seek_pulse)
+                    conn.write(mobile_seek_stop_command)
+                    next_seek_lines = conn.read_lines(
+                        mobile_seek_timeout,
+                        settle_when=lambda line: any(
+                            freq_hz < candidate <= end_hz
+                            for candidate in parse_tune_frequencies([line])
+                        ),
+                    )
+                    next_seek_lines.extend(conn.read_lines(0.5, idle_break_after_data_sec=0.3))
+                    seek_freqs = parse_tune_frequencies(next_seek_lines)
+                    settled_freq = seek_freqs[-1] if seek_freqs else None
+                    next_freq = settled_freq if (
+                        settled_freq is not None and freq_hz < settled_freq <= end_hz
+                    ) else None
+                    if next_freq is not None:
+                        break
+                    if settled_freq is not None and settled_freq <= freq_hz:
+                        append_line(
+                            os.path.join(ram_dir, "scanner.log"),
+                            f"Mobile FM seek reached upper band edge after {freq_hz}; "
+                            f"wrapped to {settled_freq}"
+                        )
+                        break
+                    append_line(
+                        os.path.join(ram_dir, "scanner.log"),
+                        f"Mobile FM seek retry {seek_try}/3 from {freq_hz}: "
+                        f"no higher T response; received {next_seek_lines[:5]}"
+                    )
+                if next_freq is not None:
+                    selected.append((next_freq, 0.0))
 
     finally:
         udp.close()
