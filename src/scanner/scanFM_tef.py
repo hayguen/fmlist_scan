@@ -83,10 +83,26 @@ class TefConn:
         if self.transport == "tcp":
             host = env("FMLIST_TEF_TCP_HOST", "192.168.1.50")
             port = int(env("FMLIST_TEF_TCP_PORT", "7373"))
-            self.sock = socket.create_connection((host, port), timeout=2.0)
-            self._tcp_auth_if_needed()
-            self.sock.settimeout(0.5)
-            return
+            max_attempts = int(env("FMLIST_TEF_TCP_CONNECT_RETRIES", "3"))
+            retry_delay = float(env("FMLIST_TEF_TCP_CONNECT_RETRY_SEC", "1.0"))
+            last_ex = None
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    self.sock = socket.create_connection((host, port), timeout=2.0)
+                    self._tcp_auth_if_needed()
+                    self.sock.settimeout(0.5)
+                    return
+                except Exception as ex:
+                    last_ex = ex
+                    if self.sock is not None:
+                        try:
+                            self.sock.close()
+                        except Exception:
+                            pass
+                        self.sock = None
+                    if attempt < max_attempts:
+                        time.sleep(retry_delay)
+            raise last_ex
 
         if serial is None:
             raise RuntimeError("pyserial is required for FMLIST_TEF_TRANSPORT=serial")
@@ -302,8 +318,25 @@ def _decode_udp_af_hex(hex_str):
             continue
         if code <= 0:
             continue
-        f10 = 8750 + (code * 10)
-        out.append(f"{f10 / 100.0:.1f}")
+        freq_khz = 87500 + (code * 100)  # kHz integer, matching redsea.json2csv.sh/RTL AF format
+        out.append(str(freq_khz))
+    return ";".join(out)
+
+
+def normalize_af_khz(af_text):
+    """Convert a semicolon-separated AF list of MHz decimals (e.g. '87.6') to kHz integers, matching redsea.json2csv.sh/RTL AF format."""
+    if not af_text:
+        return ""
+    out = []
+    for tok in af_text.split(";"):
+        tok = tok.strip()
+        if not tok:
+            continue
+        try:
+            khz = int(round(float(tok) * 1000))
+        except ValueError:
+            continue
+        out.append(str(khz))
     return ";".join(out)
 
 
@@ -431,13 +464,16 @@ class UdpRdsCollector:
         if freq_hz is None:
             return
 
+        pi_idx = freq_idx + 1
         ps_idx = freq_idx + 10
         rt_idx = freq_idx + 11
         af_idx = freq_idx + 12
+        pi_raw = parts[pi_idx].strip().upper() if len(parts) > pi_idx else ""
+        pi = pi_raw.replace("0X", "") if re.match(r'^(0X)?[0-9A-F]{4}$', pi_raw) else ""
         ps = collapse_empty_ps(normalize_ps_text(parts[ps_idx])) if len(parts) > ps_idx else ""
         rt = parts[rt_idx] if len(parts) > rt_idx else ""
-        af = parts[af_idx] if len(parts) > af_idx else ""
-        self._merge(freq_hz, {"ps": ps, "rt": rt, "af": af, "src": "udp9100"})
+        af = normalize_af_khz(parts[af_idx]) if len(parts) > af_idx else ""
+        self._merge(freq_hz, {"pi": pi, "ps": ps, "rt": rt, "af": af, "src": "udp9100"})
         self._remember_last_line(freq_hz, txt, self.port_9100)
 
     def _ingest_9030(self, txt):
@@ -459,6 +495,11 @@ class UdpRdsCollector:
         if freq_hz is None:
             return
 
+        pi = ""
+        if "PI" in fields:
+            pi_raw = fields.get("PI", "").strip().upper().replace("0X", "")
+            if re.match(r'^[0-9A-F]{4}$', pi_raw):
+                pi = pi_raw
         ps = ""
         if "PS" in fields:
             ps = collapse_empty_ps(normalize_ps_text(_decode_udp_hex_ascii(fields.get("PS", ""))))
@@ -469,7 +510,7 @@ class UdpRdsCollector:
         if "AF" in fields:
             af = _decode_udp_af_hex(fields.get("AF", ""))
 
-        self._merge(freq_hz, {"ps": ps, "rt": rt, "af": af, "src": "udp9030"})
+        self._merge(freq_hz, {"pi": pi, "ps": ps, "rt": rt, "af": af, "src": "udp9030"})
         self._remember_last_line(freq_hz, txt, self.port_9030)
 
     def get_for_freq(self, freq_hz, max_age_sec):
@@ -875,15 +916,6 @@ def main():
     t_beg = utc_epoch()
     dt_start = now_iso()
 
-    gps = read_gps_inc(os.path.join(ram_dir, "gpscoor.inc"))
-    gps_cols = ",".join([
-        gps.get("GPSLAT", ""),
-        gps.get("GPSLON", ""),
-        gps.get("GPSMODE", ""),
-        gps.get("GPSALT", ""),
-        gps.get("GPSTIM", ""),
-    ])
-
     pos = env("FMLIST_UP_POSITION", "").lower()
     dwell_mobile = int(env("FMLIST_TEF_DWELL_MOBILE_SEC", "5"))
     dwell_fixed = int(env("FMLIST_TEF_DWELL_FIXED_SEC", "10"))
@@ -902,8 +934,18 @@ def main():
     _tef_conn_global = conn
     udp = UdpRdsCollector()
     try:
-        conn.open()
-        conn.handshake()
+        init_attempts = max(1, int(env("FMLIST_TEF_INIT_RETRIES", "3")))
+        init_retry_delay = float(env("FMLIST_TEF_INIT_RETRY_SEC", "1.0"))
+        for init_attempt in range(1, init_attempts + 1):
+            try:
+                conn.open()
+                conn.handshake()
+                break
+            except Exception:
+                conn.close()
+                if init_attempt >= init_attempts:
+                    raise
+                time.sleep(init_retry_delay)
         udp.open()
     except Exception as ex:
         append_line(os.path.join(ram_dir, "scanner.log"), f"FM scan failed to initialize TEF: {ex}")
@@ -1043,6 +1085,14 @@ def main():
             dt = now_iso()
             epoch = utc_epoch()
             freq_khz = freq_hz // 1000
+            gps = read_gps_inc(os.path.join(ram_dir, "gpscoor.inc"))
+            gps_cols = ",".join([
+                gps.get("GPSLAT", ""),
+                gps.get("GPSLON", ""),
+                gps.get("GPSMODE", ""),
+                gps.get("GPSALT", ""),
+                gps.get("GPSTIM", ""),
+            ])
             if i == 0 and first_tune_sent:
                 # T was already sent before file I/O; TCP has buffered the dwell data.
                 # Do NOT call clear_input here — that would discard the buffered lines.
@@ -1079,17 +1129,17 @@ def main():
                 for ln in redsea_lines:
                     f.write(ln + "\n")
 
-            carrier_csv = os.path.join(rec_path, f"fm_carrier.{freq_hz}.csv")
-            append_line(carrier_csv, f"{epoch},freq,{freq_hz},0,{int(round(power))},{int(round(power))},{dt},{gps_cols}")
-
             pi, ps = parse_rds_fields(redsea_lines)
-            udp_ps = normalize_ps_text(udp_rec.get("ps", "")) if udp_rec else ""
+            udp_pi = udp_rec.get("pi", "") if udp_rec else ""
+            udp_ps = udp_rec.get("ps", "") if udp_rec else ""  # already normalized+collapsed when stored in UdpRdsCollector
             udp_af = udp_rec.get("af", "") if udp_rec else ""
             udp_rt = udp_rec.get("rt", "") if udp_rec else ""
+            if not pi and udp_pi:
+                pi = udp_pi
             if udp_ps:
                 ps = udp_ps
 
-            should_write_rds = has_rds_json or bool(udp_ps or udp_af or udp_rt)
+            should_write_rds = bool(pi or ps)  # no PI and no PS = no RDS reception -> carrier-only (fm_carrier), not fm_rds
             if should_write_rds:
                 rds_csv = os.path.join(rec_path, f"fm_rds.{freq_hz}.csv")
                 rdscols = read_rdscols_from_redsea_txt(redsea_txt)
@@ -1101,6 +1151,9 @@ def main():
                     fallback_rdscols = build_rdscols_fallback(pi, ps)
                     fallback_rdscols = merge_udp_into_rdscols(fallback_rdscols, pi, ps, udp_af, udp_rt)
                     append_line(rds_csv, f"{epoch},freq,{freq_hz},1,{int(round(power))},{int(round(power))},{dt},{gps_cols},{fallback_rdscols}")
+            else:
+                carrier_csv = os.path.join(rec_path, f"fm_carrier.{freq_hz}.csv")
+                append_line(carrier_csv, f"{epoch},freq,{freq_hz},0,{int(round(power))},{int(round(power))},{dt},{gps_cols}")
 
             write_last(ram_dir, freq_hz, pi, ps)
 
