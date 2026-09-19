@@ -136,7 +136,13 @@ fi
     fi
   fi
 
-  if [ "${SCANLOOP_RUNNING}" = "1" ] && [ -f scanner.log ] && [ "${PRESCAN_ACTIVE}" = "0" ]; then
+  DAB_SCAN_ACTIVE="0"
+  if pgrep -f "scanDAB.sh|abra-raw|abra-rtlsdr|dab-raw|dab-rtlsdr" >/dev/null 2>&1; then
+    DAB_SCAN_ACTIVE="1"
+  fi
+
+  if [ "${SCANLOOP_RUNNING}" = "1" ] && [ -f scanner.log ] \
+    && [ "${PRESCAN_ACTIVE}" = "0" ] && [ "${DAB_SCAN_ACTIVE}" = "1" ]; then
     CHECK_LINE=$(grep -E "rtl_sdr -s [0-9]+ -n [0-9]+ -f |rtl_sdr .*DAB_.*sec[^ ]*\.raw|abra-rtlsdr -C |dab-rtlsdr -C |abra-raw -F |dab-raw -F " scanner.log | tail -n1)
     if [ ! -z "${CHECK_LINE}" ]; then
       DAB_CH=$(echo "${CHECK_LINE}" | sed -n 's/.*\(abra-rtlsdr\|dab-rtlsdr\) -C \([^ ]*\).*/\2/p')

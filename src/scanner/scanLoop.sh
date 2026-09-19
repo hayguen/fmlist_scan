@@ -143,7 +143,7 @@ while /bin/true; do
       if [ "${FMLIST_TEF_TRANSPORT}" = "tcp" ]; then
         echo "test TEF6686 TCP ${FMLIST_TEF_TCP_HOST}:${FMLIST_TEF_TCP_PORT}"
         echo "test TEF6686 TCP ${FMLIST_TEF_TCP_HOST}:${FMLIST_TEF_TCP_PORT}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-        timeout -s SIGTERM -k 1 2 bash -c "</dev/tcp/${FMLIST_TEF_TCP_HOST}/${FMLIST_TEF_TCP_PORT}" &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
+        bash -c "exec 3<>/dev/tcp/${FMLIST_TEF_TCP_HOST}/${FMLIST_TEF_TCP_PORT}; exec 3>&-" &>>${FMLIST_SCAN_RAM_DIR}/scanner.log
       else
         echo "test TEF6686 serial ${FMLIST_TEF_SERIAL_PORT}"
         echo "test TEF6686 serial ${FMLIST_TEF_SERIAL_PORT}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
@@ -293,6 +293,7 @@ while /bin/true; do
     DABPID=$!
     scanFM.sh
     FMRC=$?
+    saveScanResults.sh fm
     wait ${DABPID}
     DABRC=$?
 

@@ -7,6 +7,8 @@ fi
 
 cd ${FMLIST_SCAN_RAM_DIR}
 
+SAVE_SCOPE="$1"
+
 source /home/${FMLIST_SCAN_USER}/bin/scanner_mount_result_dir.sh.inc
 
 if [ ${FMLIST_SCAN_MOUNT} -eq 1 ]; then
@@ -34,6 +36,9 @@ cd ${FMLIST_SCAN_RAM_DIR}
 
 
 ls -1 | grep ^scan_ | while read d ; do
+  if [ "${SAVE_SCOPE}" = "fm" ] && [ $(echo "$d" | grep -c "_FM$") -eq 0 ]; then
+    continue
+  fi
   WRITE_ERR=""
   if [ -d "$d" ]; then
     echo $d
