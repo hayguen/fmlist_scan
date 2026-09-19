@@ -85,6 +85,8 @@ export FMLIST_TEF_TRANSPORT="${FMLIST_TEF_TRANSPORT}"            # TEF transport
 export FMLIST_TEF_SERIAL_PORT="${FMLIST_TEF_SERIAL_PORT}"        # TEF serial device, e.g. /dev/ttyUSB0
 export FMLIST_TEF_SERIAL_BAUD="${FMLIST_TEF_SERIAL_BAUD}"        # TEF serial baud rate
 export FMLIST_TEF_TCP_HOST="${FMLIST_TEF_TCP_HOST}"              # TEF TCP host/IP
+export FMLIST_TEF_TCP_HOST_AUTO="${FMLIST_TEF_TCP_HOST_AUTO}"    # "1" to learn the TCP host from TEF UDP packets
+export FMLIST_TEF_TCP_HOST_DISCOVERY_SEC="${FMLIST_TEF_TCP_HOST_DISCOVERY_SEC}"  # seconds to wait for UDP host discovery
 export FMLIST_TEF_TCP_PORT="${FMLIST_TEF_TCP_PORT}"              # TEF TCP port
 export FMLIST_TEF_TCP_AUTH="${FMLIST_TEF_TCP_AUTH}"              # TCP auth: "none" (default) or "xdr" (salt+SHA1)
 export FMLIST_TEF_TCP_PASSWORD="${FMLIST_TEF_TCP_PASSWORD}"      # password used only when FMLIST_TEF_TCP_AUTH="xdr"
