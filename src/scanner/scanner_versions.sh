@@ -7,6 +7,10 @@ if [ ! -d "${FMLIST_SCAN_PATH}" ]; then
   exit 1
 fi
 
+if [ -s "${FMLIST_SCAN_RAM_DIR}/tef6686_version" ]; then
+  echo "tef6686        $(cat "${FMLIST_SCAN_RAM_DIR}/tef6686_version")"
+fi
+
 pushd "${FMLIST_SCAN_PATH}/../" &>/dev/null
 ./versions.sh "$@"
 popd &>/dev/null

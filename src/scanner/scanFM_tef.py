@@ -412,6 +412,7 @@ class UdpRdsCollector:
         self.port_9100 = int(env("FMLIST_TEF_UDP_PORT_9100", "9100"))
         self.socks = []
         self.source_host = None
+        self.source_version = None
         self.by_freq = {}
         self.last_line_by_freq = {}
 
@@ -499,6 +500,8 @@ class UdpRdsCollector:
         parts = [p.strip() for p in txt.split(",")]
         if len(parts) < 12:
             return
+        if self.source_version is None and parts[1]:
+            self.source_version = parts[1]
 
         freq_idx = -1
         freq_hz = None
@@ -979,6 +982,26 @@ def persist_tef_tcp_host(host):
         return False
 
 
+def persist_tef_version(version, ram_dir):
+    version = (version or "").strip()
+    if not version:
+        return False
+    version_path = os.path.join(ram_dir, "tef6686_version")
+    temp_path = version_path + ".tmp"
+    try:
+        with open(temp_path, "w", encoding="utf-8") as f:
+            f.write(version + "\n")
+        os.replace(temp_path, version_path)
+        return True
+    except Exception:
+        try:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+        except Exception:
+            pass
+        return False
+
+
 def main():
     global _tef_conn_global
     
@@ -989,6 +1012,10 @@ def main():
     home = os.path.expanduser("~")
     ram_dir = env("FMLIST_SCAN_RAM_DIR", f"/dev/shm/{env('FMLIST_SCAN_USER', 'pi')}_fmlist_scan")
     os.makedirs(ram_dir, exist_ok=True)
+    try:
+        os.unlink(os.path.join(ram_dir, "tef6686_version"))
+    except FileNotFoundError:
+        pass
 
     dtfrec = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%S")
     rec_name = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else f"scan_{dtfrec}_FM"
@@ -1025,6 +1052,7 @@ def main():
             discovery_timeout = max(0.0, float(env("FMLIST_TEF_TCP_HOST_DISCOVERY_SEC", "2")))
             udp.poll(discovery_timeout)
             discovered_host = udp.source_host
+            persist_tef_version(udp.source_version, ram_dir)
             if discovered_host:
                 persist_tef_tcp_host(discovered_host)
 
@@ -1246,6 +1274,7 @@ def main():
             tef_lines = trim_to_current_tune(tef_lines, freq_khz)
             # Drain UDP 9030/9100 after tune; frequency filtering below rejects delayed packets from prior channels.
             udp.poll(float(env("FMLIST_TEF_UDP_SETTLE_SEC", "1.2")))
+            persist_tef_version(udp.source_version, ram_dir)
             udp_max_age_sec = float(env("FMLIST_TEF_UDP_MAX_AGE_SEC", "6.0"))
             udp_rec = udp.get_for_freq(freq_hz, udp_max_age_sec)
             udp_last = udp.pop_last_line_for_freq(freq_hz, udp_max_age_sec)
