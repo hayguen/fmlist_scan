@@ -75,14 +75,15 @@ def _signal_handler(sig, frame):
 
 
 class TefConn:
-    def __init__(self):
+    def __init__(self, host_override=None):
         self.transport = env("FMLIST_TEF_TRANSPORT", "serial").lower()
+        self.host_override = host_override
         self.sock = None
         self.ser = None
 
     def open(self):
         if self.transport == "tcp":
-            host = env("FMLIST_TEF_TCP_HOST", "192.168.1.50")
+            host = self.host_override or env("FMLIST_TEF_TCP_HOST", "192.168.1.50")
             port = int(env("FMLIST_TEF_TCP_PORT", "7373"))
             max_attempts = int(env("FMLIST_TEF_TCP_CONNECT_RETRIES", "3"))
             retry_delay = float(env("FMLIST_TEF_TCP_CONNECT_RETRY_SEC", "1.0"))
@@ -410,6 +411,7 @@ class UdpRdsCollector:
         self.port_9030 = int(env("FMLIST_TEF_UDP_PORT_9030", "9030"))
         self.port_9100 = int(env("FMLIST_TEF_UDP_PORT_9100", "9100"))
         self.socks = []
+        self.source_host = None
         self.by_freq = {}
         self.last_line_by_freq = {}
 
@@ -453,7 +455,7 @@ class UdpRdsCollector:
             for s in ready:
                 while True:
                     try:
-                        payload, _addr = s.recvfrom(4096)
+                        payload, addr = s.recvfrom(4096)
                     except BlockingIOError:
                         break
                     except Exception:
@@ -461,6 +463,8 @@ class UdpRdsCollector:
                     txt = payload.decode("utf-8", errors="ignore").strip()
                     if not txt:
                         continue
+                    if self.source_host is None and addr:
+                        self.source_host = addr[0]
                     self._ingest(txt, s.getsockname()[1])
             if seconds <= 0.0:
                 break
@@ -940,6 +944,41 @@ def auto_threshold(pairs, margin_db=15.0):
     return noise_floor + margin_db
 
 
+def persist_tef_tcp_host(host):
+    config_path = env(
+        "FMLIST_SCAN_CONFIG",
+        os.path.join(os.path.expanduser("~"), ".config", "fmlist_scan", "config"),
+    )
+    if not host or not os.path.isfile(config_path):
+        return False
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        updated, count = re.subn(
+            r'(?m)^export FMLIST_TEF_TCP_HOST=.*$',
+            f'export FMLIST_TEF_TCP_HOST="{host}"',
+            content,
+            count=1,
+        )
+        if count == 0 or updated == content:
+            return False
+        config_dir = os.path.dirname(config_path)
+        mode = os.stat(config_path).st_mode
+        temp_path = config_path + ".tmp"
+        with open(temp_path, "w", encoding="utf-8") as f:
+            f.write(updated)
+        os.chmod(temp_path, mode)
+        os.replace(temp_path, config_path)
+        return True
+    except Exception:
+        try:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+        except Exception:
+            pass
+        return False
+
+
 def main():
     global _tef_conn_global
     
@@ -977,10 +1016,20 @@ def main():
     mobile_seek_timeout = max(1.0, float(env("FMLIST_TEF_MOBILE_SEEK_TIMEOUT_SEC", "15")))
     debug_enabled = env("FMLIST_SCAN_DEBUG", "0") != "0"
 
-    conn = TefConn()
-    _tef_conn_global = conn
     udp = UdpRdsCollector()
+    discovered_host = None
     try:
+        udp.open()
+        if (env("FMLIST_TEF_TRANSPORT", "serial").lower() == "tcp"
+                and env("FMLIST_TEF_TCP_HOST_AUTO", "1") != "0"):
+            discovery_timeout = max(0.0, float(env("FMLIST_TEF_TCP_HOST_DISCOVERY_SEC", "2")))
+            udp.poll(discovery_timeout)
+            discovered_host = udp.source_host
+            if discovered_host:
+                persist_tef_tcp_host(discovered_host)
+
+        conn = TefConn(discovered_host)
+        _tef_conn_global = conn
         init_attempts = max(1, int(env("FMLIST_TEF_INIT_RETRIES", "3")))
         init_retry_delay = float(env("FMLIST_TEF_INIT_RETRY_SEC", "1.0"))
         for init_attempt in range(1, init_attempts + 1):
@@ -993,7 +1042,6 @@ def main():
                 if init_attempt >= init_attempts:
                     raise
                 time.sleep(init_retry_delay)
-        udp.open()
     except Exception as ex:
         append_line(os.path.join(ram_dir, "scanner.log"), f"FM scan failed to initialize TEF: {ex}")
         print(f"FM scan failed to initialize TEF: {ex}")
