@@ -615,6 +615,11 @@ function rerunMissingServiceDetailsWithD() {
 function normalizeServiceSpecificTooWeakAudio() {
   local CH="$1"
   local MAIN_LOG="$2"
+  local UNRESOLVED_AUDIO_STATUS="DAB+/too weak or no audio"
+
+  if [ "${IS_FIXED_POSITION}" != "1" ]; then
+    UNRESOLVED_AUDIO_STATUS="DAB+/audio not checked"
+  fi
 
   if [ -z "${CH}" ] || [ -z "${MAIN_LOG}" ] || [ ! -f "${MAIN_LOG}" ]; then
     return 0
@@ -650,15 +655,19 @@ function normalizeServiceSpecificTooWeakAudio() {
     return 0
   fi
 
-  awk -F',' -v OFS=',' '
+  awk -F',' -v OFS=',' -v unresolvedStatus="${UNRESOLVED_AUDIO_STATUS}" '
     $2=="CSV_AUDIO" {
       codec=$15; gsub(/^"|"$/, "", codec)
       if (codec=="DAB+/too weak audio" || codec=="DAB+/audio" ||
           codec=="DAB+/no audio" || codec=="DAB+/AAC-LC Mono 32kHz") {
-        $15="\"DAB+/too weak or no audio\""
+        $15="\"" unresolvedStatus "\""
       } else if (codec=="DAB/too weak audio" || codec=="DAB/audio" ||
                  codec=="DAB/no audio" || codec=="DAB/AAC-LC Mono 32kHz") {
-        $15="\"DAB/too weak or no audio\""
+        if (unresolvedStatus=="DAB+/audio not checked") {
+          $15="\"DAB/audio not checked\""
+        } else {
+          $15="\"DAB/too weak or no audio\""
+        }
       }
     }
     { print }
@@ -778,16 +787,23 @@ function getKnownEnsembleNameByEid() {
         gsub(/^"/, "", name)
         gsub(/"$/, "", name)
         if (eid == e && tolower(name) != "unknown ensemble" && name != "") {
+        local SYNTH_AUDIO_STATUS="DAB+/too weak or no audio"
+
+        # Mobile discovery deliberately skips detailed audio analysis for known ensembles.
+        # Do not present the resulting absence of CSV_AUDIO rows as an audio failure.
+        if [ "${IS_FIXED_POSITION}" != "1" ]; then
+          SYNTH_AUDIO_STATUS="DAB+/audio not checked"
+        fi
           print name
           exit
         }
-      }
-    ' "${rec_path}/dab_ensemble.csv" )
-  fi
-
-  if [ -z "${NAME}" ] && [ -f "${REF_DAB_ENS_FILE}" ]; then
-    NAME=$( awk -F',' -v e="${EID_NORM}" '
-      {
+        local AUDIO_CNT
+        AUDIO_CNT=$(awk -F',' '$2=="CSV_AUDIO"{n++} END{print n+0}' "${MAIN_LOG}" 2>/dev/null)
+        if [ "${AUDIO_CNT:-0}" -gt 0 ] 2>/dev/null; then
+          return 0
+        fi
+        local PACKET_CNT
+        PACKET_CNT=$(awk -F',' '$2=="CSV_PACKET"{n++} END{print n+0}' "${MAIN_LOG}" 2>/dev/null)
         eid = tolower($1)
         name = $2
         gsub(/^"/, "", name)
