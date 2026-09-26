@@ -141,6 +141,7 @@ function runDabRaw() {
 
   timeout -s SIGTERM -k 5 "${FMLIST_SCAN_DAB_RAW_TIMEOUT_SEC}" "${DAB_RAW_BIN}" "$@" 1>"${STDOUT_FILE}" 2>"${STDERR_FILE}"
   local RAW_RC=$?
+  grep '^ABRA_SNR_DEBUG ' "${STDERR_FILE}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log 2>/dev/null || true
   if [ ${RAW_RC} -eq 124 ]; then
     echo "$(date -u "+%Y-%m-%dT%T.%N Z"): dab-raw timed out after ${FMLIST_SCAN_DAB_RAW_TIMEOUT_SEC}s; continuing with recovery" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
   fi
