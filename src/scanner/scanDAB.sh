@@ -148,6 +148,19 @@ function runDabRaw() {
   return ${RAW_RC}
 }
 
+function runDabLive() {
+  local STDOUT_FILE="$1"
+  local STDERR_FILE="$2"
+  shift 2
+
+  timeout -s SIGTERM -k 5 "${FMLIST_SCAN_DAB_LIVE_TIMEOUT_SEC}" "${DAB_RTLSDR_BIN}" "$@" 1>"${STDOUT_FILE}" 2>"${STDERR_FILE}"
+  local LIVE_RC=$?
+  if [ ${LIVE_RC} -eq 124 ]; then
+    echo "$(date -u "+%Y-%m-%dT%T.%N Z"): dab-rtlsdr timed out after ${FMLIST_SCAN_DAB_LIVE_TIMEOUT_SEC}s; continuing with recovery" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
+  fi
+  return ${LIVE_RC}
+}
+
 function tuneDabOptForUnknownEnsembleRetry() {
   local in="$1"
   local out=""
@@ -992,6 +1005,9 @@ fi
 if [ -z "${FMLIST_SCAN_DAB_RAW_TIMEOUT_SEC}" ]; then
   FMLIST_SCAN_DAB_RAW_TIMEOUT_SEC="180"
 fi
+if [ -z "${FMLIST_SCAN_DAB_LIVE_TIMEOUT_SEC}" ]; then
+  FMLIST_SCAN_DAB_LIVE_TIMEOUT_SEC="30"
+fi
 if [ -z "${FMLIST_SCAN_DAB_RAW_INIT_MS}" ]; then
   # This is overridden per-clip to RAW_DURATION_SEC*1000 at analysis time; keep as a safe fallback.
   FMLIST_SCAN_DAB_RAW_INIT_MS="${FMLIST_SCAN_DAB_RAW_DURATION_SEC}000"
@@ -1467,7 +1483,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
     # a raw clip and derive all metadata from the dab-raw analysis — skipping discovery
     # saves ~5 s per channel (the full -W 5000 discovery window).
     if [ "${IS_FIXED_POSITION}" != "1" ]; then
-    "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_DISCOVERY} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+    runDabLive "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -C ${CH} ${DABOPT_DISCOVERY}
     rm -f "${rec_path}/DAB_${CH}_initial_ensemble.csv" 2>/dev/null
     rm -f "${rec_path}/DAB_${CH}_initial_stderr.log" 2>/dev/null
     rm -f "${rec_path}/DAB_${CH}_discovery_ensemble.csv" 2>/dev/null
@@ -1503,7 +1519,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
     if [ "${DISC_UNKNOWN_ENS}" = "1" ] && [ ${DISC_NUM_PROGRAMS} -le 2 ]; then
       DABOPT_DISCOVERY_RETRY="$( tuneDabOptForUnknownEnsembleRetry "${DABOPT_DISCOVERY}" )"
       echo "${DTF}: DAB ${CH}: unknown/weak discovery (${DISC_NUM_PROGRAMS} program lines); retrying with longer timeout opts: ${DABOPT_DISCOVERY_RETRY}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_DISCOVERY_RETRY} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+      runDabLive "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -C ${CH} ${DABOPT_DISCOVERY_RETRY}
 
       DAB_ENS_KEY="$( getDabEnsembleKeyFromLog "${CH}" "${rec_path}/DAB_${CH}.log" )"
       DISC_NUM_PROGRAMS=$(grep -c "^programnameHandler:.* is part of the ensemble" "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
@@ -1530,7 +1546,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
       local _DISC_NAME_RETRY_STDERR="${rec_path}/.DAB_${CH}_name_retry_stderr.tmp"
       DABOPT_DISCOVERY_RETRY="$( tuneDabOptForUnknownEnsembleRetry "${DABOPT_DISCOVERY}" )"
       echo "${DTF}: DAB ${CH}: unknown ensemble name with ${DISC_NUM_PROGRAMS} programs; name-only retry: ${DABOPT_DISCOVERY_RETRY}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-      "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_DISCOVERY_RETRY} 1>/dev/null 2>"${_DISC_NAME_RETRY_STDERR}"
+      runDabLive /dev/null "${_DISC_NAME_RETRY_STDERR}" -C ${CH} ${DABOPT_DISCOVERY_RETRY}
       _RETRY_ENS_LONG=$( grep "ensemblenameHandler:" "${_DISC_NAME_RETRY_STDERR}" 2>/dev/null | head -n1 | sed -n "s/.*ensemblenameHandler: '\([^']*\)'.*/\1/p" | sed 's/[[:space:]]*$//' )
       _RETRY_ENS_SHORT=$( grep "ensemblenameHandler:" "${_DISC_NAME_RETRY_STDERR}" 2>/dev/null | head -n1 | sed -n "s/.*\/ '\([^']*\)'.*/\1/p" | sed 's/[[:space:]]*$//' )
       if [ -n "${_RETRY_ENS_LONG}" ] && [ "$(echo "${_RETRY_ENS_LONG}" | tr '[:upper:]' '[:lower:]')" != "unknown ensemble" ]; then
@@ -1665,7 +1681,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
 
         if { [ ${RTL_RC} -ne 0 ] && [ ${RTL_RC} -ne 124 ]; } || [ ! -s "${CH_RAW}" ]; then
           echo "${DTF}: DAB ${CH}: raw capture failed (rc=${RTL_RC}); retrying live fallback with opts: ${DABOPT_FALLBACK}" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-          "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+          runDabLive "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -C ${CH} ${DABOPT_FALLBACK}
           CH_RAW=""
           KEEP_RAW_FILE="0"
         else
@@ -1766,7 +1782,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
 
           if [ ${DABRAW_RC} -ne 0 ] && [ ${DABRAW_CSV_ENS} -eq 0 ] && [ ${DABRAW_CSV_AUD} -eq 0 ] && [ "${DABRAW_TOO_WEAK}" = "0" ]; then
             echo "${DTF}: DAB ${CH}: dab-raw failed (rc=${DABRAW_RC}) without CSV output and no 'too weak' hint; keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-            "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+            runDabLive "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -C ${CH} ${DABOPT_FALLBACK}
             # The raw file is unusable (produced no output). Clear it so that the
             # per-SID rerun below does not re-analyse the same bad file and falsely
             # mark every service as "DAB+/too weak or no audio".
@@ -1823,7 +1839,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
                 if [ ${DABRAW_CSV_ENS} -eq 0 ] && [ ${DABRAW_CSV_AUD} -eq 0 ]; then
                   echo "${DTF}: DAB ${CH}: longer-clip retry produced no CSV; keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
                   rm -f "${CH_RAW}" 2>/dev/null || true; CH_RAW=""; KEEP_RAW_FILE="0"
-                  "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+                  runDabLive "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -C ${CH} ${DABOPT_FALLBACK}
                 else
                   DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
                   if [ -z "${DABRAW_LIST_LINES}" ]; then DABRAW_LIST_LINES=0; fi
@@ -1841,7 +1857,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
                 echo "${DTF}: DAB ${CH}: longer-clip capture failed (rc=${RTL_RETRY_RC}); keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
                 rm -f "${CH_RAW_RETRY}" 2>/dev/null
                 rm -f "${CH_RAW}" 2>/dev/null || true; CH_RAW=""; KEEP_RAW_FILE="0"
-                "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+                runDabLive "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -C ${CH} ${DABOPT_FALLBACK}
               fi
             else
               echo "${DTF}: DAB ${CH}: no-rewind retry recovered enough services; skipping long recapture" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
@@ -1869,7 +1885,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
               if [ ${DABRAW_CSV_ENS} -eq 0 ] && [ ${DABRAW_CSV_AUD} -eq 0 ]; then
                 echo "${DTF}: DAB ${CH}: longer-clip retry produced no CSV; keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
                 rm -f "${CH_RAW}" 2>/dev/null || true; CH_RAW=""; KEEP_RAW_FILE="0"
-                "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+                runDabLive "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -C ${CH} ${DABOPT_FALLBACK}
               else
                 DABRAW_CSV_PKT=$(grep -c ",CSV_PACKET," "${rec_path}/DAB_${CH}.log" 2>/dev/null || true)
                 if [ -z "${DABRAW_CSV_PKT}" ]; then DABRAW_CSV_PKT=0; fi
@@ -1911,7 +1927,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
               echo "${DTF}: DAB ${CH}: longer-clip capture failed (rc=${RTL_RETRY_RC}); keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
               rm -f "${CH_RAW_RETRY}" 2>/dev/null
               rm -f "${CH_RAW}" 2>/dev/null || true; CH_RAW=""; KEEP_RAW_FILE="0"
-              "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+              runDabLive "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -C ${CH} ${DABOPT_FALLBACK}
             fi
           elif [ "${DABRAW_TOO_WEAK}" = "1" ]; then
             # Mobile or no freq: retry without rewind on existing clip
@@ -1925,7 +1941,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
             DABRAW_CSV_AUD=$(grep -c ",CSV_AUDIO," "${rec_path}/DAB_${CH}.log" 2>/dev/null)
             if [ ${DABRAW_CSV_ENS} -eq 0 ] && [ ${DABRAW_CSV_AUD} -eq 0 ]; then
               echo "${DTF}: DAB ${CH}: no-rewind retry produced no CSV; keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
-              "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+              runDabLive "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -C ${CH} ${DABOPT_FALLBACK}
             else
               echo "${DTF}: DAB ${CH}: no-rewind retry produced CSV; keeping dab-raw result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
             fi
@@ -1957,7 +1973,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
               if [ ${DABRAW_CSV_ENS} -eq 0 ] && [ ${DABRAW_CSV_AUD} -eq 0 ]; then
                 echo "${DTF}: DAB ${CH}: longer retry produced no CSV; keeping discovery-only result" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
                 rm -f "${CH_RAW}" 2>/dev/null || true; CH_RAW=""; KEEP_RAW_FILE="0"
-                "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT_FALLBACK} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+                runDabLive "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -C ${CH} ${DABOPT_FALLBACK}
               else
                 DABRAW_LIST_LINES=$(grep -c "^LIST: SID " "${rec_path}/DAB_${CH}_stderr.log" 2>/dev/null || true)
                 if [ -z "${DABRAW_LIST_LINES}" ]; then DABRAW_LIST_LINES=0; fi
@@ -2008,7 +2024,7 @@ for CH in $(echo "${dabchannels[@]}") ; do
 
     process_dab_channel_results "${CH}" "${CH_RAW}" "${DTFFIC}" "${KEEP_RAW_FILE}" "${DISC_ENS_LONG}" "${DISC_ENS_SHORT}"
   else
-    "${DAB_RTLSDR_BIN}" -C ${CH} ${DABOPT} 1>"${rec_path}/DAB_${CH}.log" 2>"${rec_path}/DAB_${CH}_stderr.log"
+    runDabLive "${rec_path}/DAB_${CH}.log" "${rec_path}/DAB_${CH}_stderr.log" -C ${CH} ${DABOPT}
     process_dab_channel_results "${CH}" "" "${DTFFIC}" "0" "" ""
   fi
 done
