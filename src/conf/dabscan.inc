@@ -25,6 +25,12 @@ RTL_DAGC="dagc=1"     # switch on - helps at oversteering
 # file with channels to scan
 chanlist="dab_chanlist.txt"
 
+# Mobile scans must not enter the raw/detail recovery workflow.  A weak mobile
+# signal is intentionally discarded after the discovery timeout instead of
+# retrying every service in the ensemble.  Fixed-position scans are enabled
+# explicitly by scanDAB.sh when required.
+FMLIST_SCAN_DAB_ANALYZE_FROM_RAW="0"
+
 # verifiable TII (statistics without '-x' option) requires much time: that is why to increase -A from 2000 to 12000
 #   with option '-x', activation enhanced tii algorithm with quality values, reduced -A to 6000 ms
 #   options -t,  -a and -r specify how tii statistics should work ..
@@ -60,7 +66,7 @@ fi
 
 # select rtlsdr device with option '-s <serial>'.
 #   program 'rtl_test' will list all devices with their serial numbers 'SN'.
-#   in case your serial numbers are not unique, you can modify these with 'rtl_eeprom'.
+#   if your serial numbers are not unique, you can modify these with 'rtl_eeprom'.
 #   reuse devicename from config: ${FMLIST_DAB_RTLSDR_DEV}
 
 if [ ! -z "${FMLIST_DAB_RTLSDR_DEV}" ]; then

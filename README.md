@@ -1,10 +1,21 @@
 # fmlist_scan
 
+## Installation
+
+- 🇩🇪 [Installationsanweisung auf Deutsch](INSTALL_de.md)
+- 🇬🇧 [Installation instructions in English](INSTALL_en.md)
+
 ## General information
 
 This is an FM (87.5-108 MHz) and DAB (Digital Audio Broadcasting) scanner using popular RTLSDR dongles for collecting automated logs on headless systems for later upload to FMLIST, including GPS tracking for mobile logs, RDS collection, DAB TII codes and DAB ensemble details, see URDS section at https://www.fmlist.org/ (login required).
 
+It also can connect to a TEF6686 radio in the same network and log the same way as with rtlsdr. This will produce much cleaner RDS logs.
+
+Compared to the initial project, the DAB part now uses the library of AbracaDABra, so that the detection of DAB signal has significantly improved, giving the possibility even to detect the audio codecs.
+
 The scanner mainly runs on Raspberry Pi 3B+ and 4B with RaspberryPi OS. Main parts also run on other Debian based Linux OS'es, requiring minor configuration.
+
+Note, that Armbian is not supported.
 
 The project was initially presented at the VHF meeting 2018: see https://ukw-tagung.org/
 
@@ -12,7 +23,8 @@ The project was initially presented at the VHF meeting 2018: see https://ukw-tag
 
 - automated logging of FM stations (with or without RDS)
 - automated logging of DAB ensembles (including TII transmitter identification codes and detailed information about bitrates, protection levels and lables)
-- ssh access via Internet (if configured)
+- parallel logging of FM (TEF6686) and DAB (rtlsdr) possible
+- ssh access via Internet through sidedoor (if configured)
 - possibility of remote access for maintainers (if configured, only on demand) 
 - record DAB muxes (raw file and eti file)
 - record FM audio

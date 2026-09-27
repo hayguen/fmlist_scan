@@ -6,14 +6,18 @@ if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
   mkdir -p "${FMLIST_SCAN_RAM_DIR}"
 fi
 
-DTF="$(date -u "+%Y-%m-%dT%T Z")"
-echo "checkBgScanLoop.sh: last start at ${DTF}" >${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
+if [ -s "${FMLIST_SCAN_RAM_DIR}/scanLoopBg.started" ]; then
+  DTF="$(cat "${FMLIST_SCAN_RAM_DIR}/scanLoopBg.started")"
+else
+  DTF="$(date -u "+%Y-%m-%dT%T Z")"
+fi
+echo "last start: ${DTF}" >${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
 
 if screen -list |grep -q "scanLoopBg" ; then
-  echo "scan Loop is running -> continue check"
+//  echo "scan Loop is running -> continue check"
   echo "scan Loop is running -> continue check" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
 else
-  echo "scan Loop not running -> no check"
+//  echo "scan Loop not running -> no check"
   echo "scan Loop not running -> no check" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
   exit 0
 fi
@@ -29,6 +33,18 @@ else
 fi
 D=$[ $CURR - $LAST ]
 
+FM_BACKEND_RAW="${FMLIST_FM_BACKEND}"
+if [ -z "${FM_BACKEND_RAW}" ]; then
+  FM_BACKEND_RAW="tef6686"
+fi
+FM_BACKEND="$( echo "${FM_BACKEND_RAW}" | tr '[:upper:]' '[:lower:]' )"
+if [ "${FM_BACKEND}" = "tef" ]; then
+  FM_BACKEND="tef6686"
+fi
+if [ "${FM_BACKEND}" = "rtlsdr" ]; then
+  FM_BACKEND="rtl"
+fi
+
 echo "Delta from LAST to CURR = $D secs"
 echo "Delta from LAST to CURR = $D secs" >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
 
@@ -38,6 +54,15 @@ if [ $D -ge 60 ]; then
 fi
 
 if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
+  # TEF scans may run without updating LAST for a while. If scanFM_tef.py is alive,
+  # treat this as in-progress work and skip restart/savelog storm.
+  if [ "${FM_BACKEND}" = "tef6686" ] && pgrep -f "python.*scanFM_tef.py" >/dev/null 2>&1; then
+    DTF="$(date -u "+%Y-%m-%dT%T Z")"
+    echo "${DTF}: checkBgScanLoop.sh: TEF scan process is active; skip dead-time recovery (LAST age ${D}s)." >>${FMLIST_SCAN_RAM_DIR}/checkBgScanLoop.log
+    echo "${DTF}: checkBgScanLoop.sh: TEF scan process is active; skip dead-time recovery (LAST age ${D}s)." >>${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/checkBgScanLoop.log
+    exit 0
+  fi
+
   DTF="$(date -u "+%Y-%m-%dT%T Z")"
   echo "${DTF}: No stations in last $D seconds!"
   echo "${DTF}: checkBgScanLoop.sh: Error: No stations in last $D seconds!" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
@@ -80,7 +105,10 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
     pkill scanLoop.sh
     pkill scanFM.sh
     pkill scanDAB.sh
+    pkill -9 abra-rtlsdr
+    pkill -9 abra-raw
     pkill -9 dab-rtlsdr
+    pkill -9 dab-raw
     pkill -9 rtl_test
     pkill -9 rtl_sdr
     pkill redsea
@@ -98,7 +126,10 @@ if [ $D -ge ${FMLIST_SCAN_DEAD_TIME} ]; then
     pkill scanLoop.sh
     pkill scanFM.sh
     pkill scanDAB.sh
+    pkill -9 abra-rtlsdr
+    pkill -9 abra-raw
     pkill -9 dab-rtlsdr
+    pkill -9 dab-raw
     pkill -9 rtl_test
     pkill -9 rtl_sdr
     pkill redsea

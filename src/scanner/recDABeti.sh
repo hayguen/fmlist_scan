@@ -4,7 +4,7 @@ source "$HOME/.config/fmlist_scan/config"
 source "$HOME/.config/fmlist_scan/dabscan.inc"
 
 function usage() {
-  echo "usage: $0 <#minutes> <filenameId> <channel> [<additional options to dab-rtlsdr>]"
+  echo "usage: $0 <#minutes> <filenameId> <channel> [<additional options to abra-rtlsdr>]"
   echo "  you might need to increase max. ramdisk size: sudo mount -o remount,size=600M /dev/shm"
   echo " additional options - as in eti-cmdline, e.g. -P or -S:"
   LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}" eti-cmdline-rtlsdr -h

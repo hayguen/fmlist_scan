@@ -26,6 +26,7 @@ HOST_PORT = 8000
 HOST_ADDRESS = ""
 LOGIN_EXPIRATION_SECS = 60*10  # 10 min
 VERBOSE_LOG = False
+STATUS_PAGE_TIMEOUT_SECS = 8
 config_fn_rel_to_home = "/.config/fmlist_scan/config"
 list_info_sites = ["/list_fm_pi", "/list_fm_ps", "/list_dab_ens", "/list_dab_ens_tii", "/list_dab_progs"]
 
@@ -347,7 +348,7 @@ def update_network_info():
     eth0 = get_adapter_infos("eth0")
     if VERBOSE_LOG:
         print(f"eth0:  MAC = '{eth0[0]}', IP4: '{eth0[1]}', IP6: '{eth0[2]}'")
-    
+
     wifi = get_adapter_infos("wlan0")
     if VERBOSE_LOG:
         print(f"wlan0: MAC = '{wifi[0]}', IP4: '{wifi[1]}', IP6: '{wifi[2]}'")
@@ -711,6 +712,34 @@ function togglePasswordVisibility(inputId) {
         button.textContent = 'Show';
     }
 }
+
+function openGpsMapPicker(session, latId, lonId, prefixId, altId) {
+    const latInput = document.getElementById(latId);
+    const lonInput = document.getElementById(lonId);
+    const prefixInput = document.getElementById(prefixId);
+    const altInput = document.getElementById(altId);
+    const lat = latInput ? latInput.value : '';
+    const lon = lonInput ? lonInput.value : '';
+    const prefix = prefixInput ? prefixInput.value : '';
+    const alt = altInput ? altInput.value : '';
+    const pickerUrl = '/map_picker.html?session=' + encodeURIComponent(session) + '&lat=' + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lon) + '&prefix=' + encodeURIComponent(prefix) + '&alt=' + encodeURIComponent(alt);
+    const popup = window.open(pickerUrl, 'fmlist_map_picker', 'width=980,height=760');
+    if (popup) {
+        popup.focus();
+    }
+    return false;
+}
+
+function setGpsCoordinates(lat, lon) {
+    const latInput = document.getElementById('cfg_gps_lat');
+    const lonInput = document.getElementById('cfg_gps_lon');
+    if (latInput) {
+        latInput.value = lat;
+    }
+    if (lonInput) {
+        lonInput.value = lon;
+    }
+}
 </script>
 """
 
@@ -769,12 +798,12 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         r = r + f'<tr><td><p><a href="/list_dab_ens.html?session={session}">DAB Ensembles</a></p><br>' + '</td>\n'
         r = r + f'<td><p><a href="/list_dab_ens_tii.html?session={session}">DAB Ensembles w TII</a></p><br>' + '</td></tr>\n'
-        r = r + '<tr><td colspan="2"><a href="/list_dab_progs.html?session={session}">DAB programs</a></td></tr>\n'
+        r = r + f'<tr><td colspan="2"><p><a href="/list_dab_progs.html?session={session}">DAB programs</a></p><br></td></tr>\n'
 
         r = r + '<tr><td>' + f'<p><a href="/wifi.html?session={session}">Add WiFi Config</a></p><br>' + '</td>\n'
         r = r + '<td>' + f'<p><a href="/wifi_reset.html?session={session}">Reset All WiFi Config</a></p><br>' + '</td></tr>\n'
-        r = r + '<tr><td colspan="2">' + self.create_html_form_str("wifi_reconfig", "Reconfigure WiFi", session ) + '</td></tr>\n'
-        r = r + '<tr><td colspan="2">' + f'<p><a href="/config.html?session={session}">Configure Scanner</a></p><br>' + '</td></tr>\n'
+        r = r + '<tr><td colspan="2">' + f'<p><a href="/wifi_reconfig.html?session={session}">Reconfigure WiFi</a></p><br>' + '</td></tr>\n'
+        r = r + f'<tr><td colspan="2"><p><button type="button" onclick="window.location.href=\'/config.html?session={session}\'">Configure Scanner</button></p><br></td></tr>\n'
         r = r + '<tr><td>' + self.create_html_form_str("start_scanner", "Start Scanner", session ) + '</td>\n'
         r = r + '<td>' + self.create_html_form_str("stop_scanner", "Stop Scanner", session ) + '</td></tr>\n'
         r = r + '<tr><td>' + self.create_html_form_str("prepare_upload_all", "Prepare All &amp; Upload", session ) + '</td>\n'
@@ -892,9 +921,14 @@ class RequestHandler(BaseHTTPRequestHandler):
               cfg_dict, cc_config )
 
             form_cont = form_cont + f'<tr><td>QTH_PREFIX</td><td><input type="text" id="cfg_qth_prefix" name="cfg_qth_prefix" value="{str(gps_qth_prefix)}"> </td><td>prefix for config filename for _GPS_COORDS.inc<br>usually "local"</td></tr>'
+            form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
+                            ("FMLIST_SCAN_GPS_COORDS", "GPS coordinate source mode") ],
+                            cfg_dict, cc_config,
+                            [ ("auto", "auto (prefer gps, fallback to static)"), ("gps", "gps"), ("static", "static") ] )
             form_cont = form_cont + f'<tr><td>SCAN_GPS_LAT</td><td><input type="text" id="cfg_gps_lat" name="cfg_gps_lat" value="{str(gps_lat)}"> </td><td>decimal latitude, e.g. 48.885582 </td></tr>'
             form_cont = form_cont + f'<tr><td>SCAN_GPS_LON</td><td><input type="text" id="cfg_gps_lon" name="cfg_gps_lon" value="{str(gps_lon)}"> </td><td>decimal longitude, e.g. 8.702656 </td></tr>'
             form_cont = form_cont + f'<tr><td>SCAN_GPS_ALT</td><td><input type="text" id="cfg_gps_alt" name="cfg_gps_alt" value="{str(gps_alt)}"> </td><td>decimal altitude, e.g. 307 </td></tr>'
+            form_cont = form_cont + f'<tr><td>Map picker</td><td><button type="button" onclick="return openGpsMapPicker({session!r}, \'cfg_gps_lat\', \'cfg_gps_lon\', \'cfg_qth_prefix\', \'cfg_gps_alt\')">Open OpenStreetMap</button></td><td>Click a point in the popup to save latitude and longitude immediately.</td></tr>'
 
             form_cont = form_cont + read_and_gen_check_form_from_cfg( [
               ("FMLIST_SCAN_AUTOSTART",    "autostart scanner in background, when booting"),
@@ -902,6 +936,7 @@ class RequestHandler(BaseHTTPRequestHandler):
               ("FMLIST_SCAN_AUTO_CONFIG",  "permit configuration from fmlist.org in MyURDS"),
               ("FMLIST_SCAN_FM",           "scan UKW/FM stations - requires restart of scanner"),
               ("FMLIST_SCAN_DAB",          "scan DAB stations - requires restart of scanner"),
+              ("FMLIST_SCAN_PARALLEL_FM_DAB", "run FM and DAB in parallel when hardware is independent (TEF+RTL or two different RTL serials)"),
               ("FMLIST_ALWAYS_FAST_MODE",  "deactivates verbose scan when GPS not connected"),
               ("FMLIST_SPORADIC_E_MODE",   "deactivates DAB scan, uses special scan parameters in FM for quick scan") ],
               cfg_dict, cc_config )
@@ -910,18 +945,63 @@ class RequestHandler(BaseHTTPRequestHandler):
             form_cont = form_cont + '<tr><td colspan="3"><br><b>&nbsp;SDR hardware</b></td></tr>'
             form_cont = form_cont + '<tr><th>Name</th><th>Value / Content</th><th>Description</th><tr>\n'
 
+            form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
+                ("FMLIST_FM_BACKEND",        "FM backend to use") ],
+                cfg_dict, cc_config,
+                [ ("tef6686", "TEF6686"), ("rtl", "RTL-SDR") ] )
+
             form_cont = form_cont + read_and_gen_text_form_from_cfg( [
-              ("FMLIST_FM_RTLSDR_DEV",     "FM: specify RTLSDR device's serial and it's antenna.<br>Leave empty to use any device") ],
-              cfg_dict, cc_config )
+                ("FMLIST_FM_RTLSDR_DEV",     "FM: specify RTLSDR device's serial and it's antenna.<br>Leave empty to use any device") ],
+                cfg_dict, cc_config )
             form_cont = form_cont + read_and_gen_check_form_from_cfg( [
-              ("FMLIST_FM_DEV_R820T",      "FM device has R820T/2 tuner?") ],
-              cfg_dict, cc_config )
+                ("FMLIST_FM_DEV_R820T",      "FM device has R820T/2 tuner?") ],
+                cfg_dict, cc_config )
+
+            form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
+                ("FMLIST_TEF_TRANSPORT",     "TEF transport mode") ],
+                cfg_dict, cc_config,
+                [ ("serial", "serial (/dev/ttyUSBx)"), ("tcp", "TCP (WiFi/Ethernet)") ] )
+
+            form_cont = form_cont + read_and_gen_text_form_from_cfg( [
+                ("FMLIST_TEF_SERIAL_PORT",   "TEF serial device path"),
+                ("FMLIST_TEF_SERIAL_BAUD",   "TEF serial baud rate"),
+                ("FMLIST_TEF_TCP_HOST",      "TEF TCP host/IP"),
+                ("FMLIST_TEF_TCP_PORT",      "TEF TCP port") ],
+                cfg_dict, cc_config )
+
+            form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
+                ("FMLIST_TEF_TCP_AUTH",      "TEF TCP authentication mode") ],
+                cfg_dict, cc_config,
+                [ ("none", "none"), ("xdr", "xdr (salt+SHA1)") ] )
+
+            form_cont = form_cont + read_and_gen_text_form_from_cfg( [
+                ("FMLIST_TEF_TCP_PASSWORD",  "TEF TCP password (used only when auth mode is xdr)") ],
+                cfg_dict, cc_config )
+
+            form_cont = form_cont + read_and_gen_text_form_from_cfg( [
+                ("FMLIST_TEF_SCAN_THRESHOLD_DB",        "TEF FM threshold (\"auto\" or fixed dB value)"),
+                ("FMLIST_TEF_SCAN_THRESHOLD_MARGIN_DB", "Margin above noise floor for auto threshold") ],
+                cfg_dict, cc_config )
+
+            form_cont = form_cont + read_and_gen_number_form_from_cfg( [
+                ("FMLIST_TEF_DWELL_MOBILE_SEC", "TEF dwell time per frequency for mobile scan"),
+                ("FMLIST_TEF_DWELL_FIXED_SEC",  "TEF dwell time per frequency for fixed scan") ],
+                cfg_dict, cc_config, 1, 120 )
+
             form_cont = form_cont + read_and_gen_text_form_from_cfg( [
               ("FMLIST_DAB_RTLSDR_DEV",    "DAB: specify RTLSDR device's serial and it's antenna.<br>Leave empty to use any device") ],
               cfg_dict, cc_config )
             form_cont = form_cont + read_and_gen_check_form_from_cfg( [
               ("FMLIST_DAB_DEV_R820T",     "DAB device has R820T/2 tuner?") ],
               cfg_dict, cc_config )
+            form_cont = form_cont + read_and_gen_check_form_from_cfg( [
+                            ("FMLIST_SCAN_DAB_ANALYZE_FROM_RAW", "DAB: always discover with dab-rtlsdr (no audio analysis); only new multiplexes are captured to /dev/shm and analyzed via dab-raw") ],
+              cfg_dict, cc_config )
+            form_cont = form_cont + read_and_gen_number_form_from_cfg( [
+                            ("FMLIST_SCAN_DAB_RAW_DURATION_SEC", "DAB: raw IQ capture duration in seconds for a new multiplex"),
+                                                        ("FMLIST_SCAN_DAB_RAW_INIT_MS",      "DAB: dab-raw init/wait time (-W) in milliseconds for new multiplex analysis"),
+                                                        ("FMLIST_SCAN_DAB_RAW_PARALLEL_JOBS", "DAB: legacy parallel raw-analysis setting (kept for compatibility)") ],
+              cfg_dict, cc_config, 1, 60000 )
 
 
             # ********************
@@ -937,8 +1017,6 @@ class RequestHandler(BaseHTTPRequestHandler):
               ("FMLIST_SCAN_FOUND_LEDPLAY", "Toggle LEDs with every detected carrier"),
               ("FMLIST_SCAN_SAVE_LEDPLAY",  "Toggle LEDs after saving results per scan iteration") ],
               cfg_dict, cc_config )
-
-            form_cont = form_cont + f'<tr><td></td><td>1</td><td>Wiring Pi Number for Buzzer<br>wPi Pin 1 is Physical Pin 12.<br>see output of command "gpio readall"</td></tr>'
 
             form_cont = form_cont + read_and_gen_check_form_from_cfg( [
               ("FMLIST_SCAN_FOUND_PWMTONE", "Play tones for every detected carrier?"),
@@ -959,7 +1037,7 @@ class RequestHandler(BaseHTTPRequestHandler):
               ("FMLIST_UP_COMMENT", "Upload Comments shown in URDS table") ],
               cfg_dict, cc_config, 3, 40 )
             form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
-              ("FMLIST_UP_POSITION", "Position for next upload<br>mobile scans are faster; fixed enables detailed DAB audio analysis") ],
+                            ("FMLIST_UP_POSITION", "Position for next upload<br>mobile: fast discovery, detailed DAB only for new ensembles<br>fixed: always raw-file DAB analysis with detailed audio (5s for known, 15s for new ensembles)") ],
               cfg_dict, cc_config, [ ("fixed", "fixed position"), ("mobile", "mobile") ] )
 
             form_cont = form_cont + read_and_gen_combo_form_from_cfg( [
@@ -998,7 +1076,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             gps_lat = get_export_value(cc_config, "FMLIST_SCAN_GPS_LAT")
             gps_lon = get_export_value(cc_config, "FMLIST_SCAN_GPS_LON")
             gps_alt = get_export_value(cc_config, "FMLIST_SCAN_GPS_ALT")
-            
+
             while gps_qth_prefix is not None and len(gps_qth_prefix) > 0:
                 cc_gps = read_all_lines(home+"/.config/fmlist_scan/"+gps_qth_prefix+"_GPS_COORDS.inc")
                 if cc_gps is None:
@@ -1042,13 +1120,20 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             replace_export_value(cc_config, "FMLIST_SCAN_AUTOSTART",     "1" if "cfg_scan_autostart" in d     else "0")
             replace_export_value(cc_config, "FMLIST_SCAN_AUTO_IP_INFO",  "1" if "cfg_scan_auto_ip_info" in d  else "0")
+
             replace_export_value(cc_config, "FMLIST_SCAN_AUTO_CONFIG",   "1" if "cfg_scan_auto_config" in d   else "0")
+            v = d["cfg_scan_gps_coords"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_SCAN_GPS_COORDS", v )
             replace_export_value(cc_config, "FMLIST_SCAN_FM",            "1" if "cfg_scan_fm" in d            else "0")
             replace_export_value(cc_config, "FMLIST_SCAN_DAB",           "1" if "cfg_scan_dab" in d           else "0")
+            replace_export_value(cc_config, "FMLIST_SCAN_PARALLEL_FM_DAB", "1" if "cfg_scan_parallel_fm_dab" in d else "0")
             replace_export_value(cc_config, "FMLIST_ALWAYS_FAST_MODE",   "1" if "cfg_always_fast_mode" in d   else "0")
             replace_export_value(cc_config, "FMLIST_SPORADIC_E_MODE",    "1" if "cfg_sporadic_e_mode" in d    else "0")
 
             # group
+
+            v = d["cfg_fm_backend"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_FM_BACKEND", v )
 
             replace_export_value(cc_config, "FMLIST_FM_DEV_R820T",       "1" if "cfg_fm_dev_r820t" in d       else "0")
             replace_export_value(cc_config, "FMLIST_DAB_DEV_R820T",      "1" if "cfg_dab_dev_r820t" in d      else "0")
@@ -1056,8 +1141,51 @@ class RequestHandler(BaseHTTPRequestHandler):
             v = d["cfg_fm_rtlsdr_dev"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
             replace_export_value(cc_config, "FMLIST_FM_RTLSDR_DEV", v )
 
+            v = d["cfg_tef_transport"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_TRANSPORT", v )
+
+            v = d["cfg_tef_serial_port"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_SERIAL_PORT", v )
+
+            v = d["cfg_tef_serial_baud"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_SERIAL_BAUD", v )
+
+            v = d["cfg_tef_tcp_host"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_TCP_HOST", v )
+
+            v = d["cfg_tef_tcp_port"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_TCP_PORT", v )
+
+            v = d["cfg_tef_tcp_auth"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_TCP_AUTH", v )
+
+            v = d["cfg_tef_tcp_password"].replace('"',"'").replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')
+            replace_export_value(cc_config, "FMLIST_TEF_TCP_PASSWORD", v )
+
+            v = d["cfg_tef_scan_threshold_db"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_SCAN_THRESHOLD_DB", v )
+
+            v = d["cfg_tef_scan_threshold_margin_db"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_SCAN_THRESHOLD_MARGIN_DB", v )
+
+            v = d["cfg_tef_dwell_mobile_sec"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_DWELL_MOBILE_SEC", v )
+
+            v = d["cfg_tef_dwell_fixed_sec"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_TEF_DWELL_FIXED_SEC", v )
+
             v = d["cfg_dab_rtlsdr_dev"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
             replace_export_value(cc_config, "FMLIST_DAB_RTLSDR_DEV", v )
+            replace_export_value(cc_config, "FMLIST_SCAN_DAB_ANALYZE_FROM_RAW", "1" if "cfg_scan_dab_analyze_from_raw" in d else "0")
+
+            v = d["cfg_scan_dab_raw_duration_sec"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_SCAN_DAB_RAW_DURATION_SEC", v )
+
+            v = d["cfg_scan_dab_raw_init_ms"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_SCAN_DAB_RAW_INIT_MS", v )
+
+            v = d["cfg_scan_dab_raw_parallel_jobs"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+            replace_export_value(cc_config, "FMLIST_SCAN_DAB_RAW_PARALLEL_JOBS", v )
 
             # group
 
@@ -1074,7 +1202,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             replace_export_value(cc_config, "FMLIST_SCAN_SAVE_PWMTONE",  "1" if "cfg_scan_save_pwmtone" in d  else "0")
             replace_export_value(cc_config, "FMLIST_SCAN_PWM_FEEDBACK",  "1" if "cfg_scan_pwm_feedback" in d  else "0")
 
-            # group 
+            # group
 
             v = d["cfg_om_id"].replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
             replace_export_value(cc_config, "FMLIST_OM_ID", v )
@@ -1119,6 +1247,136 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             break
 
+    def GET_map_picker(self, session, d):
+        def parse_coord(name, default_value):
+            try:
+                return float(d.get(name, default_value))
+            except:
+                return default_value
+
+        lat = parse_coord("lat", 48.0)
+        lon = parse_coord("lon", 8.0)
+        prefix = d.get("prefix", "")
+        alt = d.get("alt", "")
+
+        self.wfile.write(str.encode('<h1>Pick location on map</h1>\n'))
+        self.wfile.write(str.encode('<p>Click on the map to save the coordinates and copy them back into the config form.</p>\n'))
+        self.wfile.write(str.encode(f'<p>Current selection: <span id="selected_coords">{lat:.6f}, {lon:.6f}</span></p>\n'))
+        self.wfile.write(str.encode('<div id="save_status" style="margin: 0.4rem 0 0.8rem 0; font-weight: 700;"></div>\n'))
+        self.wfile.write(str.encode('<div id="map" style="height: 620px; width: 100%; border: 1px solid #b8cbc0; border-radius: 12px;"></div>\n'))
+        self.wfile.write(str.encode(f'<input type="hidden" id="start_lat" value="{lat:.6f}">\n'))
+        self.wfile.write(str.encode(f'<input type="hidden" id="start_lon" value="{lon:.6f}">\n'))
+        self.wfile.write(str.encode(f'<input type="hidden" id="start_prefix" value="{prefix}">\n'))
+        self.wfile.write(str.encode(f'<input type="hidden" id="start_alt" value="{alt}">\n'))
+        self.wfile.write(str.encode(f'<input type="hidden" id="start_session" value="{session}">\n'))
+        self.wfile.write(str.encode('<p><button type="button" onclick="if (window.opener) { window.opener.setGpsCoordinates(currentLat.toFixed(6), currentLon.toFixed(6)); } window.close();">Use selected location</button></p>\n'))
+        self.wfile.write(str.encode('''<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script>
+let map;
+let marker;
+let currentLat = parseFloat(document.getElementById('start_lat').value);
+let currentLon = parseFloat(document.getElementById('start_lon').value);
+let currentPrefix = document.getElementById('start_prefix').value;
+let currentAlt = document.getElementById('start_alt').value;
+let currentSession = document.getElementById('start_session').value;
+
+function updateSelection(lat, lon) {
+    currentLat = lat;
+    currentLon = lon;
+    document.getElementById('selected_coords').textContent = lat.toFixed(6) + ', ' + lon.toFixed(6);
+    const status = document.getElementById('save_status');
+    if (status) {
+        status.textContent = 'Saving...';
+    }
+    const payload = 'prefix=' + encodeURIComponent(currentPrefix) + '&lat=' + encodeURIComponent(lat.toFixed(6)) + '&lon=' + encodeURIComponent(lon.toFixed(6)) + '&alt=' + encodeURIComponent(currentAlt);
+    fetch('/map_picker_save?session=' + encodeURIComponent(currentSession), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: payload
+    }).then(function(response) {
+        if (response.ok) {
+            if (status) {
+                status.textContent = 'Saved';
+            }
+            if (window.opener && !window.opener.closed) {
+                window.opener.setGpsCoordinates(lat.toFixed(6), lon.toFixed(6));
+            }
+        } else if (status) {
+            status.textContent = 'Save failed';
+        }
+    }).catch(function() {
+        if (status) {
+            status.textContent = 'Save failed';
+        }
+    });
+    if (window.opener && !window.opener.closed) {
+        window.opener.setGpsCoordinates(lat.toFixed(6), lon.toFixed(6));
+    }
+}
+
+function syncMarker(latlng) {
+    if (!marker) {
+        marker = L.marker(latlng, { draggable: true }).addTo(map);
+        marker.on('dragend', function() {
+            const pos = marker.getLatLng();
+            updateSelection(pos.lat, pos.lng);
+        });
+    } else {
+        marker.setLatLng(latlng);
+    }
+    updateSelection(latlng.lat, latlng.lng);
+}
+
+map = L.map('map').setView([currentLat, currentLon], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+syncMarker(L.latLng(currentLat, currentLon));
+
+map.on('click', function(ev) {
+    syncMarker(ev.latlng);
+});
+</script>'''))
+        self.wfile.write(str.encode('</body>\n</html>\n'))
+
+    def POST_map_picker_save(self, session, d):
+        home = os.getenv("HOME")
+        prefix = d.get("prefix", "")
+        prefix = prefix.replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','').replace('/','').replace('\\','')
+        lat = d.get("lat", "")
+        lon = d.get("lon", "")
+        alt = d.get("alt", "")
+        lat = lat.replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+        lon = lon.replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+        alt = alt.replace('"','').replace('&','').replace(',','').replace(';','').replace('<','').replace('>','')
+
+        if len(prefix) == 0:
+            return ('<p>Error: missing GPS prefix.</p>', True)
+
+        cc_config = read_all_lines(home + config_fn_rel_to_home)
+        if cc_config is not None:
+            replace_export_value(cc_config, "FMLIST_SCAN_GPS_LAT", lat)
+            replace_export_value(cc_config, "FMLIST_SCAN_GPS_LON", lon)
+            write_all_lines(home + config_fn_rel_to_home, cc_config)
+
+        localFname = home + '/.config/fmlist_scan/' + prefix + '_GPS_COORDS.inc'
+        cc_gps = read_all_lines(localFname)
+        if cc_gps is None:
+            cc_gps = [
+                f'export FMLIST_SCAN_GPS_LAT="{lat}"\n',
+                f'export FMLIST_SCAN_GPS_LON="{lon}"\n',
+                f'export FMLIST_SCAN_GPS_ALT="{alt}"\n',
+            ]
+        else:
+            replace_export_value(cc_gps, "FMLIST_SCAN_GPS_LAT", lat)
+            replace_export_value(cc_gps, "FMLIST_SCAN_GPS_LON", lon)
+            replace_export_value(cc_gps, "FMLIST_SCAN_GPS_ALT", alt)
+
+        if write_all_lines(localFname, cc_gps):
+            return ('<p>Saved GPS coordinates.</p>', False)
+        return ('<p>Error saving GPS coordinates.</p>', True)
 
     def POST_wifi(self, d):
         out_html, err_at_exec = run_and_get_output(True, "scannerPrepareWifiConfig.sh", timeout_val_in_sec=3)
@@ -1216,7 +1474,9 @@ class RequestHandler(BaseHTTPRequestHandler):
         if ps=="/status":
             self.wfile.write(str.encode( webhdr() ))
             self.wfile.write(str.encode("<hr>"))
-            out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", timeout_val_in_sec=3)
+            out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", timeout_val_in_sec=STATUS_PAGE_TIMEOUT_SECS)
+            self.wfile.write(str.encode(out_html))
+            out_html, err_at_exec = run_and_get_output(True, "get_throttled.sh", timeout_val_in_sec=2)
             self.wfile.write(str.encode(out_html))
             self.wfile.write(str.encode("<hr>"))
             self.wfile.write(str.encode(f'<p><a href="/status.html?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
@@ -1284,13 +1544,19 @@ class RequestHandler(BaseHTTPRequestHandler):
             elif ps=="/status":
                 self.wfile.write(str.encode( webhdr() ))
                 self.wfile.write(str.encode("<hr>"))
-                out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", timeout_val_in_sec=3)
+                out_html, err_at_exec = run_and_get_output(True, "statusBgScanLoop.sh", timeout_val_in_sec=STATUS_PAGE_TIMEOUT_SECS)
+                self.wfile.write(str.encode(out_html))
+                out_html, err_at_exec = run_and_get_output(True, "get_throttled.sh", timeout_val_in_sec=2)
                 self.wfile.write(str.encode(out_html))
                 self.wfile.write(str.encode("<hr>"))
                 self.wfile.write(str.encode(f'<br><p><a href="/status.html?session={session}">Reload/Update Scanner Status</a> every 3 seconds ..</p>'))
 
             elif ps=="/config":
                 self.GET_config(session)
+
+            elif ps=="/map_picker":
+                self.GET_map_picker(session, d)
+                return
 
             elif ps=="/test_tones":
                 self.GET_test_tones(session, d)
@@ -1361,6 +1627,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         elif ps=="/config":
             out_html, err_at_exec = self.POST_config(session, d)
+
+        elif ps=="/map_picker_save":
+            out_html, err_at_exec = self.POST_map_picker_save(session, d)
 
         elif ps=="/start_scanner":
             out_html, err_at_exec = run_in_background(True, "startBgScanLoop.sh", 1)
@@ -1475,5 +1744,3 @@ def run(server_class=HTTPServer, handler_class=BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     run(handler_class=RequestHandler)
-
-

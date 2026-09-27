@@ -45,6 +45,24 @@ if [ -z "${FMLIST_OM_ID}" ]; then
   export FMLIST_OM_ID=""
 fi
 
+on_setup_interrupt() {
+  echo " "
+  echo "========================================="
+  echo "SETUP STOPPED BY USER"
+  echo "  received interrupt signal (Ctrl-C)"
+  echo "========================================="
+  exit 130
+}
+
+handle_step_failure() {
+  local rc="$1"
+  if [ "${rc}" -eq 130 ]; then
+    on_setup_interrupt
+  fi
+}
+
+trap on_setup_interrupt INT TERM
+
 echo "$0 [syspre|cron|fstab|files|conf|pre|gui|rtl|csdr|lfec|ldsp|redsea|dabcmd|eticmd|pipwm|pishutd|wsrv|chkspec|pscan|kal|gpsd]"
 echo "  syspre  install system prerequisites"
 echo "  cron    install crontab entries"
@@ -93,7 +111,7 @@ else
 fi
 for C in $(seq 5 -1 1) ; do
   echo -en "\r${C} secs to start .. press Ctrl-C to abort"
-  sleep 1
+  sleep 1 || on_setup_interrupt
 done
 echo -e "\n\n"
 
@@ -264,10 +282,10 @@ while /bin/true; do
     echo "building librtlsdr"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_librtlsdr"
-    if . inst_librtlsdr; then
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_librtlsdr" && . inst_librtlsdr; then
         SUCCESS_STEPS+=("rtl")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("rtl")
     fi
   fi
@@ -278,10 +296,10 @@ while /bin/true; do
     echo "building csdr"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_csdr"
-    if . inst_csdr; then
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_csdr" && . inst_csdr; then
         SUCCESS_STEPS+=("csdr")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("csdr")
     fi    
   fi
@@ -292,10 +310,10 @@ while /bin/true; do
     echo "building libcorrect/libfec"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_libcorrect"
-    if . inst_libcorrect; then
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_libcorrect" && . inst_libcorrect; then
         SUCCESS_STEPS+=("lfec")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("lfec")
     fi
   fi
@@ -306,10 +324,10 @@ while /bin/true; do
     echo "building libliquid-dsp"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_liquid-dsp"
-    if . inst_liquid-dsp; then
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_liquid-dsp" && . inst_liquid-dsp; then
         SUCCESS_STEPS+=("ldsp")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("ldsp")
     fi
   fi
@@ -320,10 +338,10 @@ while /bin/true; do
     echo "building redsea"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_redsea"
-    if . inst_redsea; then
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_redsea" && . inst_redsea; then
         SUCCESS_STEPS+=("redsea")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("redsea")
     fi
   fi
@@ -334,10 +352,10 @@ while /bin/true; do
     echo "building dab-cmdline"
     echo "-------------------------"
     echo " "
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_dab-cmdline"
-    if . inst_dab-cmdline; then
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_dab-cmdline" && . inst_dab-cmdline; then
         SUCCESS_STEPS+=("dabcmd")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("dabcmd")
     fi
   fi
@@ -351,6 +369,7 @@ while /bin/true; do
     if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_eti-cmdline" && sudo -u ${FMLIST_SCAN_USER} bash -c "source inst_eti-cmdline"; then
         SUCCESS_STEPS+=("eticmd")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("eticmd")
     fi
   fi
@@ -364,6 +383,7 @@ while /bin/true; do
     if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi" && . inst_wpi && sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pipwm" && . setup_pipwm; then
         SUCCESS_STEPS+=("pipwm")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("pipwm")
     fi
   fi
@@ -377,6 +397,7 @@ while /bin/true; do
     if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_wiringpi" && . inst_wpi && sudo -u ${FMLIST_SCAN_USER} bash -c "source build_pishutdown" && . inst_pishutdown; then
         SUCCESS_STEPS+=("pishutd")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("pishutd")
     fi
   fi
@@ -413,6 +434,7 @@ while /bin/true; do
     if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_liquid-dsp" && . inst_liquid-dsp && sudo -u ${FMLIST_SCAN_USER} bash -c "source build_checkSpectrum"; then
         SUCCESS_STEPS+=("chkspec")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("chkspec")
     fi
   fi
@@ -426,6 +448,7 @@ while /bin/true; do
     if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_prescanDAB"; then
         SUCCESS_STEPS+=("pscan")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("pscan")
     fi
   fi
@@ -437,10 +460,10 @@ while /bin/true; do
     echo "-------------------------"
     echo " "
 
-    sudo -u ${FMLIST_SCAN_USER} bash -c "source build_kal"
-    if . inst_kal; then
+    if sudo -u ${FMLIST_SCAN_USER} bash -c "source build_kal" && . inst_kal; then
         SUCCESS_STEPS+=("kal")
     else
+      handle_step_failure $?
         FAILED_STEPS+=("kal")
     fi
   fi

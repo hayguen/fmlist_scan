@@ -167,13 +167,17 @@ if [ "$1" = "autostart" ] && [ "$2" = "upload" ] ; then
   uploadScanResults.sh
 fi
 
+# A new scan starts with fresh live status; do not show stations from the previous run.
+rm -f ${FMLIST_SCAN_RAM_DIR}/LAST.history
 echo "" >${FMLIST_SCAN_RAM_DIR}/LAST
 rm -f ${FMLIST_SCAN_RAM_DIR}/stopScanLoop
+rm -f ${FMLIST_SCAN_RAM_DIR}/scanLoopBg.started
 # signal desired state - not the current one
 echo "1" >${FMLIST_SCAN_RAM_DIR}/scanLoopBgRunning
 
 echo "starting screen session 'scanLoopBg' .."
 
+SCAN_LOOP_START_TIME="$(date -u "+%Y-%m-%dT%T Z")"
 screen -d -m -S scanLoopBg bash "$HOME/bin/scanLoop.sh"
 sleep 2
 SSESSION="$( screen -ls | grep scanLoopBg )"
@@ -182,4 +186,5 @@ if [ -z "$SSESSION" ]; then
   echo "Error starting screen session" >>"${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner/error.log"
   exit 10
 fi
+echo "${SCAN_LOOP_START_TIME}" >${FMLIST_SCAN_RAM_DIR}/scanLoopBg.started
 

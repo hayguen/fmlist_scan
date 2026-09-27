@@ -1,4 +1,5 @@
 #!/bin/bash
+clear
 
 source $HOME/.config/fmlist_scan/config
 if [ ! -d "${FMLIST_SCAN_RAM_DIR}" ]; then
@@ -14,11 +15,4 @@ fi
 export LC_ALL=C
 cd "${FMLIST_SCAN_RAM_DIR}"
 
-while /bin/true; do
-  clear
-  echo ""
-  statusBgScanLoop.sh
-  echo ""
-  get_throttled.sh
-  sleep "${SLEEPDUR}"
-done
+watch -t -n "$SLEEPDUR" 'echo ""; statusBgScanLoop.sh; echo ""; get_throttled.sh'

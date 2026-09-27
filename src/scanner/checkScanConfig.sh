@@ -20,6 +20,7 @@
     "FMLIST_SCAN_AUTOSTART"          \
     "FMLIST_SCAN_FM"                 \
     "FMLIST_SCAN_DAB"                \
+    "FMLIST_SCAN_PARALLEL_FM_DAB"    \
     "FMLIST_ALWAYS_FAST_MODE"        \
     "FMLIST_SPORADIC_E_MODE"         \
     "FMLIST_SCAN_TEST"               \
@@ -66,6 +67,8 @@
 
   OTHER_VARS=( \
     "FMLIST_SCAN_GPS_COORDS" \
+    "FMLIST_FM_BACKEND"      \
+    "FMLIST_TEF_TRANSPORT"   \
   )
 
   OPTIONAL_VARS=( \
@@ -79,6 +82,25 @@
     "FMLIST_SCAN_SAVE_LOG_OPT" \
     "FMLIST_FM_RTLSDR_DEV"     \
     "FMLIST_DAB_RTLSDR_DEV"    \
+    "FMLIST_TEF_SERIAL_PORT"   \
+    "FMLIST_TEF_SERIAL_BAUD"   \
+    "FMLIST_TEF_TCP_HOST"      \
+    "FMLIST_TEF_TCP_HOST_AUTO" \
+    "FMLIST_TEF_TCP_HOST_DISCOVERY_SEC" \
+    "FMLIST_TEF_TCP_PORT"      \
+    "FMLIST_TEF_UDP_ENABLE"    \
+    "FMLIST_TEF_UDP_BIND"      \
+    "FMLIST_TEF_UDP_PORT_9030" \
+    "FMLIST_TEF_UDP_PORT_9100" \
+    "FMLIST_TEF_UDP_SETTLE_SEC" \
+    "FMLIST_TEF_UDP_MAX_AGE_SEC" \
+    "FMLIST_TEF_SCAN_THRESHOLD_DB" \
+    "FMLIST_TEF_MOBILE_SEEK_COMMAND" \
+    "FMLIST_TEF_MOBILE_SEEK_STOP_COMMAND" \
+    "FMLIST_TEF_MOBILE_SEEK_PULSE_SEC" \
+    "FMLIST_TEF_MOBILE_SEEK_TIMEOUT_SEC" \
+    "FMLIST_TEF_DWELL_MOBILE_SEC"  \
+    "FMLIST_TEF_DWELL_FIXED_SEC"   \
   )
 
 
@@ -117,6 +139,16 @@
     echo "error: missing FMLIST_SCAN_GPS_COORDS in $HOME/.config/fmlist_scan/config"
   elif [ ! "${FMLIST_SCAN_GPS_COORDS}" = "gps" ] && [ ! "${FMLIST_SCAN_GPS_COORDS}" = "static" ] && [ ! "${FMLIST_SCAN_GPS_COORDS}" = "auto" ]; then
     echo "error: FMLIST_SCAN_GPS_COORDS must be 'gps', 'static' or 'auto'"
+  fi
+
+  if [ -z "${FMLIST_FM_BACKEND}" ]; then
+    echo "error: missing FMLIST_FM_BACKEND in $HOME/.config/fmlist_scan/config"
+  elif [ ! "${FMLIST_FM_BACKEND}" = "rtl" ] && [ ! "${FMLIST_FM_BACKEND}" = "rtlsdr" ] && [ ! "${FMLIST_FM_BACKEND}" = "tef6686" ] && [ ! "${FMLIST_FM_BACKEND}" = "tef" ]; then
+    echo "error: FMLIST_FM_BACKEND must be 'rtl', 'rtlsdr', 'tef6686' or 'tef'"
+  fi
+
+  if [ -n "${FMLIST_TEF_TRANSPORT}" ] && [ ! "${FMLIST_TEF_TRANSPORT}" = "serial" ] && [ ! "${FMLIST_TEF_TRANSPORT}" = "tcp" ]; then
+    echo "error: FMLIST_TEF_TRANSPORT must be 'serial' or 'tcp'"
   fi
 
 

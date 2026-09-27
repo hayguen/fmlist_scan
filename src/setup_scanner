@@ -11,6 +11,7 @@ cp scanner/monitorBgScanLoop.sh      /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/statusBgScanLoop.sh       /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/createFMoverview.py       /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanFM.sh                 /home/${FMLIST_SCAN_USER}/bin/
+cp scanner/scanFM_tef.py             /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanDAB.sh                /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/scanLoop.sh               /home/${FMLIST_SCAN_USER}/bin/
 cp scanner/startBgScanLoop.sh        /home/${FMLIST_SCAN_USER}/bin/
@@ -79,6 +80,7 @@ CHOWNLIST=( \
   "anonTimeForPreparedResults.sh"
   "atx-knob.sh"
   "createFMoverview.py"
+  "scanFM_tef.py"
   "get_throttled.sh"
   "get-adapter-info.py"
   "listUSBdevices.sh"
