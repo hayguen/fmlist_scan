@@ -37,7 +37,7 @@ IFS='x'
 read -a strarr <<< "$THROTTLED_OUTPUT"
 THROTTLED_CODE_HEX=${strarr[1]}
 # Display current issues
-echo "Currently detected power supply issues:"
+echo "Currently detected power issues:"
 CURRENT_HEX=${THROTTLED_CODE_HEX:4:1}
 CURRENT_BIN=${HEX_BIN_MAP[$CURRENT_HEX]}
 if [ "$CURRENT_HEX" == "0" ] || [ -z $CURRENT_HEX ]; then
@@ -46,7 +46,7 @@ else
   bit_n=0
   for (( i=${#CURRENT_BIN}-1; i>=0; i--)); do
     if [ "${CURRENT_BIN:$i:1}" = "1" ]; then
-      echo -e "=======================\nWARNING!\n=======================\n${ISSUES_MAP[$bit_n]}\n"
+      echo -e "==================\nWARNING!\n==================\n${ISSUES_MAP[$bit_n]}\n"
       bit_n=$((bit_n+1))
     fi
   done
@@ -55,11 +55,11 @@ fi
 echo ""
 
 # Display past issues
-echo "Previously detected power supply issues since reboot:"
+echo "Previous power issues since reboot:"
 PAST_HEX=${THROTTLED_CODE_HEX:0:1}
 PAST_BIN=${HEX_BIN_MAP[$PAST_HEX]}
 if [ $PAST_HEX = "0" ]; then
-  echo "Supply Voltage was always ok since reboot"
+  echo "Supply Voltage always was ok"
 else
   bit_n=16
   for (( i=${#PAST_BIN}-1; i>=0; i--)); do

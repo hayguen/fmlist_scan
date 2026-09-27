@@ -9,6 +9,12 @@ fi
 
 source /home/${FMLIST_SCAN_USER}/bin/scanner_mount_result_dir.sh.inc
 
+QTH_PREFIX_SHOW="${FMLIST_QTH_PREFIX}"
+if [ -z "${QTH_PREFIX_SHOW}" ]; then
+  QTH_PREFIX_SHOW="local"
+fi
+rm -f "${HOME}/.config/fmlist_scan/${QTH_PREFIX_SHOW}_last_new_ensemble.txt"
+
 
 cd "${FMLIST_SCAN_RESULT_DIR}/fmlist_scanner"
 

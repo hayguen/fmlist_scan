@@ -15,6 +15,38 @@ if [ "${FMLIST_SCAN_FM}" = "0" ] || [ "${FMLIST_SCAN_FM}" = "OFF" ]; then
   exit 0
 fi
 
+FM_BACKEND_RAW="${FMLIST_FM_BACKEND}"
+if [ -z "${FM_BACKEND_RAW}" ]; then
+  FM_BACKEND_RAW="tef6686"
+fi
+FM_BACKEND="$( echo "${FM_BACKEND_RAW}" | tr '[:upper:]' '[:lower:]' )"
+if [ "${FM_BACKEND}" = "rtlsdr" ]; then
+  FM_BACKEND="rtl"
+fi
+if [ "${FM_BACKEND}" = "tef" ]; then
+  FM_BACKEND="tef6686"
+fi
+
+if [ "${FM_BACKEND}" = "tef6686" ]; then
+  SCANFM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+  if command -v python3 >/dev/null 2>&1; then
+    if [ -z "$1" ]; then
+      exec python3 "${SCANFM_DIR}/scanFM_tef.py"
+    else
+      exec python3 "${SCANFM_DIR}/scanFM_tef.py" "$1"
+    fi
+  elif command -v python >/dev/null 2>&1; then
+    if [ -z "$1" ]; then
+      exec python "${SCANFM_DIR}/scanFM_tef.py"
+    else
+      exec python "${SCANFM_DIR}/scanFM_tef.py" "$1"
+    fi
+  else
+    echo "FM scan failed: python runtime is required for TEF6686 backend"
+    exit 1
+  fi
+fi
+
 
 DTF="$(date -u "+%Y-%m-%dT%T.%N Z")"
 DTFREC="$(date -u "+%Y-%m-%dT%H%M%S")"
@@ -310,6 +342,7 @@ for chunkfreq in $( echo $chunkfrqs EOL ) ; do
     GPSV_ACT="$( ( flock -s 213 ; cat ${FMLIST_SCAN_RAM_DIR}/gpscoor.inc 2>/dev/null ) 213>${FMLIST_SCAN_RAM_DIR}/gps.lock )"
     DTF_ACT="$(date -u "+%Y-%m-%dT%T.%N Z")"
     echo "recording frequency $chunkfreq in background. last gps ${GPS_ACT}. now ${DTF_ACT}: rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw"
+    echo "rtl_sdr -s $chunksrate -n $chunknumsmp -f $chunkfreq ${RTLSDR_OPT} ${RTL_BW_OPT} ${rec_path}/${act_rec_name}.raw" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     if [ -d /sys/class/thermal/thermal_zone0 ]; then
       echo -e "\\n$(date -u "+%Y-%m-%dT%T Z"): Temperature at scanFM.sh before rtl_sdr -f ${chunkfreq}: $(cat /sys/class/thermal/thermal_zone*/temp | tr '\n' ' ')" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
       echo "$(date -u +%s), $(cat /sys/class/thermal/thermal_zone*/temp | tr '\n' ' ')" >>${FMLIST_SCAN_RAM_DIR}/cputemp.csv
@@ -397,16 +430,30 @@ if [ \$NL -le 0 ]; then
   echo "processing freq \$f : no decode"
   echo "RDS=\"0\"" >>redsea.\${f}.inc
   RDS="0"
+  LAST_KEY="FM \${f}"
+  LAST_INFO=""
+  (
+    flock -x 214
+    echo "\${LAST_KEY}" >${FMLIST_SCAN_RAM_DIR}/LAST
+    : >${FMLIST_SCAN_RAM_DIR}/LAST.info
+    if [ -f ${FMLIST_SCAN_RAM_DIR}/LAST.history ]; then
+      awk -v k="\${LAST_KEY}" 'index($0, k " ") != 1 && $0 != k' ${FMLIST_SCAN_RAM_DIR}/LAST.history >${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+    else
+      : >${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+    fi
+    echo "\${LAST_KEY}" >>${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+    tail -n 50 ${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp >${FMLIST_SCAN_RAM_DIR}/LAST.history
+    rm -f ${FMLIST_SCAN_RAM_DIR}/LAST.history.tmp
+  ) 214>${FMLIST_SCAN_RAM_DIR}/last.lock
+  echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_carrier.\${f}.csv
+  echo -n ",\$(printf "%.0f" \${carrier_pwr_ratioMin[\$1]}),\$(printf "%.0f" \${carrier_pwr_ratioMax[\$1]})" >>fm_carrier.\${f}.csv
+  echo ",${DTF_RDY},\${GPSCOLS}" >>fm_carrier.\${f}.csv
   if [ ${FMLIST_SCAN_DEBUG} -ne 0 ]; then
     echo "${DTF_RDY}: FM \${f}: NO RDS decode" >>${FMLIST_SCAN_RAM_DIR}/scanner.log
     mv redsea.\${f}.txt redsea.\${f}_noRDS.txt
     if [ -f redsea.\${f}.spy ]; then
       mv redsea.\${f}.spy redsea.\${f}_noRDS.spy
     fi
-
-    echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_carrier.\${f}.csv
-    echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm_carrier.\${f}.csv
-    echo ",${DTF_RDY},\${GPSCOLS}" >>fm_carrier.\${f}.csv
 
   else
     rm -f redsea.\${f}.txt
@@ -436,7 +483,7 @@ else
   ) 214>${FMLIST_SCAN_RAM_DIR}/last.lock
 
     echo -n "\${CURREPOCH},freq,\${f},\${RDS}" >fm_rds.\${f}.csv
-    echo -n ",\${carrier_pwr_ratioMin[\$1]},\${carrier_pwr_ratioMax[\$1]}" >>fm_rds.\${f}.csv
+    echo -n ",\$(printf "%.0f" \${carrier_pwr_ratioMin[\$1]}),\$(printf "%.0f" \${carrier_pwr_ratioMax[\$1]})" >>fm_rds.\${f}.csv
     echo -n ",${DTF_RDY},\${GPSCOLS}" >>fm_rds.\${f}.csv
     echo ",\${RDSCOLS}" >>fm_rds.\${f}.csv
 
